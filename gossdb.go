@@ -23,7 +23,7 @@ func NewPool(conf *Config) (*Connectors, error) {
 		conf.MinPoolSize = conf.MaxPoolSize
 	}
 	if conf.GetClientTimeout == 0 {
-		conf.GetClientTimeout = 600
+		conf.GetClientTimeout = 10
 	}
 	c := &Connectors{
 		pool: make(chan *Client, conf.MaxPoolSize),
@@ -31,6 +31,9 @@ func NewPool(conf *Config) (*Connectors, error) {
 	}
 	c.appendClient(conf.MinPoolSize)
 	c.Size = len(c.pool)
+	if c.Size == 0 {
+		return nil, fmt.Errorf("创建连接池失败，无法取得连接。")
+	}
 	return c, nil
 }
 
