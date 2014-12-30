@@ -7,11 +7,11 @@ type Config struct {
 	Host string
 	// ssdb的端口
 	Port int
-	//获取连接超时时间，单位为秒，默认10分钟
+	//获取连接超时时间，单位为秒，默认1分钟
 	GetClientTimeout int
-	//最大连接池个数
+	//最大连接池个数，默认为10
 	MaxPoolSize int
-	//最小连接池数
+	//最小连接池数，默认为1
 	MinPoolSize int
 	//当连接池中的连接耗尽的时候一次同时获取的连接数。默认值: 3
 	AcquireIncrement int

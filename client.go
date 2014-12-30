@@ -14,6 +14,11 @@ type Client struct {
 
 //关闭连接
 func (this *Client) Close() {
-	this.lastTime = time.Now()
-	this.pool.pool <- this
+	if this != nil {
+		if this.pool == nil { //连接池不存在，只关闭自己的连接
+			this.Client.Close()
+		} else {
+			this.pool.closeClient(this)
+		}
+	}
 }
