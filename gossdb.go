@@ -44,6 +44,7 @@ func NewPool(conf *Config) (*Connectors, error) {
 		return nil, fmt.Errorf("创建连接池失败，无法取得连接。")
 	}
 	c.Status = 1
+	go c.timed()
 	return c, nil
 }
 
@@ -56,6 +57,35 @@ func (this *Connectors) Close() {
 	}
 
 	close(this.pool)
+}
+
+//定期执行，简单方式
+func (this *Connectors) timed() {
+	timer := time.Tick(time.Minute)
+	for t := range timer {
+		go this.Contraction(t)
+	}
+}
+
+//收缩连接池
+func (this *Connectors) Contraction(now time.Time) {
+	this.lock.Lock()
+	defer this.lock.Unlock()
+	if this.Status != 1 {
+		return
+	}
+	tmplist := []*Client{}
+	for len(this.pool) > 0 {
+		c := <-this.pool
+		if c.lastTime.Add(time.Duration(this.cfg.MaxIdleTime) * time.Second).After(now) {
+			tmplist = append(tmplist, c)
+		} else {
+			c.Client.Close()
+		}
+	}
+	for _, c := range tmplist {
+		this.pool <- c
+	}
 }
 
 //创建一个连接
