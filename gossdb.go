@@ -44,7 +44,9 @@ func NewPool(conf *Config) (*Connectors, error) {
 		return nil, fmt.Errorf("creat pool is failed.")
 	}
 	c.Status = 1
-	go c.timed()
+	if c.cfg.MaxIdleTime > 0 {
+		go c.timed()
+	}
 	return c, nil
 }
 
