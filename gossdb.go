@@ -39,9 +39,9 @@ func NewPool(conf *Config) (*Connectors, error) {
 		cfg:  conf,
 	}
 	c.appendClient(conf.MinPoolSize)
-	c.Size = len(c.pool)
+
 	if c.Size == 0 {
-		return nil, fmt.Errorf("创建连接池失败，无法取得连接。")
+		return nil, fmt.Errorf("creat pool is failed.")
 	}
 	c.Status = 1
 	go c.timed()
@@ -55,7 +55,7 @@ func (this *Connectors) Close() {
 		c := <-this.pool
 		c.Client.Close()
 	}
-
+	this.ActiveCount = 0
 	close(this.pool)
 }
 
@@ -86,6 +86,12 @@ func (this *Connectors) Contraction(now time.Time) {
 	for _, c := range tmplist {
 		this.pool <- c
 	}
+	this.Size = len(this.pool)
+}
+
+//状态信息
+func (this *Connectors) Info() string {
+	return fmt.Sprintf(`pool size:%d	actived client:%d	config max pool size:%d	config Increment:%d`, this.Size, this.ActiveCount, this.cfg.MaxPoolSize, this.cfg.AcquireIncrement)
 }
 
 //创建一个连接
@@ -94,11 +100,11 @@ func (this *Connectors) NewClient() (*Client, error) {
 	defer this.lock.Unlock()
 	switch this.Status {
 	case -1:
-		return nil, fmt.Errorf("连接池已关闭，无法获取新连接。")
+		return nil, fmt.Errorf("the Connectors is Closed, can not get new client.")
 	case 0:
-		return nil, fmt.Errorf("连接池未初始化，无法获取新连接。")
+		return nil, fmt.Errorf("the Connectors is not inited, can not get new client.")
 	}
-	if this.Size == this.ActiveCount && this.Size < this.cfg.MaxPoolSize { //如果没有连接了，检查是否可以自动增加
+	if this.Size <= this.ActiveCount && this.Size < this.cfg.MaxPoolSize { //如果没有连接了，检查是否可以自动增加
 		for i := 0; i < this.cfg.AcquireIncrement && this.Size < this.cfg.MaxPoolSize; i++ {
 			if c, err := this.newClient(); err == nil {
 				this.pool <- c
@@ -111,7 +117,7 @@ func (this *Connectors) NewClient() (*Client, error) {
 	timeout := time.Tick(time.Duration(this.cfg.GetClientTimeout) * time.Second)
 	select {
 	case <-timeout:
-		return nil, fmt.Errorf("ssdb太忙，无法取得连接")
+		return nil, fmt.Errorf("ssdb pool is busy,can not get new client")
 	case c := <-this.pool:
 		this.ActiveCount += 1
 		return c, nil
@@ -123,11 +129,11 @@ func (this *Connectors) closeClient(client *Client) {
 	this.lock.Lock()
 	defer this.lock.Unlock()
 	if this.Status != 1 {
-		this.ActiveCount -= 1
 		client.Client.Close()
 	} else {
 		client.lastTime = time.Now()
 		this.pool <- client
+		this.ActiveCount -= 1
 	}
 }
 
@@ -142,6 +148,7 @@ func (this *Connectors) appendClient(size int) error {
 			return err
 		}
 	}
+	this.Size = len(this.pool)
 	return nil
 }
 
