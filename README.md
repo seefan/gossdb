@@ -9,6 +9,8 @@
 * 支持连接池。
 
 示例：
+
+
 	pool, err := gossdb.NewPool(&gossdb.Config{
 		Host:             "127.0.0.1",
 		Port:             6380,
