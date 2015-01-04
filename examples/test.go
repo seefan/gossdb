@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"github.com/seefan/gossdb"
 	"log"
 	"runtime"
@@ -29,10 +30,14 @@ func main() {
 				log.Println(idx, err.Error())
 				return
 			}
-
-			time.Sleep(time.Microsecond * 10)
-			c.Close()
-			log.Println(idx, "is closed")
+			defer c.Close()
+			c.Set(fmt.Sprintf("test%d", idx), fmt.Sprintf("test%d", idx))
+			re, err := c.Get(fmt.Sprintf("test%d", idx))
+			if err != nil {
+				log.Println(err)
+			} else {
+				log.Println(re, "is closed")
+			}
 		}(i)
 		time.Sleep(time.Microsecond)
 	}
