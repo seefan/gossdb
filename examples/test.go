@@ -21,6 +21,11 @@ func main() {
 		log.Fatal(err)
 		return
 	}
+	client, err := pool.NewClient()
+	if err != nil {
+		log.Println(err.Error())
+		return
+	}
 
 	for i := 0; i < 100; i++ {
 		go func(idx int) {
