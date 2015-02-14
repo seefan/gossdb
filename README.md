@@ -42,10 +42,11 @@
 		log.Println(re, "is get")
 	}
 	//设置10 秒过期
-	c.Set("test1","hello world.",10)
+	c.Set("test1",1225,10)
+	//取出数据，并指定类型为 int
 	re, err = c.Get("test1")
 	if err != nil {
 		log.Println(err)
 	} else {
-		log.Println(re, "is get")
+		log.Println(re.Int(), "is get")
 	}
