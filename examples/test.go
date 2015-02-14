@@ -64,8 +64,13 @@ func main() {
 	log.Println(err, test, v)
 	err = client.Hset("set", "key", 132)
 	log.Println(err)
+	//client.Client.Close()
 	v, err = client.Hget("set", "key")
-	log.Println(v.Int16(), err)
+	log.Println(v, err)
+	err = client.Hdel("set", "key")
+	log.Println(err)
+	v, err = client.Hget("set", "key")
+	log.Println(v, err)
 	//	for i := 0; i < 100; i++ {
 	//		go func(idx int) {
 	//			log.Println(i, pool.Info())

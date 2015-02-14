@@ -40,7 +40,7 @@ func (this *Client) DbSize() (re int, err error) {
 	if len(resp) == 2 && resp[0] == "ok" {
 		return strconv.Atoi(resp[1])
 	}
-	return -1, goerr.New("执行过程中有错误")
+	return -1, makeError(resp)
 }
 
 //返回服务器的信息.
@@ -56,7 +56,7 @@ func (this *Client) Info() (re []string, err error) {
 	if len(resp) > 1 && resp[0] == "ok" {
 		return resp[1:], nil
 	}
-	return nil, goerr.New("执行过程中有错误")
+	return nil, makeError(resp)
 }
 
 //对数据进行编码
@@ -80,5 +80,21 @@ func (this *Client) encoding(value interface{}, hasArray bool) interface{} {
 			}
 		}
 		return "Not open Encoding options"
+	}
+}
+
+//生成通过的错误信息，已经确定是有错误
+func makeError(resp []string, errKey ...interface{}) error {
+	if len(resp) < 1 {
+		return goerr.New("ssdb respone error")
+	}
+	//正常返回的不存在不报错，如果要捕捉这个问题请使用exists
+	if resp[0] == "not_found" {
+		return nil
+	}
+	if len(errKey) > 0 {
+		return goerr.New("access ssdb error, code is %v, parameter is %v", resp, errKey)
+	} else {
+		return goerr.New("access ssdb error, code is %v", resp)
 	}
 }

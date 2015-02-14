@@ -1,6 +1,6 @@
 package gossdb
 
-//ssdb的连接配置
+//ssdb连接池的配置
 type Config struct {
 
 	//ssdb的ip或主机名

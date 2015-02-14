@@ -19,6 +19,16 @@ type Connectors struct {
 }
 
 //根据配置初始化连接池
+//
+//  conf 连接池的初始化配置
+//
+//默认值
+//
+//	GetClientTimeout int 获取连接超时时间，单位为秒，默认1分钟
+//	MaxPoolSize int 最大连接池个数，默认为10
+//	MinPoolSize int 最小连接池数，默认为1
+//	AcquireIncrement int  当连接池中的连接耗尽的时候一次同时获取的连接数。默认值: 3
+//	MaxIdleTime int 最大空闲时间，指定秒内未使用则连接被丢弃。若为0则永不丢弃。默认值: 0
 func NewPool(conf *Config) (*Connectors, error) {
 	//默认值处理
 	if conf.MaxPoolSize < 1 {
@@ -72,6 +82,8 @@ func (this *Connectors) timed() {
 }
 
 //收缩连接池
+//
+//  now 当前的时间
 func (this *Connectors) Contraction(now time.Time) {
 	this.lock.Lock()
 	defer this.lock.Unlock()
@@ -133,7 +145,7 @@ func (this *Connectors) NewClient() (*Client, error) {
 
 //关闭一个连接，如果连接池关闭，就销毁连接，否则就回收到连接池
 //
-//client 要关闭的连接
+//  client 要关闭的连接
 func (this *Connectors) closeClient(client *Client) {
 	this.lock.Lock()
 	defer this.lock.Unlock()
@@ -148,7 +160,7 @@ func (this *Connectors) closeClient(client *Client) {
 
 //按要求创建连接
 //
-//size 创建多少个
+//  size 一次创建多少个连接
 func (this *Connectors) appendClient(size int) error {
 	this.lock.Lock()
 	defer this.lock.Unlock()

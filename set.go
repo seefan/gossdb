@@ -1,6 +1,7 @@
 package gossdb
 
 import (
+	//	"fmt"
 	"github.com/seefan/goerr"
 )
 
@@ -18,12 +19,12 @@ func (this *Client) Set(key string, val interface{}, ttl ...int) (err error) {
 		resp, err = this.Client.Do("set", key, this.encoding(val, false))
 	}
 	if err != nil {
-		return goerr.NewError(err, "设置 %s 值时出错", key)
+		return goerr.NewError(err, "set %s error", key)
 	}
 	if len(resp) == 2 && resp[0] == "ok" {
 		return nil
 	}
-	return goerr.New("设置 %s 值时出错，代码为：%s", key, resp[0])
+	return makeError(resp, key)
 }
 
 //获取指定 key 的值内容
@@ -34,12 +35,12 @@ func (this *Client) Set(key string, val interface{}, ttl ...int) (err error) {
 func (this *Client) Get(key string) (Value, error) {
 	resp, err := this.Client.Do("get", key)
 	if err != nil {
-		return "", goerr.NewError(err, "获取 %s 值时出错", key)
+		return "", goerr.NewError(err, "get %s error", key)
 	}
 	if len(resp) == 2 && resp[0] == "ok" {
 		return Value(resp[1]), nil
 	}
-	return "", goerr.New("指定键值 %s 不存在", key)
+	return "", makeError(resp, key)
 }
 
 //设置过期
@@ -51,12 +52,12 @@ func (this *Client) Get(key string) (Value, error) {
 func (this *Client) Expire(key string, ttl int) (re bool, err error) {
 	resp, err := this.Do("expire", key, ttl)
 	if err != nil {
-		return false, err
+		return false, goerr.NewError(err, "expire %s error", key)
 	}
 	if len(resp) == 2 && resp[0] == "ok" {
 		return resp[1] == "1", nil
 	}
-	return false, goerr.New("执行过程中有错误，错误代码:%v", resp)
+	return false, makeError(resp, key, ttl)
 }
 
 //查询指定 key 是否存在
@@ -67,13 +68,13 @@ func (this *Client) Expire(key string, ttl int) (re bool, err error) {
 func (this *Client) Exists(key string) (re bool, err error) {
 	resp, err := this.Do("exists", key)
 	if err != nil {
-		return false, err
+		return false, goerr.NewError(err, "exists %s error", key)
 	}
 
 	if len(resp) == 2 && resp[0] == "ok" {
 		return resp[1] == "1", nil
 	}
-	return false, goerr.New("执行过程中有错误，错误代码:%v", resp)
+	return false, makeError(resp, key)
 }
 
 //删除指定 key
@@ -81,14 +82,14 @@ func (this *Client) Exists(key string) (re bool, err error) {
 //  key 要删除的 key
 //  返回 err，执行的错误，操作成功返回 nil
 func (this *Client) Del(key string) error {
-	resp, err := c.Do("del", key)
+	resp, err := this.Do("del", key)
 	if err != nil {
-		return err
+		return goerr.NewError(err, "del %s error", key)
 	}
 
 	//response looks like this: [ok 1]
 	if len(resp) > 0 && resp[0] == "ok" {
 		return nil
 	}
-	return goerr.New("执行过程中有错误，错误代码:%v", resp)
+	return makeError(resp, key)
 }

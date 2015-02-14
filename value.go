@@ -103,7 +103,7 @@ func (this Value) Bytes() []byte {
 //
 //  value 传入的指针
 //
-//示例：
+//示例
 //  var abc time.Time
 //  v.As(&abc)
 func (this Value) As(value interface{}) (err error) {
