@@ -53,10 +53,11 @@ func main() {
 		log.Println(err.Error())
 		return
 	}
-	err = client.Set("keys", time.Now())
+	err = client.Set("keys", time.Now(), 1)
 	log.Println(err)
-
+	//time.Sleep(time.Second * 3)
 	v, err := client.Get("keys")
+	log.Println(err, v)
 	var test time.Time
 	log.Println(err)
 	err = v.As(&test)
