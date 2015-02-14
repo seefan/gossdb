@@ -54,3 +54,37 @@ func (this *Client) Hdel(setName, key string) (err error) {
 	}
 	return makeError(resp, setName, key)
 }
+
+//判断指定的 key 是否存在于 hashmap 中.
+//
+//  setName hashmap 的名字
+//  key hashmap 的 key
+//  返回 re，如果当前 key 不存在返回 false
+//  返回 err，执行的错误，操作成功返回 nil
+func (this *Client) Hexists(setName, key string) (re bool, err error) {
+	resp, err := this.Do("hexists", setName, key)
+	if err != nil {
+		return false, goerr.NewError(err, "exists hashmap %s/%s error", setName, key)
+	}
+
+	if len(resp) == 2 && resp[0] == "ok" {
+		return resp[1] == "1", nil
+	}
+	return false, makeError(resp, setName, key)
+}
+
+//删除 hashmap 中的所有 key
+//
+//  setName hashmap 的名字
+//  返回 err，执行的错误，操作成功返回 nil
+func (this *Client) Hclear(setName string) (err error) {
+	resp, err := this.Do("hclear", setName)
+	if err != nil {
+		return goerr.NewError(err, "hclear hashmap %s error", setName)
+	}
+
+	if len(resp) == 2 && resp[0] == "ok" {
+		return nil
+	}
+	return makeError(resp, setName)
+}

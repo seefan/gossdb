@@ -67,10 +67,13 @@ func main() {
 	//client.Client.Close()
 	v, err = client.Hget("set", "key")
 	log.Println(v, err)
+	bv, err := client.Hexists("set", "key")
+	log.Println(bv, err)
 	err = client.Hdel("set", "key")
 	log.Println(err)
-	v, err = client.Hget("set", "key")
-	log.Println(v, err)
+	err = client.Hclear("set")
+	log.Println(err)
+
 	//	for i := 0; i < 100; i++ {
 	//		go func(idx int) {
 	//			log.Println(i, pool.Info())
