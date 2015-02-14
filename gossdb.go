@@ -7,6 +7,7 @@ import (
 	"time"
 )
 
+//连接池
 type Connectors struct {
 	pool        chan *Client //连接池
 	cfg         *Config      //配置
@@ -14,9 +15,10 @@ type Connectors struct {
 	Size        int          //连接池大小
 	ActiveCount int          //活动连接数
 	Status      int          //状态 0：创建 1：正常 -1：关闭
+	Encoding    bool         //是否启动编码，启用后会对struct 进行 json 编码，以支持更多类型
 }
 
-//初始化连接池
+//根据配置初始化连接池
 func NewPool(conf *Config) (*Connectors, error) {
 	//默认值处理
 	if conf.MaxPoolSize < 1 {
@@ -41,7 +43,7 @@ func NewPool(conf *Config) (*Connectors, error) {
 	c.appendClient(conf.MinPoolSize)
 
 	if c.Size == 0 {
-		return nil, fmt.Errorf("creat pool is failed.")
+		return nil, fmt.Errorf("create pool is failed.")
 	}
 	c.Status = 1
 	if c.cfg.MaxIdleTime > 0 {
@@ -96,7 +98,10 @@ func (this *Connectors) Info() string {
 	return fmt.Sprintf(`pool size:%d	actived client:%d	config max pool size:%d	config Increment:%d`, this.Size, this.ActiveCount, this.cfg.MaxPoolSize, this.cfg.AcquireIncrement)
 }
 
-//创建一个连接
+//从连接池里获取一个新连接
+//
+//  返回 一个新连接
+//  返回 可能的错误
 func (this *Connectors) NewClient() (*Client, error) {
 	this.lock.Lock()
 	defer this.lock.Unlock()
@@ -127,6 +132,8 @@ func (this *Connectors) NewClient() (*Client, error) {
 }
 
 //关闭一个连接，如果连接池关闭，就销毁连接，否则就回收到连接池
+//
+//client 要关闭的连接
 func (this *Connectors) closeClient(client *Client) {
 	this.lock.Lock()
 	defer this.lock.Unlock()
@@ -140,6 +147,8 @@ func (this *Connectors) closeClient(client *Client) {
 }
 
 //按要求创建连接
+//
+//size 创建多少个
 func (this *Connectors) appendClient(size int) error {
 	this.lock.Lock()
 	defer this.lock.Unlock()
@@ -155,6 +164,9 @@ func (this *Connectors) appendClient(size int) error {
 }
 
 //创建一个连接
+//
+//  返回 一个新连接
+//  返回 可能的错误
 func (this *Connectors) newClient() (*Client, error) {
 	db, err := ssdb.Connect(this.cfg.Host, this.cfg.Port)
 	if err != nil {
