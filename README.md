@@ -8,6 +8,9 @@
 * 继承官方连接方式。
 * 支持连接池。
 * 支持 Set 和 Get 方法，支持 Do 方法。
+* 已支持 Hset 和 Hget 方法
+
+更多说明请见[这里](https://gowalker.org/github.com/seefan/gossdb)
 
 示例：
 
