@@ -30,12 +30,20 @@
 
 	c, err := pool.NewClient()
 	if err != nil {
-		log.Println(idx, err.Error())
+		log.Println(err.Error())
 		return
 	}
 	defer c.Close()
 	c.Set("test","hello world.")
 	re, err := c.Get("test")
+	if err != nil {
+		log.Println(err)
+	} else {
+		log.Println(re, "is get")
+	}
+	//设置10 秒过期
+	c.Set("test1","hello world.",10)
+	re, err = c.Get("test1")
 	if err != nil {
 		log.Println(err)
 	} else {
