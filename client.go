@@ -60,26 +60,36 @@ func (this *Client) Info() (re []string, err error) {
 }
 
 //对数据进行编码
-func (this *Client) encoding(value interface{}, hasArray bool) interface{} {
+func (this *Client) encoding(value interface{}, hasArray bool) string {
 	switch t := value.(type) {
 	case int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64, float32, float64, complex64, complex128:
 		return to.String(t)
-	case string, []byte, bool, nil: //byte==uint8
+	case string: //byte==uint8
 		return t
+	case []byte:
+		return string(t)
+	case bool:
+		if t {
+			return "1"
+		} else {
+			return "0"
+		}
+	case nil:
+		return ""
 	case []bool, []string, []int, []int8, []int16, []int32, []int64, []uint, []uint16, []uint32, []uint64, []float32, []float64, []interface{}:
 		if hasArray && this.pool.Encoding {
 			if bs, err := json.Marshal(value); err == nil {
-				return bs
+				return string(bs)
 			}
 		}
 		return "can not support slice,please open the Encoding options"
 	default:
 		if this.pool.Encoding {
 			if bs, err := json.Marshal(value); err == nil {
-				return bs
+				return string(bs)
 			}
 		}
-		return "Not open Encoding options"
+		return "not open Encoding options"
 	}
 }
 

@@ -19,7 +19,7 @@ func (this *Client) Set(key string, val interface{}, ttl ...int) (err error) {
 		resp, err = this.Client.Do("set", key, this.encoding(val, false))
 	}
 	if err != nil {
-		return goerr.NewError(err, "set %s error", key)
+		return goerr.NewError(err, "Set %s error", key)
 	}
 	if len(resp) == 2 && resp[0] == "ok" {
 		return nil
@@ -35,7 +35,7 @@ func (this *Client) Set(key string, val interface{}, ttl ...int) (err error) {
 func (this *Client) Get(key string) (Value, error) {
 	resp, err := this.Client.Do("get", key)
 	if err != nil {
-		return "", goerr.NewError(err, "get %s error", key)
+		return "", goerr.NewError(err, "Get %s error", key)
 	}
 	if len(resp) == 2 && resp[0] == "ok" {
 		return Value(resp[1]), nil
@@ -52,7 +52,7 @@ func (this *Client) Get(key string) (Value, error) {
 func (this *Client) Expire(key string, ttl int) (re bool, err error) {
 	resp, err := this.Do("expire", key, ttl)
 	if err != nil {
-		return false, goerr.NewError(err, "expire %s error", key)
+		return false, goerr.NewError(err, "Expire %s error", key)
 	}
 	if len(resp) == 2 && resp[0] == "ok" {
 		return resp[1] == "1", nil
@@ -68,7 +68,7 @@ func (this *Client) Expire(key string, ttl int) (re bool, err error) {
 func (this *Client) Exists(key string) (re bool, err error) {
 	resp, err := this.Do("exists", key)
 	if err != nil {
-		return false, goerr.NewError(err, "exists %s error", key)
+		return false, goerr.NewError(err, "Exists %s error", key)
 	}
 
 	if len(resp) == 2 && resp[0] == "ok" {
@@ -84,7 +84,7 @@ func (this *Client) Exists(key string) (re bool, err error) {
 func (this *Client) Del(key string) error {
 	resp, err := this.Do("del", key)
 	if err != nil {
-		return goerr.NewError(err, "del %s error", key)
+		return goerr.NewError(err, "Del %s error", key)
 	}
 
 	//response looks like this: [ok 1]

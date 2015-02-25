@@ -13,7 +13,7 @@ import (
 func (this *Client) Hset(setName, key string, value interface{}) (err error) {
 	resp, err := this.Do("hset", setName, key, this.encoding(value, false))
 	if err != nil {
-		return goerr.NewError(err, " set hashmap %s/%s error", setName, key)
+		return goerr.NewError(err, "Hset %s/%s error", setName, key)
 	}
 
 	if len(resp) == 2 && resp[0] == "ok" {
@@ -31,7 +31,7 @@ func (this *Client) Hset(setName, key string, value interface{}) (err error) {
 func (this *Client) Hget(setName, key string) (value Value, err error) {
 	resp, err := this.Do("hget", setName, key)
 	if err != nil {
-		return "", goerr.NewError(err, "get hashmap %s/%s error", setName, key)
+		return "", goerr.NewError(err, "Hget %s/%s error", setName, key)
 	}
 	if len(resp) == 2 && resp[0] == "ok" {
 		return Value(resp[1]), nil
@@ -47,7 +47,7 @@ func (this *Client) Hget(setName, key string) (value Value, err error) {
 func (this *Client) Hdel(setName, key string) (err error) {
 	resp, err := this.Do("hdel", setName, key)
 	if err != nil {
-		return goerr.NewError(err, "del hashmap %s/%s error", setName, key)
+		return goerr.NewError(err, "Hdel %s/%s error", setName, key)
 	}
 	if len(resp) == 2 && resp[0] == "ok" {
 		return nil
@@ -64,7 +64,7 @@ func (this *Client) Hdel(setName, key string) (err error) {
 func (this *Client) Hexists(setName, key string) (re bool, err error) {
 	resp, err := this.Do("hexists", setName, key)
 	if err != nil {
-		return false, goerr.NewError(err, "exists hashmap %s/%s error", setName, key)
+		return false, goerr.NewError(err, "Hexists %s/%s error", setName, key)
 	}
 
 	if len(resp) == 2 && resp[0] == "ok" {
@@ -80,7 +80,7 @@ func (this *Client) Hexists(setName, key string) (re bool, err error) {
 func (this *Client) Hclear(setName string) (err error) {
 	resp, err := this.Do("hclear", setName)
 	if err != nil {
-		return goerr.NewError(err, "hclear hashmap %s error", setName)
+		return goerr.NewError(err, "Hclear %s error", setName)
 	}
 
 	if len(resp) == 2 && resp[0] == "ok" {

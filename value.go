@@ -99,6 +99,11 @@ func (this Value) Bytes() []byte {
 	return []byte(this)
 }
 
+//判断是否为空
+func (this Value) IsEmpty() bool {
+	return this == ""
+}
+
 //按json 转换指定类型
 //
 //  value 传入的指针
