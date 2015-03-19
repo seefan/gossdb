@@ -21,7 +21,7 @@ var (
 func (this *Client) Qsize(name string) (size int64, err error) {
 	resp, err := this.Do("qsize", name)
 	if err != nil {
-		return -1, goerr.NewError(err, "size queue %s error", name)
+		return -1, goerr.NewError(err, "Qsize %s error", name)
 	}
 
 	if len(resp) == 2 && resp[0] == "ok" {
@@ -37,7 +37,7 @@ func (this *Client) Qsize(name string) (size int64, err error) {
 func (this *Client) Qclear(name string) (err error) {
 	resp, err := this.Do("qclear", name)
 	if err != nil {
-		return goerr.NewError(err, "clear queue %s error", name)
+		return goerr.NewError(err, "Qclear %s error", name)
 	}
 
 	if len(resp) == 2 && resp[0] == "ok" {
