@@ -2,7 +2,7 @@ package gossdb
 
 import (
 	"github.com/seefan/goerr"
-	"github.com/seefan/to"
+
 	//	"log"
 )
 
@@ -25,7 +25,7 @@ func (this *Client) Qsize(name string) (size int64, err error) {
 	}
 
 	if len(resp) == 2 && resp[0] == "ok" {
-		return to.Int64(resp[1]), nil
+		return Value(resp[1]).Int64(), nil
 	}
 	return -1, makeError(resp, name)
 }
@@ -40,7 +40,7 @@ func (this *Client) Qclear(name string) (err error) {
 		return goerr.NewError(err, "Qclear %s error", name)
 	}
 
-	if len(resp) == 2 && resp[0] == "ok" {
+	if len(resp) > 0 && resp[0] == "ok" {
 		return nil
 	}
 	return makeError(resp, name)
@@ -80,7 +80,7 @@ func (this *Client) qpush(name string, reverse bool, value ...interface{}) (size
 		return -1, goerr.NewError(err, "%s %s error", qpush_cmd[index], name)
 	}
 	if len(resp) == 2 && resp[0] == "ok" {
-		return to.Int64(resp[1]), nil
+		return Value(resp[1]).Int64(), nil
 	}
 	return -1, makeError(resp, name)
 }
@@ -217,7 +217,7 @@ func (this *Client) Qtrim(name string, size int, reverse ...bool) (delSize int64
 		return -1, goerr.NewError(err, "%s %s error", qtrim_cmd[index], name)
 	}
 	if len(resp) == 2 && resp[0] == "ok" {
-		return to.Int64(resp[1]), nil
+		return Value(resp[1]).Int64(), nil
 	}
 	return -1, makeError(resp, name)
 }

@@ -67,8 +67,14 @@ func main() {
 	//client.Client.Close()
 	v, err = client.Hget("set", "key")
 	log.Println(v, err)
+	v, err = client.Getset("keys", "key1")
+	log.Println(v, err)
+	v, err = client.Getset("keys", "key2")
+	log.Println(v, err)
 	bv, err := client.Hexists("set", "key")
 	log.Println(bv, err)
+	i, err := client.Ttl("set")
+	log.Println("ttl", i, err)
 	err = client.Hdel("set", "key")
 	log.Println(err)
 	err = client.Hclear("set")
@@ -90,6 +96,24 @@ func main() {
 	log.Println(err, size)
 	vs, err = client.Qslice("queue", 0, 2)
 	log.Println(err, vs)
+	i, err = client.Incr("incr", 1)
+	log.Println(i, err)
+	i, err = client.Incr("incr", 4)
+	log.Println(i, err)
+	mm := make(map[string]interface{})
+	mm["a"] = 1
+	mm["b"] = 11
+	mm["a1"] = 1
+	mm["b11"] = 11
+	mm["a22"] = 1
+	mm["b22"] = 11
+	err = client.MultiSet(mm)
+	log.Println(err)
+
+	err = client.MultiDel("a", "b", "a1")
+	log.Println(err)
+	vm, err := client.MultiGet("a", "b", "a1")
+	log.Println(vm, err)
 	//	for i := 0; i < 100; i++ {
 	//		go func(idx int) {
 	//			log.Println(i, pool.Info())

@@ -16,7 +16,7 @@ func (this *Client) Hset(setName, key string, value interface{}) (err error) {
 		return goerr.NewError(err, "Hset %s/%s error", setName, key)
 	}
 
-	if len(resp) == 2 && resp[0] == "ok" {
+	if len(resp) > 0 && resp[0] == "ok" {
 		return nil
 	}
 	return makeError(resp, setName, key)
@@ -49,7 +49,7 @@ func (this *Client) Hdel(setName, key string) (err error) {
 	if err != nil {
 		return goerr.NewError(err, "Hdel %s/%s error", setName, key)
 	}
-	if len(resp) == 2 && resp[0] == "ok" {
+	if len(resp) > 0 && resp[0] == "ok" {
 		return nil
 	}
 	return makeError(resp, setName, key)
@@ -83,7 +83,7 @@ func (this *Client) Hclear(setName string) (err error) {
 		return goerr.NewError(err, "Hclear %s error", setName)
 	}
 
-	if len(resp) == 2 && resp[0] == "ok" {
+	if len(resp) > 0 && resp[0] == "ok" {
 		return nil
 	}
 	return makeError(resp, setName)
