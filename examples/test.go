@@ -1,7 +1,7 @@
 package main
 
 import (
-	//	"fmt"
+	"fmt"
 	"github.com/seefan/gossdb"
 	"log"
 	"reflect"
@@ -37,27 +37,28 @@ func main() {
 	//	return
 	runtime.GOMAXPROCS(runtime.NumCPU())
 	pool, err := gossdb.NewPool(&gossdb.Config{
-		Host:             "192.168.199.10",
+		Host:             "127.0.0.1",
 		Port:             8888,
-		MinPoolSize:      5,
-		MaxPoolSize:      50,
-		AcquireIncrement: 5,
+		MinPoolSize:      1,
+		MaxPoolSize:      5,
+		AcquireIncrement: 2,
+		GetClientTimeout: 5,
 	})
 	if err != nil {
 		log.Fatal(err)
 		return
 	}
 	pool.Encoding = true
-	client, err := pool.NewClient()
-	if err != nil {
-		log.Println(err.Error())
-		return
-	}
-	client.Set("a", "hello1")
-	client.Set("b", "hello2")
-	client.Set("keys", "hello")
-	v, err := client.Rscan("z", "", 100)
-	log.Println(v, err)
+	//	client, err := pool.NewClient()
+	//	if err != nil {
+	//		log.Println(err.Error())
+	//		return
+	//	}
+	//	client.Set("a", "hello1")
+	//	client.Set("b", "hello2")
+	//	client.Set("keys", "hello")
+	//	v, err := client.Rscan("z", "", 100)
+	//	log.Println(v, err)
 	//	err = client.Set("keys", "hello")
 	//	log.Println(err)
 	//	v, err := client.Setbit("keys", 3, 0)
@@ -130,26 +131,30 @@ func main() {
 	//	log.Println(err)
 	//	vm, err := client.MultiGet("a", "b", "a1")
 	//	log.Println(vm, err)
-	//	for i := 0; i < 100; i++ {
-	//		go func(idx int) {
-	//			log.Println(i, pool.Info())
-	//			c, err := pool.NewClient()
-	//			if err != nil {
-	//				log.Println(idx, err.Error())
-	//				return
-	//			}
-	//			defer c.Close()
-	//			c.Set(fmt.Sprintf("test%d", idx), fmt.Sprintf("test%d", idx))
-	//			re, err := c.Get(fmt.Sprintf("test%d", idx))
-	//			if err != nil {
-	//				log.Println(err)
-	//			} else {
-	//				log.Println(re, "is closed")
-	//			}
-	//		}(i)
-	//		time.Sleep(time.Microsecond)
-	//	}
-	//	time.Sleep(time.Second * 1)
+	log.Println("----------------")
+	for i := 0; i < 50; i++ {
+		go func(idx int) {
+			now := time.Now()
+			c, err := pool.NewClient()
+			if err != nil {
+				log.Println(idx, err.Error())
+				return
+			}
+			defer c.Close()
+			log.Println(idx, time.Since(now).String())
+			c.Set(fmt.Sprintf("test%d", idx), fmt.Sprintf("test%d", idx))
+			re, err := c.Get(fmt.Sprintf("test%d", idx))
+			if err != nil {
+				log.Println(err)
+			} else {
+				log.Println(idx, "is closed", re)
+			}
+			log.Println(idx, time.Since(now).String())
+			time.Sleep(time.Second)
+		}(i)
+		time.Sleep(time.Millisecond * 50)
+	}
+	time.Sleep(time.Second * 100)
 	pool.Close()
 	time.Sleep(time.Second * 1)
 }

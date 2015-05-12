@@ -3,6 +3,7 @@ package gossdb
 import (
 	"fmt"
 	"github.com/ssdb/gossdb/ssdb"
+	//	"log"
 	"sync"
 	"time"
 )
@@ -116,7 +117,6 @@ func (this *Connectors) Info() string {
 //  返回 可能的错误
 func (this *Connectors) NewClient() (*Client, error) {
 	this.lock.Lock()
-	defer this.lock.Unlock()
 	switch this.Status {
 	case -1:
 		return nil, fmt.Errorf("the Connectors is Closed, can not get new client.")
@@ -133,13 +133,39 @@ func (this *Connectors) NewClient() (*Client, error) {
 			}
 		}
 	}
-	timeout := time.Tick(time.Duration(this.cfg.GetClientTimeout) * time.Second)
-	select {
-	case <-timeout:
-		return nil, fmt.Errorf("ssdb pool is busy,can not get new client")
-	case c := <-this.pool:
-		this.ActiveCount += 1
-		return c, nil
+	//此处如果无法增加连接，会导致在超时的时间内，所有的连接都无法释放
+	this.lock.Unlock()
+	//首先把锁释放
+	now := time.Now()
+	timeoutSeconds := float64(this.cfg.GetClientTimeout)
+	var waitClient *Client
+	waitTimeout := true
+	for {
+		timeout := time.After(time.Millisecond) //千分之一秒超时
+		this.lock.Lock()
+		select {
+		case <-timeout:
+			//检查等待时间是否超时
+			if time.Since(now).Seconds() > timeoutSeconds {
+				waitTimeout = false
+			}
+		case c := <-this.pool:
+			this.ActiveCount += 1
+			waitClient = c
+			waitTimeout = false
+		}
+		this.lock.Unlock()
+		if waitTimeout {
+			time.Sleep(time.Millisecond)
+		} else {
+			break
+		}
+
+	}
+	if waitClient != nil {
+		return waitClient, nil
+	} else {
+		return nil, fmt.Errorf("ssdb pool is busy,can not get new client in %d seconds", this.cfg.GetClientTimeout)
 	}
 }
 
