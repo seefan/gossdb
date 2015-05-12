@@ -115,8 +115,6 @@ func (this *Connectors) Info() string {
 //  返回 一个新连接
 //  返回 可能的错误
 func (this *Connectors) NewClient() (*Client, error) {
-	this.lock.Lock()
-	defer this.lock.Unlock()
 	switch this.Status {
 	case -1:
 		return nil, fmt.Errorf("the Connectors is Closed, can not get new client.")
@@ -124,22 +122,44 @@ func (this *Connectors) NewClient() (*Client, error) {
 		return nil, fmt.Errorf("the Connectors is not inited, can not get new client.")
 	}
 	if this.Size <= this.ActiveCount && this.Size < this.cfg.MaxPoolSize { //如果没有连接了，检查是否可以自动增加
-		for i := 0; i < this.cfg.AcquireIncrement && this.Size < this.cfg.MaxPoolSize; i++ {
-			if c, err := this.newClient(); err == nil {
-				this.pool <- c
-				this.Size = len(this.pool) + this.ActiveCount
-			} else { //如果新建连接有错误，就放弃
-				break
-			}
-		}
+		this.increment()
 	}
 	timeout := time.Tick(time.Duration(this.cfg.GetClientTimeout) * time.Second)
 	select {
 	case <-timeout:
 		return nil, fmt.Errorf("ssdb pool is busy,can not get new client")
-	case c := <-this.pool:
-		this.ActiveCount += 1
+	//case c := <-this.pool:
+	case c := <-this.safePool():
+		this.addActiveCount()
 		return c, nil
+	}
+}
+
+func (this *Connectors) safePool() chan *Client {
+	this.lock.Lock()
+	defer this.lock.Unlock()
+	return this.pool
+}
+
+func (this *Connectors) addActiveCount() {
+	this.lock.Lock()
+	defer this.lock.Unlock()
+	this.ActiveCount += 1
+}
+
+func (this *Connectors) increment() {
+	this.lock.Lock()
+	defer this.lock.Unlock()
+	if this.Size <= this.ActiveCount && this.Size < this.cfg.MaxPoolSize { //如果没有连接了，检查是否可以自动增加
+		for i := 0; i < this.cfg.AcquireIncrement && this.Size < this.cfg.MaxPoolSize; i++ {
+			if c, err := this.newClient(); err == nil {
+				this.pool <- c
+				//fmt.Println(len(this.pool)+this.ActiveCount, " ---  ", len(this.pool), "  --- ", this.ActiveCount)
+				this.Size = len(this.pool) + this.ActiveCount
+			} else { //如果新建连接有错误，就放弃
+				break
+			}
+		}
 	}
 }
 
