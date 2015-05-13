@@ -17,4 +17,6 @@ type Config struct {
 	AcquireIncrement int
 	//最大空闲时间，指定秒内未使用则连接被丢弃。若为0则永不丢弃。默认值: 0
 	MaxIdleTime int
+	//最大等待数目，当连接池满后，新建连接将排除等待池中连接释放，本值限制最大等待的数量。默认值: 1000
+	MaxWaitSize int
 }

@@ -42,7 +42,7 @@ func main() {
 		MinPoolSize:      1,
 		MaxPoolSize:      5,
 		AcquireIncrement: 2,
-		GetClientTimeout: 5,
+		GetClientTimeout: 10,
 	})
 	if err != nil {
 		log.Fatal(err)
@@ -132,7 +132,7 @@ func main() {
 	//	vm, err := client.MultiGet("a", "b", "a1")
 	//	log.Println(vm, err)
 	log.Println("----------------")
-	for i := 0; i < 50; i++ {
+	for i := 0; i < 5000; i++ {
 		go func(idx int) {
 			now := time.Now()
 			c, err := pool.NewClient()
@@ -144,17 +144,16 @@ func main() {
 			log.Println(idx, time.Since(now).String())
 			c.Set(fmt.Sprintf("test%d", idx), fmt.Sprintf("test%d", idx))
 			re, err := c.Get(fmt.Sprintf("test%d", idx))
+			time.Sleep(time.Millisecond * 10)
 			if err != nil {
 				log.Println(err)
 			} else {
 				log.Println(idx, "is closed", re)
 			}
-			log.Println(idx, time.Since(now).String())
-			time.Sleep(time.Second)
 		}(i)
-		time.Sleep(time.Millisecond * 50)
+		time.Sleep(time.Millisecond)
 	}
-	time.Sleep(time.Second * 100)
+	time.Sleep(time.Second * 10)
 	pool.Close()
 	time.Sleep(time.Second * 1)
 }
