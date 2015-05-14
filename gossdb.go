@@ -2,9 +2,8 @@ package gossdb
 
 import (
 	"fmt"
+	"github.com/seefan/goerr"
 	"github.com/ssdb/gossdb/ssdb"
-	//	"log"
-	//	"log"
 	"sync"
 	"time"
 )
@@ -13,8 +12,8 @@ import (
 type Connectors struct {
 	pool        chan *Client //连接池
 	cfg         *Config      //配置
-	lock        sync.RWMutex //锁
-	Size        int          //连接池大小
+	lock        sync.Mutex   //锁
+	Size        int          //连接池内的连接数
 	ActiveCount int          //活动连接数
 	WaitCount   int          //当前等待创建的连接数
 	Status      int          //状态 0：创建 1：正常 -1：关闭
@@ -66,17 +65,11 @@ func NewPool(conf *Config) (*Connectors, error) {
 		pool: make(chan *Client, conf.MaxPoolSize),
 		cfg:  conf,
 	}
-	for i := 0; i < conf.MinPoolSize; i++ {
-		if nc, err := c.newClient(); err == nil {
-			c.pool <- nc
-			c.Size += 1
-		} else {
-			return nil, err
-		}
+	if err := c.increment(conf.MinPoolSize); err != nil {
+		return nil, goerr.NewError(err, "create pool is failed.")
 	}
-
-	if c.Size == 0 {
-		return nil, fmt.Errorf("create pool is failed.")
+	if len(c.pool) == 0 {
+		return nil, goerr.New("create pool is failed,pool is empty")
 	}
 	c.Status = PoolStart
 	if c.cfg.MaxIdleTime > 0 {
@@ -86,7 +79,7 @@ func NewPool(conf *Config) (*Connectors, error) {
 }
 
 //设置连接池的活动连接变化
-func (this *Connectors) SetCount(active, wait, size int) {
+func (this *Connectors) setCount(active, wait, size int) {
 	this.lock.Lock()
 	defer this.lock.Unlock()
 	if active != 0 {
@@ -98,6 +91,7 @@ func (this *Connectors) SetCount(active, wait, size int) {
 	if size != 0 {
 		this.Size += size
 	}
+
 }
 
 //关闭连接池
@@ -124,8 +118,6 @@ func (this *Connectors) timed() {
 //
 //  now 当前的时间
 func (this *Connectors) Contraction(now time.Time) {
-	this.lock.Lock()
-	defer this.lock.Unlock()
 	//只有正常运行时处理
 	if this.Status != PoolStart {
 		return
@@ -134,25 +126,29 @@ func (this *Connectors) Contraction(now time.Time) {
 	if this.WaitCount > 0 {
 		return
 	}
-	tmplist := []*Client{}
-	for len(this.pool) > 0 {
+
+	csize := len(this.pool)
+	for i := 0; i < csize; i++ {
 		c := <-this.pool
 		if c.lastTime.Add(time.Duration(this.cfg.MaxIdleTime) * time.Second).After(now) {
-			tmplist = append(tmplist, c)
+			this.pool <- c
 		} else {
 			c.Client.Close()
+			if c, err := this.newClient(); err == nil {
+				this.lock.Lock()
+				this.pool <- c
+				this.Size += 1
+				this.lock.Unlock()
+			}
+
 		}
 	}
-	for _, c := range tmplist {
-		this.pool <- c
-	}
-	this.Size = len(this.pool)
 }
 
 //状态信息
 func (this *Connectors) Info() string {
-	return fmt.Sprintf(`pool size:%d,%d	actived client:%d	wait create:%d	config max pool size:%d	config Increment:%d`,
-		this.Size, len(this.pool), this.ActiveCount, this.WaitCount, this.cfg.MaxPoolSize, this.cfg.AcquireIncrement)
+	return fmt.Sprintf(`pool size:%d	actived client:%d	wait create:%d	config max pool size:%d	config Increment:%d`,
+		(this.Size + this.ActiveCount), this.ActiveCount, this.WaitCount, this.cfg.MaxPoolSize, this.cfg.AcquireIncrement)
 }
 
 //从连接池里获取一个新连接
@@ -160,17 +156,24 @@ func (this *Connectors) Info() string {
 //  返回 一个新连接
 //  返回 可能的错误
 func (this *Connectors) NewClient() (*Client, error) {
+	switch this.Status {
+	case -1:
+		return nil, goerr.New("the Connectors is Closed, can not get new client.")
+	case 0:
+		return nil, goerr.New("the Connectors is not inited, can not get new client.")
+	}
 	if err := this.checkNew(); err != nil {
 		return nil, err
 	}
-	this.SetCount(0, 1, 0)
+	this.setCount(0, 1, 0)
 	//此处如果无法增加连接，会导致在超时的时间内，所有的连接都无法释放
 	timeout := time.After(time.Duration(this.cfg.GetClientTimeout) * time.Second)
+
 	select {
 	case <-timeout:
-		return nil, fmt.Errorf("ssdb pool is busy,can not get new client in %d seconds", this.cfg.GetClientTimeout)
+		return nil, goerr.New("ssdb pool is busy,can not get new client in %d seconds", this.cfg.GetClientTimeout)
 	case c := <-this.pool:
-		this.SetCount(1, -1, -1)
+		this.setCount(1, -1, -1)
 		return c, nil
 	}
 }
@@ -179,23 +182,31 @@ func (this *Connectors) NewClient() (*Client, error) {
 func (this *Connectors) checkNew() error {
 	this.lock.Lock()
 	defer this.lock.Unlock()
-	switch this.Status {
-	case -1:
-		return fmt.Errorf("the Connectors is Closed, can not get new client.")
-	case 0:
-		return fmt.Errorf("the Connectors is not inited, can not get new client.")
-	}
 	if this.WaitCount >= this.cfg.MaxWaitSize {
-		return fmt.Errorf("ssdb pool is busy,Wait for connection creation has reached %d", this.WaitCount)
+		return goerr.New("ssdb pool is busy,Wait for connection creation has reached %d", this.WaitCount)
 	}
-	if this.Size+this.ActiveCount < this.cfg.MaxPoolSize { //如果没有连接了，检查是否可以自动增加
-		for i := 0; i < this.cfg.AcquireIncrement && this.Size+this.ActiveCount < this.cfg.MaxPoolSize; i++ {
-			if c, err := this.newClient(); err == nil {
-				this.Size += 1
-				this.pool <- c
-			} else { //如果新建连接有错误，就放弃
-				break
-			}
+	if this.Size == 0 && this.Size+this.ActiveCount < this.cfg.MaxPoolSize { //如果没有连接了，检查是否可以自动增加
+		if c, err := this.newClient(); err == nil { //首先增加一个连接
+			this.pool <- c
+			this.Size += 1
+		} else {
+			return err
+		}
+		go this.increment(this.cfg.AcquireIncrement - 1) //另外的线程增加连接
+	}
+	return nil
+}
+
+//自动增长
+func (this *Connectors) increment(size int) error {
+	this.lock.Lock()
+	defer this.lock.Unlock()
+	for i := 0; i < size && this.Size+this.ActiveCount < this.cfg.MaxPoolSize; i++ {
+		if c, err := this.newClient(); err == nil {
+			this.pool <- c
+			this.Size += 1
+		} else { //如果新建连接有错误，就放弃
+			return err
 		}
 	}
 	return nil
@@ -205,20 +216,13 @@ func (this *Connectors) checkNew() error {
 //
 //  client 要关闭的连接
 func (this *Connectors) closeClient(client *Client) {
-	if this.isStart() {
+	if this.Status == PoolStart {
 		client.lastTime = time.Now()
 		this.pool <- client
-		this.SetCount(-1, 0, 1)
+		this.setCount(-1, 0, 1)
 	} else {
 		client.Client.Close()
 	}
-}
-
-//检查连接池是否是开启状态
-func (this *Connectors) isStart() bool {
-	this.lock.RLock()
-	this.lock.RUnlock()
-	return this.Status == PoolStart
 }
 
 //创建一个连接
@@ -233,6 +237,5 @@ func (this *Connectors) newClient() (*Client, error) {
 	c := new(Client)
 	c.Client = *db
 	c.pool = this
-
 	return c, nil
 }
