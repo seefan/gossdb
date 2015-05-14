@@ -103,7 +103,8 @@ func (this *Connectors) Close() {
 		c := <-this.pool
 		c.Client.Close()
 	}
-	close(this.pool)
+	//暂时不去关闭chan，因为提前关闭后引起很多问题
+	//close(this.pool)
 }
 
 //定期执行，简单方式
@@ -118,6 +119,8 @@ func (this *Connectors) timed() {
 //
 //  now 当前的时间
 func (this *Connectors) Contraction(now time.Time) {
+	this.lock.Lock()
+	this.lock.Unlock()
 	//只有正常运行时处理
 	if this.Status != PoolStart {
 		return
@@ -130,15 +133,15 @@ func (this *Connectors) Contraction(now time.Time) {
 	csize := len(this.pool)
 	for i := 0; i < csize; i++ {
 		c := <-this.pool
+		this.Size -= 1
 		if c.lastTime.Add(time.Duration(this.cfg.MaxIdleTime) * time.Second).After(now) {
 			this.pool <- c
+			this.Size += 1
 		} else {
 			c.Client.Close()
 			if c, err := this.newClient(); err == nil {
-				this.lock.Lock()
 				this.pool <- c
 				this.Size += 1
-				this.lock.Unlock()
 			}
 
 		}
@@ -216,10 +219,13 @@ func (this *Connectors) increment(size int) error {
 //
 //  client 要关闭的连接
 func (this *Connectors) closeClient(client *Client) {
+	this.lock.Lock()
+	defer this.lock.Unlock()
 	if this.Status == PoolStart {
 		client.lastTime = time.Now()
 		this.pool <- client
-		this.setCount(-1, 0, 1)
+		this.ActiveCount -= 1
+		this.Size += 1
 	} else {
 		client.Client.Close()
 	}
