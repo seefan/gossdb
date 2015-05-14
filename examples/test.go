@@ -149,9 +149,9 @@ func main() {
 				log.Println(idx, err, re)
 			}
 		}(i)
-		time.Sleep(time.Millisecond)
+		//time.Sleep(time.Millisecond)
 	}
-	time.Sleep(time.Second * 10)
+	//time.Sleep(time.Second * 10)
 	pool.Close()
 	time.Sleep(time.Second * 1)
 }
