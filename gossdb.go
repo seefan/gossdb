@@ -217,7 +217,7 @@ func (this *Connectors) closeClient(client *Client) {
 //检查连接池是否是开启状态
 func (this *Connectors) isStart() bool {
 	this.lock.RLock()
-	this.lock.RUnlock()
+	defer this.lock.RUnlock()
 	return this.Status == PoolStart
 }
 
