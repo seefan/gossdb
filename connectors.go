@@ -78,22 +78,22 @@ func (this *Connectors) Start() error {
 func (this *Connectors) setConfig(conf *Config) {
 	//默认值处理
 	if conf.MaxPoolSize < 1 {
-		conf.MaxPoolSize = 100
+		conf.MaxPoolSize = 20
 	}
 	if conf.MinPoolSize < 1 {
-		conf.MinPoolSize = 10
+		conf.MinPoolSize = 5
 	}
 	if conf.GetClientTimeout < 1 {
-		conf.GetClientTimeout = 60
+		conf.GetClientTimeout = 5
 	}
 	if conf.AcquireIncrement < 1 {
-		conf.AcquireIncrement = 10
+		conf.AcquireIncrement = 5
 	}
 	if conf.MaxWaitSize < 1 {
 		conf.MaxWaitSize = 1000
 	}
 	if conf.HealthSecond < 1 {
-		conf.HealthSecond = 10
+		conf.HealthSecond = 300
 	}
 	if conf.MinPoolSize > conf.MaxPoolSize {
 		conf.MinPoolSize = conf.MaxPoolSize
