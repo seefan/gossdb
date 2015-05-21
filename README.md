@@ -5,10 +5,20 @@
 自已用ssdb时开发的，共享出来。
 
 功能列表
-* 继承官方连接方式。
+* 继承官方连接方式。已支持超过40个官方命令。
 * 支持连接池。
-* 支持 Set 和 Get 方法，支持 Do 方法。
-* 已支持 Hset 和 Hget 方法
+* 已支持 set 相关方法
+* 已支持 hashmap 相关方法
+* 已支持 queue 相关方法
+
+连接池已支持如下参数
+*	GetClientTimeout int 获取连接超时时间，单位为秒，默认1分钟
+*	MaxPoolSize int 最大连接池个数，默认为10
+*	MinPoolSize int 最小连接池数，默认为1
+*	AcquireIncrement int  当连接池中的连接耗尽的时候一次同时获取的连接数。默认值: 3
+*	MaxIdleTime int 最大空闲时间，指定秒内未使用则连接被丢弃。若为0则永不丢弃。默认值: 0
+*   MaxWaitSize int 最大等待数目，当连接池满后，新建连接将排除等待池中连接释放，本值限制最大等待的数量。默认值: 1000
+*   HealthSecond int 健康检查时间隔，单位为秒。默认值: 10。通过ping方法维护连接的可用性，并定期回收长期不用的连接。
 
 更多说明请见[这里](https://gowalker.org/github.com/seefan/gossdb)
 
