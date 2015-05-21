@@ -2,20 +2,18 @@ package main
 
 import (
 	"fmt"
+	log "github.com/cihub/seelog"
 	"github.com/seefan/gossdb"
-	"log"
-	"reflect"
+	golog "github.com/seefan/gossdb/examples/log"
+
 	"runtime"
+	"sync"
 	"time"
 )
 
-func add(i, j int) int {
-	k := (j) + (i)
-	t := reflect.ValueOf(j)
-	log.Println(t.CanSet())
-	return k
-}
 func main() {
+	defer golog.PrintErr()
+	golog.InitSeeLog()
 	//	//	i := 12
 	//	var v gossdb.Value = "123"
 	//	log.Println(v.String())
@@ -39,17 +37,19 @@ func main() {
 	pool, err := gossdb.NewPool(&gossdb.Config{
 		Host:             "127.0.0.1",
 		Port:             8888,
-		MinPoolSize:      1,
-		MaxPoolSize:      5,
-		AcquireIncrement: 2,
+		MinPoolSize:      5,
+		MaxPoolSize:      50,
+		AcquireIncrement: 5,
 		GetClientTimeout: 10,
-		MaxWaitSize:      2000,
+		MaxWaitSize:      1000,
+		MaxIdleTime:      1,
+		HealthSecond:     2,
 	})
 	if err != nil {
-		log.Fatal(err)
+		log.Debug(err)
 		return
 	}
-	pool.Encoding = true
+	gossdb.Encoding = true
 	//	client, err := pool.NewClient()
 	//	if err != nil {
 	//		log.Println(err.Error())
@@ -132,26 +132,71 @@ func main() {
 	//	log.Println(err)
 	//	vm, err := client.MultiGet("a", "b", "a1")
 	//	log.Println(vm, err)
-	log.Println("----------------")
+	log.Debugf("----------------")
 
-	for i := 0; i < 10000; i++ {
+	for i := 0; i < 100; i++ {
 		go func(idx int) {
-
+			//log.Println(idx, "get client", pool.Info())
 			c, err := pool.NewClient()
 			if err != nil {
-				log.Println(idx, err.Error())
+				log.Debugf(err.Error(), idx)
 				return
 			}
 			defer c.Close()
-			c.Set(fmt.Sprintf("test%d", idx), fmt.Sprintf("test%d", idx))
+			err = c.Set(fmt.Sprintf("test%d", idx), fmt.Sprintf("test%d", idx))
+			if err != nil {
+				log.Error(err)
+			}
 			re, err := c.Get(fmt.Sprintf("test%d", idx))
 			if err != nil {
-				log.Println(idx, err, re)
+				log.Debug(err, re, "close client")
+			} else {
+				log.Debug(idx, "close client")
 			}
 		}(i)
 		//time.Sleep(time.Millisecond)
 	}
-	//time.Sleep(time.Second * 10)
-	pool.Close()
-	time.Sleep(time.Second * 1)
+	time.Sleep(time.Second * 10)
+	log.Debug(pool.Info())
+	time.Sleep(time.Second * 10)
+	pool.Close() //连接可能未处理完
+	log.Debugf(pool.Info())
+	time.Sleep(time.Second * 10)
+}
+
+func test1() {
+	wait := sync.WaitGroup{}
+	locker := new(sync.Mutex)
+	cond := sync.NewCond(locker)
+
+	for i := 0; i < 3; i++ {
+		go func(i int) {
+			defer wait.Done()
+			wait.Add(1)
+			cond.L.Lock()
+			fmt.Println("Waiting start...", i)
+			cond.Wait()
+			fmt.Println("Waiting end...", i)
+			cond.L.Unlock()
+
+			fmt.Println("Goroutine run. Number:", i)
+		}(i)
+	}
+
+	time.Sleep(2e9)
+	cond.L.Lock()
+	cond.Signal()
+	cond.L.Unlock()
+
+	time.Sleep(2e9)
+	cond.L.Lock()
+	cond.Signal()
+	cond.L.Unlock()
+
+	time.Sleep(2e9)
+	cond.L.Lock()
+	cond.Signal()
+	cond.L.Unlock()
+
+	wait.Wait()
 }

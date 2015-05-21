@@ -5,7 +5,7 @@ import (
 	"github.com/seefan/goerr"
 	"github.com/seefan/to"
 	"github.com/ssdb/gossdb/ssdb"
-	"log"
+	//	"log"
 	"strconv"
 	"time"
 )
@@ -15,17 +15,41 @@ type Client struct {
 	ssdb.Client
 	pool     *Connectors //来源的连接池
 	lastTime time.Time   //最后的更新时间
+	isOpen   bool        //是否已连接
+}
+
+//打开连接
+func (this *Client) Start() error {
+	if this.isOpen {
+		return nil
+	}
+	db, err := ssdb.Connect(this.pool.cfg.Host, this.pool.cfg.Port)
+	if err != nil {
+		return err
+	}
+	this.lastTime = time.Now()
+	this.isOpen = true
+	this.Client = *db
+	return nil
 }
 
 //关闭连接
 func (this *Client) Close() {
-	if this != nil {
-		if this.pool == nil { //连接池不存在，只关闭自己的连接
-			this.Client.Close()
-		} else {
-			this.pool.closeClient(this)
-		}
+	this.lastTime = time.Now()
+	if this.pool == nil { //连接池不存在，只关闭自己的连接
+		this.Client.Close()
+		this.isOpen = false
+	} else {
+		this.pool.closeClient(this)
 	}
+}
+
+//检查连接情况
+//
+//  返回 bool，如果可以正常查询数据库信息，就返回true，否则返回false
+func (this *Client) Ping() bool {
+	_, err := this.Info()
+	return err == nil
 }
 
 //查询数据库大小
@@ -52,7 +76,6 @@ func (this *Client) Info() (re []string, err error) {
 	if err != nil {
 		return nil, err
 	}
-	log.Println(resp)
 	if len(resp) > 1 && resp[0] == "ok" {
 		return resp[1:], nil
 	}
@@ -77,14 +100,14 @@ func (this *Client) encoding(value interface{}, hasArray bool) string {
 	case nil:
 		return ""
 	case []bool, []string, []int, []int8, []int16, []int32, []int64, []uint, []uint16, []uint32, []uint64, []float32, []float64, []interface{}:
-		if hasArray && this.pool.Encoding {
+		if hasArray && Encoding {
 			if bs, err := json.Marshal(value); err == nil {
 				return string(bs)
 			}
 		}
 		return "can not support slice,please open the Encoding options"
 	default:
-		if this.pool.Encoding {
+		if Encoding {
 			if bs, err := json.Marshal(value); err == nil {
 				return string(bs)
 			}

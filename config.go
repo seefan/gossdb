@@ -7,16 +7,18 @@ type Config struct {
 	Host string
 	// ssdb的端口
 	Port int
-	//获取连接超时时间，单位为秒，默认1分钟
+	//获取连接超时时间，单位为秒。默认值: 60
 	GetClientTimeout int
-	//最大连接池个数，默认为10
+	//最大连接池个数。默认值: 100
 	MaxPoolSize int
-	//最小连接池数，默认为1
+	//最小连接池数。默认值: 10
 	MinPoolSize int
-	//当连接池中的连接耗尽的时候一次同时获取的连接数。默认值: 3
+	//当连接池中的连接耗尽的时候一次同时获取的连接数。默认值: 10
 	AcquireIncrement int
 	//最大空闲时间，指定秒内未使用则连接被丢弃。若为0则永不丢弃。默认值: 0
 	MaxIdleTime int
 	//最大等待数目，当连接池满后，新建连接将排除等待池中连接释放，本值限制最大等待的数量。默认值: 1000
 	MaxWaitSize int
+	//健康检查时间隔，单位为秒。默认值: 10
+	HealthSecond int
 }
