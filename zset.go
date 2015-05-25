@@ -2,6 +2,7 @@ package gossdb
 
 import (
 	"github.com/seefan/goerr"
+	"github.com/seefan/to"
 	"log"
 )
 
@@ -118,7 +119,7 @@ func (this *Client) MultiZget(setName string, key ...string) (val map[string]int
 		}
 		return val, nil
 	}
-	return nil, makeError(resp, key)
+	return nil, makeError(resp, setName, key)
 }
 
 func (this *Client) MultiZdel(setName string, key ...string) (err error) {
@@ -134,5 +135,20 @@ func (this *Client) MultiZdel(setName string, key ...string) (err error) {
 	if len(resp) > 0 && resp[0] == "ok" {
 		return nil
 	}
-	return makeError(resp, key)
+	return makeError(resp, setName, key)
+}
+
+func (this *Client) Zincr(setName string, key string, num int64) (int64, error) {
+	if len(key) == 0 {
+		return 0, nil
+	}
+	resp, err := this.Client.Do("zincr", setName, key, this.encoding(num, false))
+	if err != nil {
+		return 0, goerr.NewError(err, "Zincr %s %s %v", setName, key, num)
+	}
+	log.Println("Zincr", resp)
+	if len(resp) > 1 && resp[0] == "ok" {
+		return to.Int64(resp[1]), nil
+	}
+	return 0, makeError(resp, setName, key)
 }

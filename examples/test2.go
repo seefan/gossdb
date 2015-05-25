@@ -12,7 +12,7 @@ type Book struct {
 }
 
 func main() {
-	ip := "10.10.10.214"
+	ip := "127.0.0.1"
 	port := 8888
 
 	pool, err := gossdb.NewPool(&gossdb.Config{
@@ -26,6 +26,10 @@ func main() {
 	gossdb.Encoding = true
 
 	c, err := pool.NewClient()
+	if err != nil {
+		fmt.Errorf("new client err=%v", err)
+		return
+	}
 
 	c.Set("myset", "hello world")
 	val, err := c.Get("myset")
@@ -97,5 +101,21 @@ func main() {
 	fmt.Printf("result3=%v\n", result3)
 	for i, b := range result3 {
 		fmt.Printf("%v - %v\n", i, b)
+
+		var book Book
+		b.As(&book)
+		fmt.Printf("---book=%v\n", book)
 	}
+
+	c.Zset("zsettest", "zsettest_count", 0)
+	c.Zincr("zsettest", "zsettest_count", 1)
+	c.Zincr("zsettest", "zsettest_count", 1)
+	c.Zincr("zsettest", "zsettest_count", 1)
+	count, err := c.Zget("zsettest", "zsettest_count")
+	if err != nil {
+		fmt.Println("zsettest_count error = ", err.Error())
+	} else {
+		fmt.Printf("zsettest_count = %v\n", count)
+	}
+
 }

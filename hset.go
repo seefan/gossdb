@@ -136,7 +136,6 @@ func (this *Client) MultiHget(setName string, key ...string) (val map[string]Val
 	if err != nil {
 		return nil, goerr.NewError(err, "MultiHget %s %s error", setName, key)
 	}
-	log.Println("multihget keys=", key)
 	log.Println("MultiHget", resp)
 	size := len(resp)
 	if size > 0 && resp[0] == "ok" {
