@@ -65,21 +65,46 @@ func (this *Client) Zclear(setName string) (err error) {
 }
 
 // scoreStart,scoreEnd 空字符串"" 或者 int64
-func (this *Client) Zscan(setName string, keyStart string, scoreStart, scoreEnd interface{}, limit int64) (map[string]int64, error) {
+func (this *Client) Zscan(setName string, keyStart string, scoreStart, scoreEnd interface{}, limit int64) (keys []string, scores []int64, err error) {
 	resp, err := this.Client.Do("zscan", setName, keyStart, this.encoding(scoreStart, false), this.encoding(scoreEnd, false), limit)
 
 	if err != nil {
-		return nil, goerr.NewError(err, "Zscan %s %v %v %v %v error", setName, keyStart, scoreStart, scoreEnd, limit)
+		return nil, nil, goerr.NewError(err, "Zscan %s %v %v %v %v error", setName, keyStart, scoreStart, scoreEnd, limit)
 	}
 	if len(resp) > 0 && resp[0] == "ok" {
-		re := make(map[string]int64)
 		size := len(resp)
+		keys := make([]string, 0, (size-1)/2)
+		scores := make([]int64, 0, (size-1)/2)
+
 		for i := 1; i < size-1; i += 2 {
-			re[resp[i]] = Value(resp[i+1]).Int64()
+			keys = append(keys, resp[i])
+			scores = append(scores, Value(resp[i+1]).Int64())
 		}
-		return re, nil
+		return keys, scores, nil
 	}
-	return nil, makeError(resp, setName, keyStart, scoreStart, scoreEnd, limit)
+	return nil, nil, makeError(resp, setName, keyStart, scoreStart, scoreEnd, limit)
+}
+
+// scoreStart,scoreEnd 空字符串"" 或者 int64
+func (this *Client) Zrscan(setName string, keyStart string, scoreStart, scoreEnd interface{}, limit int64) (keys []string, scores []int64, err error) {
+	resp, err := this.Client.Do("zrscan", setName, keyStart, this.encoding(scoreStart, false), this.encoding(scoreEnd, false), limit)
+
+	if err != nil {
+		return nil, nil, goerr.NewError(err, "Zrscan %s %v %v %v %v error", setName, keyStart, scoreStart, scoreEnd, limit)
+	}
+
+	if len(resp) > 0 && resp[0] == "ok" {
+		size := len(resp)
+		keys := make([]string, 0, (size-1)/2)
+		scores := make([]int64, 0, (size-1)/2)
+
+		for i := 1; i < size-1; i += 2 {
+			keys = append(keys, resp[i])
+			scores = append(scores, Value(resp[i+1]).Int64())
+		}
+		return keys, scores, nil
+	}
+	return nil, nil, makeError(resp, setName, keyStart, scoreStart, scoreEnd, limit)
 }
 
 func (this *Client) MultiZset(setName string, kvs map[string]int64) (err error) {
@@ -101,25 +126,29 @@ func (this *Client) MultiZset(setName string, kvs map[string]int64) (err error) 
 	return makeError(resp, setName, kvs)
 }
 
-func (this *Client) MultiZget(setName string, key ...string) (val map[string]int64, err error) {
+func (this *Client) MultiZget(setName string, key ...string) (keys []string, scores []int64, err error) {
 	if len(key) == 0 {
-		return make(map[string]int64), nil
+		return []string{}, []int64{}, nil
 	}
 	resp, err := this.Client.Do("multi_zget", setName, key)
 
 	if err != nil {
-		return nil, goerr.NewError(err, "MultiZget %s %s error", setName, key)
+		return nil, nil, goerr.NewError(err, "MultiZget %s %s error", setName, key)
 	}
 	log.Println("MultiZget", resp)
 	size := len(resp)
 	if size > 0 && resp[0] == "ok" {
-		val = make(map[string]int64)
+
+		keys := make([]string, (size-1)/2)
+		scores := make([]int64, (size-1)/2)
+
 		for i := 1; i < size && i+1 < size; i += 2 {
-			val[resp[i]] = Value(resp[i+1]).Int64()
+			keys = append(keys, resp[i])
+			scores = append(scores, Value(resp[i+1]).Int64())
 		}
-		return val, nil
+		return keys, scores, nil
 	}
-	return nil, makeError(resp, setName, key)
+	return nil, nil, makeError(resp, setName, key)
 }
 
 func (this *Client) MultiZdel(setName string, key ...string) (err error) {

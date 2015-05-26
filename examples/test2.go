@@ -65,13 +65,13 @@ func main() {
 	c.Hset("booklist", "id4", &Book{"id4", "name4", 3})
 	c.Zset("booklist_order_by_price", "id4", 3)
 	c.Hset("booklist", "id5", &Book{"id5", "name5", 5})
-	c.Zset("booklist_order_by_price", "id5", 5)
+	c.Zset("booklist_order_by_price", "id5", 51)
 	c.Hset("booklist", "id6", &Book{"id6", "name6", 14})
-	c.Zset("booklist_order_by_price", "id6", 14)
+	c.Zset("booklist_order_by_price", "id6", 18)
 	c.Hset("booklist", "id7", &Book{"id7", "name7", 13})
-	c.Zset("booklist_order_by_price", "id7", 13)
+	c.Zset("booklist_order_by_price", "id7", 15)
 	c.Hset("booklist", "id8", &Book{"id8", "name8", 12})
-	c.Zset("booklist_order_by_price", "id8", 12)
+	c.Zset("booklist_order_by_price", "id8", 22)
 	c.Hset("booklist", "id9", &Book{"id9", "name9", 11})
 	c.Zset("booklist_order_by_price", "id9", 11)
 	c.Hset("booklist", "id10", &Book{"id10", "name10", 10})
@@ -84,17 +84,19 @@ func main() {
 		fmt.Printf("%v - %v\n", i, b)
 	}
 
-	result2, err := c.Zscan("booklist_order_by_price", "", 10, "", 1000)
-	fmt.Printf("result2=%v\n", result2)
-
-	for i, b := range result2 {
-		fmt.Printf("%v - %v\n", i, b)
+	fmt.Println("will zscan---------------------------------")
+	keys, scores, err := c.Zscan("booklist_order_by_price", "", "", "", 1000)
+	fmt.Printf("keys = %v \nscores = %v\n", keys, scores)
+	fmt.Printf("keys len = %v \nscores  len = %v\n", len(keys), len(scores))
+	for i, k := range keys {
+		fmt.Printf("%v : %v - %v\n", i, k, scores[i])
 	}
-
-	keys := []string{}
-	//keys := make([]string, 0, len(result2))
-	for k := range result2 {
-		keys = append(keys, k)
+	fmt.Println("will zrscan---------------------------------")
+	keys, scores, err = c.Zrscan("booklist_order_by_price", "", "", "", 1000)
+	fmt.Printf("keys = %v \nscores = %v\n", keys, scores)
+	fmt.Printf("keys len = %v \nscores  len = %v\n", len(keys), len(scores))
+	for i, k := range keys {
+		fmt.Printf("%v : %v - %v\n", i, k, scores[i])
 	}
 
 	result3, err := c.MultiHget("booklist", keys...)

@@ -97,6 +97,7 @@ func (this *Client) Hscan(setName string, keyStart, keyEnd string, limit int64) 
 	if err != nil {
 		return nil, goerr.NewError(err, "Hscan %s %s %s %v error", setName, keyStart, keyEnd, limit)
 	}
+
 	if len(resp) > 0 && resp[0] == "ok" {
 		re := make(map[string]Value)
 		size := len(resp)
@@ -136,7 +137,7 @@ func (this *Client) MultiHget(setName string, key ...string) (val map[string]Val
 	if err != nil {
 		return nil, goerr.NewError(err, "MultiHget %s %s error", setName, key)
 	}
-	log.Println("MultiHget", resp)
+	//log.Println("MultiHget", resp)
 	size := len(resp)
 	if size > 0 && resp[0] == "ok" {
 		val = make(map[string]Value)
