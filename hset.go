@@ -128,25 +128,28 @@ func (this *Client) MultiHset(setName string, kvs map[string]interface{}) (err e
 	return makeError(resp, setName, kvs)
 }
 
-func (this *Client) MultiHget(setName string, key ...string) (val map[string]Value, err error) {
+func (this *Client) MultiHget(setName string, key ...string) (keys []string, values []Value, err error) {
 	if len(key) == 0 {
-		return make(map[string]Value), nil
+		return []string{}, []Value{}, nil
 	}
 	resp, err := this.Client.Do("multi_hget", setName, key)
 
 	if err != nil {
-		return nil, goerr.NewError(err, "MultiHget %s %s error", setName, key)
+		return nil, nil, goerr.NewError(err, "MultiHget %s %s error", setName, key)
 	}
 	//log.Println("MultiHget", resp)
-	size := len(resp)
-	if size > 0 && resp[0] == "ok" {
-		val = make(map[string]Value)
+	if len(resp) > 0 && resp[0] == "ok" {
+		size := len(resp)
+		keys := make([]string, 0, (size-1)/2)
+		values := make([]Value, 0, (size-1)/2)
+
 		for i := 1; i < size && i+1 < size; i += 2 {
-			val[resp[i]] = Value(resp[i+1])
+			keys = append(keys, resp[i])
+			values = append(values, Value(resp[i+1]))
 		}
-		return val, nil
+		return keys, values, nil
 	}
-	return nil, makeError(resp, key)
+	return nil, nil, makeError(resp, key)
 }
 
 func (this *Client) MultiHdel(setName string, key ...string) (err error) {
