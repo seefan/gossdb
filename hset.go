@@ -137,7 +137,6 @@ func (this *Client) MultiHget(setName string, key ...string) (keys []string, val
 	if err != nil {
 		return nil, nil, goerr.NewError(err, "MultiHget %s %s error", setName, key)
 	}
-	//log.Println("MultiHget", resp)
 	if len(resp) > 0 && resp[0] == "ok" {
 		size := len(resp)
 		keys := make([]string, 0, (size-1)/2)
@@ -166,4 +165,22 @@ func (this *Client) MultiHdel(setName string, key ...string) (err error) {
 		return nil
 	}
 	return makeError(resp, key)
+}
+
+func (this *Client) Hlist(nameStart, nameEnd string, limit int64) ([]string, error) {
+	resp, err := this.Client.Do("hlist", nameStart, nameEnd, this.encoding(limit, false))
+	if err != nil {
+		return nil, goerr.NewError(err, "Hlist %s %s %v error", nameStart, nameEnd, limit)
+	}
+
+	if len(resp) > 0 && resp[0] == "ok" {
+		size := len(resp)
+		keyList := make([]string, 0, size-1)
+
+		for i := 1; i < size; i += 1 {
+			keyList = append(keyList, resp[i])
+		}
+		return keyList, nil
+	}
+	return nil, makeError(resp, nameStart, nameEnd, limit)
 }
