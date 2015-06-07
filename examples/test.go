@@ -2,18 +2,14 @@ package main
 
 import (
 	"fmt"
-	log "github.com/cihub/seelog"
 	"github.com/seefan/gossdb"
-	golog "github.com/seefan/gossdb/examples/log"
-
+	"log"
 	"runtime"
 	"sync"
 	"time"
 )
 
 func main() {
-	defer golog.PrintErr()
-	golog.InitSeeLog()
 	//	//	i := 12
 	//	var v gossdb.Value = "123"
 	//	log.Println(v.String())
@@ -46,7 +42,7 @@ func main() {
 		HealthSecond:     2,
 	})
 	if err != nil {
-		log.Debug(err)
+		log.Println(err)
 		return
 	}
 	gossdb.Encoding = true
@@ -132,35 +128,35 @@ func main() {
 	//	log.Println(err)
 	//	vm, err := client.MultiGet("a", "b", "a1")
 	//	log.Println(vm, err)
-	log.Debugf("----------------")
+	log.Println("----------------")
 
 	for i := 0; i < 100; i++ {
 		go func(idx int) {
 			//log.Println(idx, "get client", pool.Info())
 			c, err := pool.NewClient()
 			if err != nil {
-				log.Debugf(err.Error(), idx)
+				log.Println(err.Error(), idx)
 				return
 			}
 			defer c.Close()
 			err = c.Set(fmt.Sprintf("test%d", idx), fmt.Sprintf("test%d", idx))
 			if err != nil {
-				log.Error(err)
+				log.Println(err)
 			}
 			re, err := c.Get(fmt.Sprintf("test%d", idx))
 			if err != nil {
-				log.Debug(err, re, "close client")
+				log.Println(err, re, "close client")
 			} else {
-				log.Debug(idx, "close client")
+				log.Println(idx, "close client")
 			}
 		}(i)
 		//time.Sleep(time.Millisecond)
 	}
 	time.Sleep(time.Second * 10)
-	log.Debug(pool.Info())
+	log.Println(pool.Info())
 	time.Sleep(time.Second * 10)
 	pool.Close() //连接可能未处理完
-	log.Debugf(pool.Info())
+	log.Println(pool.Info())
 	time.Sleep(time.Second * 10)
 }
 
