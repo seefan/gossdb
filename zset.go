@@ -181,3 +181,21 @@ func (this *Client) Zincr(setName string, key string, num int64) (int64, error) 
 	}
 	return 0, makeError(resp, setName, key)
 }
+
+func (this *Client) Zlist(nameStart, nameEnd string, limit int64) ([]string, error) {
+	resp, err := this.Client.Do("zlist", nameStart, nameEnd, this.encoding(limit, false))
+	if err != nil {
+		return nil, goerr.NewError(err, "Zlist %s %s %v error", nameStart, nameEnd, limit)
+	}
+
+	if len(resp) > 0 && resp[0] == "ok" {
+		size := len(resp)
+		keyList := make([]string, 0, size-1)
+
+		for i := 1; i < size; i += 1 {
+			keyList = append(keyList, resp[i])
+		}
+		return keyList, nil
+	}
+	return nil, makeError(resp, nameStart, nameEnd, limit)
+}
