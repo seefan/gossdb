@@ -43,7 +43,7 @@ func (this *Connectors) Init(cfg *Config) {
 	this.setConfig(cfg)
 	this.pool = make(chan *Client, cfg.MaxPoolSize)
 	this.poolMap = make(map[*Client]bool)
-	this.timeHealth = time.NewTicker(time.Second)
+	this.timeHealth = time.NewTicker(time.Second * time.Duration(cfg.HealthSecond))
 }
 
 //启动连接池
