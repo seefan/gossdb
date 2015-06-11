@@ -128,6 +128,28 @@ func (this *Client) MultiHset(setName string, kvs map[string]interface{}) (err e
 	return makeError(resp, setName, kvs)
 }
 
+func (this *Client) MultiHgetMap(setName string, key ...string) (val map[string]Value, err error) {
+	if len(key) == 0 {
+		return make(map[string]Value), nil
+	}
+	resp, err := this.Client.Do("multi_hget", setName, key)
+
+	if err != nil {
+		return nil, goerr.NewError(err, "MultiHget %s %s error", setName, key)
+	}
+	log.Println("multihget keys=", key)
+	log.Println("MultiHget", resp)
+	size := len(resp)
+	if size > 0 && resp[0] == "ok" {
+		val = make(map[string]Value)
+		for i := 1; i < size && i+1 < size; i += 2 {
+			val[resp[i]] = Value(resp[i+1])
+		}
+		return val, nil
+	}
+	return nil, makeError(resp, key)
+}
+
 func (this *Client) MultiHget(setName string, key ...string) (keys []string, values []Value, err error) {
 	if len(key) == 0 {
 		return []string{}, []Value{}, nil
