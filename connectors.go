@@ -108,7 +108,7 @@ func (this *Connectors) healthWorker() {
 	this.lock.Lock()
 	defer this.lock.Unlock()
 	if this.WaitCount == 0 {
-		fmt.Println("heath check", this.Info())
+		//fmt.Println("heath check", this.Info())
 		//是否需要检查过期
 		size := this.Size
 		expired := 0
