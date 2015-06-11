@@ -126,6 +126,25 @@ func (this *Client) MultiZset(setName string, kvs map[string]int64) (err error) 
 	return makeError(resp, setName, kvs)
 }
 
+func (this *Client) MultiZgetMap(setName string, key ...string) (val map[string]int64, err error) {
+	if len(key) == 0 {
+		return make(map[string]int64), nil
+	}
+	resp, err := this.Client.Do("multi_zget", setName, key)
+
+	if err != nil {
+		return nil, goerr.NewError(err, "MultiZget %s %s error", setName, key)
+	}
+	size := len(resp)
+	if size > 0 && resp[0] == "ok" {
+		val = make(map[string]int64)
+		for i := 1; i < size && i+1 < size; i += 2 {
+			val[resp[i]] = Value(resp[i+1]).Int64()
+		}
+		return val, nil
+	}
+	return nil, makeError(resp, key)
+}
 func (this *Client) MultiZget(setName string, key ...string) (keys []string, scores []int64, err error) {
 	if len(key) == 0 {
 		return []string{}, []int64{}, nil
