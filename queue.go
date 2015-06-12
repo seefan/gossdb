@@ -241,3 +241,39 @@ func (this *Client) Qtrim_front(name string, size int) (delSize int64, err error
 func (this *Client) Qtrim_back(name string, size int) (delSize int64, err error) {
 	return this.Qtrim(name, size, true)
 }
+
+func (this *Client) Qlist(nameStart, nameEnd string, limit int64) ([]string, error) {
+	resp, err := this.Client.Do("qlist", nameStart, nameEnd, this.encoding(limit, false))
+	if err != nil {
+		return nil, goerr.NewError(err, "Qlist %s %s %v error", nameStart, nameEnd, limit)
+	}
+
+	if len(resp) > 0 && resp[0] == "ok" {
+		size := len(resp)
+		keyList := make([]string, 0, size-1)
+
+		for i := 1; i < size; i += 1 {
+			keyList = append(keyList, resp[i])
+		}
+		return keyList, nil
+	}
+	return nil, makeError(resp, nameStart, nameEnd, limit)
+}
+
+func (this *Client) Qrlist(nameStart, nameEnd string, limit int64) ([]string, error) {
+	resp, err := this.Client.Do("qrlist", nameStart, nameEnd, this.encoding(limit, false))
+	if err != nil {
+		return nil, goerr.NewError(err, "Qrlist %s %s %v error", nameStart, nameEnd, limit)
+	}
+
+	if len(resp) > 0 && resp[0] == "ok" {
+		size := len(resp)
+		keyList := make([]string, 0, size-1)
+
+		for i := 1; i < size; i += 1 {
+			keyList = append(keyList, resp[i])
+		}
+		return keyList, nil
+	}
+	return nil, makeError(resp, nameStart, nameEnd, limit)
+}

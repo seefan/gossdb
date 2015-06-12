@@ -2,6 +2,7 @@ package gossdb
 
 import (
 	"github.com/seefan/goerr"
+	"log"
 )
 
 //设置 hashmap 中指定 key 对应的值内容.
@@ -87,4 +88,119 @@ func (this *Client) Hclear(setName string) (err error) {
 		return nil
 	}
 	return makeError(resp, setName)
+}
+
+func (this *Client) Hscan(setName string, keyStart, keyEnd string, limit int64) (map[string]Value, error) {
+
+	resp, err := this.Client.Do("hscan", setName, keyStart, keyEnd, limit)
+
+	if err != nil {
+		return nil, goerr.NewError(err, "Hscan %s %s %s %v error", setName, keyStart, keyEnd, limit)
+	}
+
+	if len(resp) > 0 && resp[0] == "ok" {
+		re := make(map[string]Value)
+		size := len(resp)
+		for i := 1; i < size-1; i += 2 {
+			re[resp[i]] = Value(resp[i+1])
+		}
+		return re, nil
+	}
+	return nil, makeError(resp, setName, keyStart, keyEnd, limit)
+}
+
+func (this *Client) MultiHset(setName string, kvs map[string]interface{}) (err error) {
+
+	args := []string{}
+	for k, v := range kvs {
+		args = append(args, k)
+		args = append(args, this.encoding(v, false))
+	}
+	resp, err := this.Client.Do("multi_hset", setName, args)
+
+	if err != nil {
+		return goerr.NewError(err, "MultiHset %s %s error", setName, kvs)
+	}
+
+	if len(resp) > 0 && resp[0] == "ok" {
+		return nil
+	}
+	return makeError(resp, setName, kvs)
+}
+
+func (this *Client) MultiHgetMap(setName string, key ...string) (val map[string]Value, err error) {
+	if len(key) == 0 {
+		return make(map[string]Value), nil
+	}
+	resp, err := this.Client.Do("multi_hget", setName, key)
+
+	if err != nil {
+		return nil, goerr.NewError(err, "MultiHget %s %s error", setName, key)
+	}
+	size := len(resp)
+	if size > 0 && resp[0] == "ok" {
+		val = make(map[string]Value)
+		for i := 1; i < size && i+1 < size; i += 2 {
+			val[resp[i]] = Value(resp[i+1])
+		}
+		return val, nil
+	}
+	return nil, makeError(resp, key)
+}
+
+func (this *Client) MultiHget(setName string, key ...string) (keys []string, values []Value, err error) {
+	if len(key) == 0 {
+		return []string{}, []Value{}, nil
+	}
+	resp, err := this.Client.Do("multi_hget", setName, key)
+
+	if err != nil {
+		return nil, nil, goerr.NewError(err, "MultiHget %s %s error", setName, key)
+	}
+	if len(resp) > 0 && resp[0] == "ok" {
+		size := len(resp)
+		keys := make([]string, 0, (size-1)/2)
+		values := make([]Value, 0, (size-1)/2)
+
+		for i := 1; i < size && i+1 < size; i += 2 {
+			keys = append(keys, resp[i])
+			values = append(values, Value(resp[i+1]))
+		}
+		return keys, values, nil
+	}
+	return nil, nil, makeError(resp, key)
+}
+
+func (this *Client) MultiHdel(setName string, key ...string) (err error) {
+	if len(key) == 0 {
+		return nil
+	}
+	resp, err := this.Client.Do("multi_hdel", key)
+
+	if err != nil {
+		return goerr.NewError(err, "MultiHdel %s %s error", setName, key)
+	}
+	log.Println("MultiHdel", resp)
+	if len(resp) > 0 && resp[0] == "ok" {
+		return nil
+	}
+	return makeError(resp, key)
+}
+
+func (this *Client) Hlist(nameStart, nameEnd string, limit int64) ([]string, error) {
+	resp, err := this.Client.Do("hlist", nameStart, nameEnd, this.encoding(limit, false))
+	if err != nil {
+		return nil, goerr.NewError(err, "Hlist %s %s %v error", nameStart, nameEnd, limit)
+	}
+
+	if len(resp) > 0 && resp[0] == "ok" {
+		size := len(resp)
+		keyList := make([]string, 0, size-1)
+
+		for i := 1; i < size; i += 1 {
+			keyList = append(keyList, resp[i])
+		}
+		return keyList, nil
+	}
+	return nil, makeError(resp, nameStart, nameEnd, limit)
 }
