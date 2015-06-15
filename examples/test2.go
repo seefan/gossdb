@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/everettjf/gossdb"
+	"github.com/seefan/gossdb"
 )
 
 type Book struct {
@@ -11,7 +11,7 @@ type Book struct {
 	Price int64
 }
 
-func main() {
+func test2() {
 	ip := "127.0.0.1"
 	port := 8888
 
@@ -99,7 +99,7 @@ func main() {
 		fmt.Printf("%v : %v - %v\n", i, k, scores[i])
 	}
 
-	keys, values, err := c.MultiHget("booklist", keys...)
+	keys, values, err := c.MultiHgetSlice("booklist", keys...)
 	fmt.Printf("keys=%v\n", keys)
 	for i, k := range keys {
 		b := values[i]

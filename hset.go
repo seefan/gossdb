@@ -90,6 +90,14 @@ func (this *Client) Hclear(setName string) (err error) {
 	return makeError(resp, setName)
 }
 
+//列出 hashmap 中处于区间 (key_start, key_end] 的 key-value 列表. ("", ""] 表示整个区间.
+//
+//  setName - hashmap 的名字.
+//  keyStart - 返回的起始 key(不包含), 空字符串表示 -inf.
+//  keyEnd - 返回的结束 key(包含), 空字符串表示 +inf.
+//  limit - 最多返回这么多个元素.
+//  返回包含 key-value 的关联字典.
+//  返回 err，执行的错误，操作成功返回 nil
 func (this *Client) Hscan(setName string, keyStart, keyEnd string, limit int64) (map[string]Value, error) {
 
 	resp, err := this.Client.Do("hscan", setName, keyStart, keyEnd, limit)
@@ -109,6 +117,11 @@ func (this *Client) Hscan(setName string, keyStart, keyEnd string, limit int64) 
 	return nil, makeError(resp, setName, keyStart, keyEnd, limit)
 }
 
+//批量设置 hashmap 中的 key-value.
+//
+//  setName - hashmap 的名字.
+//  kvs - 包含 key-value 的关联数组 .
+//  返回 err，执行的错误，操作成功返回 nil
 func (this *Client) MultiHset(setName string, kvs map[string]interface{}) (err error) {
 
 	args := []string{}
@@ -128,7 +141,13 @@ func (this *Client) MultiHset(setName string, kvs map[string]interface{}) (err e
 	return makeError(resp, setName, kvs)
 }
 
-func (this *Client) MultiHgetMap(setName string, key ...string) (val map[string]Value, err error) {
+//批量获取 hashmap 中多个 key 对应的权重值.
+//
+//  setName - hashmap 的名字.
+//  keys - 包含 key 的数组 .
+//  返回 包含 key-value 的关联数组, 如果某个 key 不存在, 则它不会出现在返回数组中.
+//  返回 err，执行的错误，操作成功返回 nil
+func (this *Client) MultiHget(setName string, key ...string) (val map[string]Value, err error) {
 	if len(key) == 0 {
 		return make(map[string]Value), nil
 	}
@@ -148,14 +167,20 @@ func (this *Client) MultiHgetMap(setName string, key ...string) (val map[string]
 	return nil, makeError(resp, key)
 }
 
-func (this *Client) MultiHget(setName string, key ...string) (keys []string, values []Value, err error) {
+//批量获取 hashmap 中多个 key 对应的权重值.
+//
+//  setName - hashmap 的名字.
+//  keys - 包含 key 的数组 .
+//  返回 包含 key和value 的有序数组, 如果某个 key 不存在, 则它不会出现在返回数组中.
+//  返回 err，执行的错误，操作成功返回 nil
+func (this *Client) MultiHgetSlice(setName string, key ...string) (keys []string, values []Value, err error) {
 	if len(key) == 0 {
 		return []string{}, []Value{}, nil
 	}
 	resp, err := this.Client.Do("multi_hget", setName, key)
 
 	if err != nil {
-		return nil, nil, goerr.NewError(err, "MultiHget %s %s error", setName, key)
+		return nil, nil, goerr.NewError(err, "MultiHgetSlice %s %s error", setName, key)
 	}
 	if len(resp) > 0 && resp[0] == "ok" {
 		size := len(resp)
@@ -171,6 +196,11 @@ func (this *Client) MultiHget(setName string, key ...string) (keys []string, val
 	return nil, nil, makeError(resp, key)
 }
 
+//批量删除 hashmap 中的 key.
+//
+//  setName - hashmap 的名字.
+//  keys - 包含 key 的数组.
+//  返回 err，执行的错误，操作成功返回 nil
 func (this *Client) MultiHdel(setName string, key ...string) (err error) {
 	if len(key) == 0 {
 		return nil
@@ -187,6 +217,13 @@ func (this *Client) MultiHdel(setName string, key ...string) (err error) {
 	return makeError(resp, key)
 }
 
+//列出名字处于区间 (name_start, name_end] 的 hashmap. ("", ""] 表示整个区间.
+//
+//  keyStart - 返回的起始 key(不包含), 空字符串表示 -inf.
+//  keyEnd - 返回的结束 key(包含), 空字符串表示 +inf.
+//  limit - 最多返回这么多个元素.
+//  返回 包含名字的数组
+//  返回 err，执行的错误，操作成功返回 nil
 func (this *Client) Hlist(nameStart, nameEnd string, limit int64) ([]string, error) {
 	resp, err := this.Client.Do("hlist", nameStart, nameEnd, this.encoding(limit, false))
 	if err != nil {
