@@ -205,7 +205,7 @@ func (this *Client) MultiHdel(setName string, key ...string) (err error) {
 	if len(key) == 0 {
 		return nil
 	}
-	resp, err := this.Client.Do("multi_hdel", key)
+	resp, err := this.Do("multi_hdel", key)
 
 	if err != nil {
 		return goerr.NewError(err, "MultiHdel %s %s error", setName, key)
@@ -225,7 +225,7 @@ func (this *Client) MultiHdel(setName string, key ...string) (err error) {
 //  返回 包含名字的数组
 //  返回 err，执行的错误，操作成功返回 nil
 func (this *Client) Hlist(nameStart, nameEnd string, limit int64) ([]string, error) {
-	resp, err := this.Client.Do("hlist", nameStart, nameEnd, this.encoding(limit, false))
+	resp, err := this.Do("hlist", nameStart, nameEnd, this.encoding(limit, false))
 	if err != nil {
 		return nil, goerr.NewError(err, "Hlist %s %s %v error", nameStart, nameEnd, limit)
 	}

@@ -15,9 +15,9 @@ import (
 func (this *Client) Set(key string, val interface{}, ttl ...int) (err error) {
 	var resp []string
 	if len(ttl) > 0 {
-		resp, err = this.Client.Do("setx", key, this.encoding(val, false), ttl[0])
+		resp, err = this.Do("setx", key, this.encoding(val, false), ttl[0])
 	} else {
-		resp, err = this.Client.Do("set", key, this.encoding(val, false))
+		resp, err = this.Do("set", key, this.encoding(val, false))
 	}
 	if err != nil {
 		return goerr.NewError(err, "Set %s error", key)
@@ -35,7 +35,7 @@ func (this *Client) Set(key string, val interface{}, ttl ...int) (err error) {
 //  返回 err，可能的错误，操作成功返回 nil
 //  返回 val 1: value 已经设置, 0: key 已经存在, 不更新.
 func (this *Client) Setnx(key string, val interface{}) (Value, error) {
-	resp, err := this.Client.Do("setnx", key, this.encoding(val, false))
+	resp, err := this.Do("setnx", key, this.encoding(val, false))
 
 	if err != nil {
 		return "", goerr.NewError(err, "Setnx %s error", key)
@@ -52,7 +52,7 @@ func (this *Client) Setnx(key string, val interface{}) (Value, error) {
 //  返回 一个 Value,可以方便的向其它类型转换
 //  返回 一个可能的错误，操作成功返回 nil
 func (this *Client) Get(key string) (Value, error) {
-	resp, err := this.Client.Do("get", key)
+	resp, err := this.Do("get", key)
 	if err != nil {
 		return "", goerr.NewError(err, "Get %s error", key)
 	}
@@ -69,7 +69,7 @@ func (this *Client) Get(key string) (Value, error) {
 //  返回 一个 Value,可以方便的向其它类型转换.如果 key 不存在则返回 "", 否则返回 key 对应的值内容.
 //  返回 一个可能的错误，操作成功返回 nil
 func (this *Client) Getset(key string, val interface{}) (Value, error) {
-	resp, err := this.Client.Do("getset", key, val)
+	resp, err := this.Do("getset", key, val)
 	if err != nil {
 		return "", goerr.NewError(err, "Getset %s error", key)
 	}
@@ -156,7 +156,7 @@ func (this *Client) Ttl(key string) (ttl int64, err error) {
 //  返回 err，可能的错误，操作成功返回 nil
 func (this *Client) Incr(key string, num int64) (val int64, err error) {
 
-	resp, err := this.Client.Do("incr", key, num)
+	resp, err := this.Do("incr", key, num)
 
 	if err != nil {
 		return -1, goerr.NewError(err, "Incr %s error", key)
@@ -178,7 +178,7 @@ func (this *Client) MultiSet(kvs map[string]interface{}) (err error) {
 		args = append(args, k)
 		args = append(args, this.encoding(v, false))
 	}
-	resp, err := this.Client.Do("multi_set", args)
+	resp, err := this.Do("multi_set", args)
 
 	if err != nil {
 		return goerr.NewError(err, "MultiSet %s error", kvs)
@@ -199,7 +199,7 @@ func (this *Client) MultiGet(key ...string) (val map[string]Value, err error) {
 	if len(key) == 0 {
 		return make(map[string]Value), nil
 	}
-	resp, err := this.Client.Do("multi_get", key)
+	resp, err := this.Do("multi_get", key)
 
 	if err != nil {
 		return nil, goerr.NewError(err, "MultiGet %s error", key)
@@ -224,7 +224,7 @@ func (this *Client) MultiDel(key ...string) (err error) {
 	if len(key) == 0 {
 		return nil
 	}
-	resp, err := this.Client.Do("multi_del", key)
+	resp, err := this.Do("multi_del", key)
 
 	if err != nil {
 		return goerr.NewError(err, "MultiDel %s error", key)
@@ -245,7 +245,7 @@ func (this *Client) MultiDel(key ...string) (err error) {
 ////  返回 err，可能的错误，操作成功返回 nil
 //func (this *Client) Setbit(key string, offset int64, bit byte) (byte, error) {
 
-//	resp, err := this.Client.Do("setbit", key, offset, bit)
+//	resp, err := this.Do("setbit", key, offset, bit)
 
 //	if err != nil {
 //		return 255, goerr.NewError(err, "Setbit %s error", key)
@@ -264,7 +264,7 @@ func (this *Client) MultiDel(key ...string) (err error) {
 ////  返回 err，可能的错误，操作成功返回 nil
 //func (this *Client) Getbit(key string, offset int64) (byte, error) {
 
-//	resp, err := this.Client.Do("getbit", key, offset)
+//	resp, err := this.Do("getbit", key, offset)
 
 //	if err != nil {
 //		return 255, goerr.NewError(err, "Getbit %s error", key)
@@ -284,9 +284,9 @@ func (this *Client) MultiDel(key ...string) (err error) {
 func (this *Client) Substr(key string, start int64, size ...int64) (val string, err error) {
 	var resp []string
 	if len(size) > 0 {
-		resp, err = this.Client.Do("substr", key, start, size[0])
+		resp, err = this.Do("substr", key, start, size[0])
 	} else {
-		resp, err = this.Client.Do("substr", key, start)
+		resp, err = this.Do("substr", key, start)
 	}
 
 	if err != nil {
@@ -305,7 +305,7 @@ func (this *Client) Substr(key string, start int64, size ...int64) (val string, 
 //  返回 err，可能的错误，操作成功返回 nil
 func (this *Client) Strlen(key string) (int64, error) {
 
-	resp, err := this.Client.Do("strlen", key)
+	resp, err := this.Do("strlen", key)
 
 	if err != nil {
 		return -1, goerr.NewError(err, "Strlen %s error", key)
@@ -325,7 +325,7 @@ func (this *Client) Strlen(key string) (int64, error) {
 //  返回 err，可能的错误，操作成功返回 nil
 func (this *Client) Keys(keyStart, keyEnd string, limit int64) ([]string, error) {
 
-	resp, err := this.Client.Do("keys", keyStart, keyEnd, limit)
+	resp, err := this.Do("keys", keyStart, keyEnd, limit)
 
 	if err != nil {
 		return nil, goerr.NewError(err, "Keys %s error", keyStart, keyEnd, limit)
@@ -345,7 +345,7 @@ func (this *Client) Keys(keyStart, keyEnd string, limit int64) ([]string, error)
 //  返回 err，可能的错误，操作成功返回 nil
 func (this *Client) Scan(keyStart, keyEnd string, limit int64) (map[string]Value, error) {
 
-	resp, err := this.Client.Do("scan", keyStart, keyEnd, limit)
+	resp, err := this.Do("scan", keyStart, keyEnd, limit)
 
 	if err != nil {
 		return nil, goerr.NewError(err, "Scan %s error", keyStart, keyEnd, limit)
@@ -370,7 +370,7 @@ func (this *Client) Scan(keyStart, keyEnd string, limit int64) (map[string]Value
 //  返回 err，可能的错误，操作成功返回 nil
 func (this *Client) Rscan(keyStart, keyEnd string, limit int64) (map[string]Value, error) {
 
-	resp, err := this.Client.Do("rscan", keyStart, keyEnd, limit)
+	resp, err := this.Do("rscan", keyStart, keyEnd, limit)
 
 	if err != nil {
 		return nil, goerr.NewError(err, "Rscan %s error", keyStart, keyEnd, limit)

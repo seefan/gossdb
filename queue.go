@@ -243,7 +243,7 @@ func (this *Client) Qtrim_back(name string, size int) (delSize int64, err error)
 }
 
 func (this *Client) Qlist(nameStart, nameEnd string, limit int64) ([]string, error) {
-	resp, err := this.Client.Do("qlist", nameStart, nameEnd, this.encoding(limit, false))
+	resp, err := this.Do("qlist", nameStart, nameEnd, this.encoding(limit, false))
 	if err != nil {
 		return nil, goerr.NewError(err, "Qlist %s %s %v error", nameStart, nameEnd, limit)
 	}
@@ -261,7 +261,7 @@ func (this *Client) Qlist(nameStart, nameEnd string, limit int64) ([]string, err
 }
 
 func (this *Client) Qrlist(nameStart, nameEnd string, limit int64) ([]string, error) {
-	resp, err := this.Client.Do("qrlist", nameStart, nameEnd, this.encoding(limit, false))
+	resp, err := this.Do("qrlist", nameStart, nameEnd, this.encoding(limit, false))
 	if err != nil {
 		return nil, goerr.NewError(err, "Qrlist %s %s %v error", nameStart, nameEnd, limit)
 	}

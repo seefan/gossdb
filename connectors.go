@@ -54,8 +54,7 @@ func (this *Connectors) Start() error {
 	this.ActiveCount = 0
 	this.WaitCount = 0
 	for i := 0; i < this.cfg.MinPoolSize; i++ {
-		c := new(Client)
-		c.pool = this
+		c := this.createClient()
 		if err := c.Start(); err != nil {
 			return goerr.NewError(err, "启动连接池出错")
 		}
@@ -208,8 +207,7 @@ func (this *Connectors) checkNew() error {
 	}
 	if this.Size < this.cfg.MinPoolSize && this.Size+this.ActiveCount < this.cfg.MaxPoolSize { //如果没有连接了，检查是否可以自动增加
 		for i := 0; i < this.cfg.AcquireIncrement; i++ {
-			c := new(Client)
-			c.pool = this
+			c := this.createClient()
 			if err := c.Start(); err == nil {
 				this.pool <- c
 				this.poolMap[c] = false
@@ -247,4 +245,11 @@ func (this *Connectors) Close() {
 func (this *Connectors) Info() string {
 	return fmt.Sprintf(`pool size:%d	actived client:%d	wait create:%d	config max pool size:%d	config Increment:%d`,
 		this.Size, this.ActiveCount, this.WaitCount, this.cfg.MaxPoolSize, this.cfg.AcquireIncrement)
+}
+
+//创建一个新的连接
+func (this *Connectors) createClient() *Client {
+	c := new(Client)
+	c.pool = this
+	return c
 }

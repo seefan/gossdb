@@ -66,7 +66,7 @@ func (this *Client) Zclear(setName string) (err error) {
 
 // scoreStart,scoreEnd 空字符串"" 或者 int64
 func (this *Client) Zscan(setName string, keyStart string, scoreStart, scoreEnd interface{}, limit int64) (keys []string, scores []int64, err error) {
-	resp, err := this.Client.Do("zscan", setName, keyStart, this.encoding(scoreStart, false), this.encoding(scoreEnd, false), limit)
+	resp, err := this.Do("zscan", setName, keyStart, this.encoding(scoreStart, false), this.encoding(scoreEnd, false), limit)
 
 	if err != nil {
 		return nil, nil, goerr.NewError(err, "Zscan %s %v %v %v %v error", setName, keyStart, scoreStart, scoreEnd, limit)
@@ -87,7 +87,7 @@ func (this *Client) Zscan(setName string, keyStart string, scoreStart, scoreEnd 
 
 // scoreStart,scoreEnd 空字符串"" 或者 int64
 func (this *Client) Zrscan(setName string, keyStart string, scoreStart, scoreEnd interface{}, limit int64) (keys []string, scores []int64, err error) {
-	resp, err := this.Client.Do("zrscan", setName, keyStart, this.encoding(scoreStart, false), this.encoding(scoreEnd, false), limit)
+	resp, err := this.Do("zrscan", setName, keyStart, this.encoding(scoreStart, false), this.encoding(scoreEnd, false), limit)
 
 	if err != nil {
 		return nil, nil, goerr.NewError(err, "Zrscan %s %v %v %v %v error", setName, keyStart, scoreStart, scoreEnd, limit)
@@ -114,7 +114,7 @@ func (this *Client) MultiZset(setName string, kvs map[string]int64) (err error) 
 		args = append(args, k)
 		args = append(args, this.encoding(v, false))
 	}
-	resp, err := this.Client.Do("multi_zset", setName, args)
+	resp, err := this.Do("multi_zset", setName, args)
 
 	if err != nil {
 		return goerr.NewError(err, "MultiZset %s %s error", setName, kvs)
@@ -130,7 +130,7 @@ func (this *Client) MultiZgetMap(setName string, key ...string) (val map[string]
 	if len(key) == 0 {
 		return make(map[string]int64), nil
 	}
-	resp, err := this.Client.Do("multi_zget", setName, key)
+	resp, err := this.Do("multi_zget", setName, key)
 
 	if err != nil {
 		return nil, goerr.NewError(err, "MultiZget %s %s error", setName, key)
@@ -149,7 +149,7 @@ func (this *Client) MultiZget(setName string, key ...string) (keys []string, sco
 	if len(key) == 0 {
 		return []string{}, []int64{}, nil
 	}
-	resp, err := this.Client.Do("multi_zget", setName, key)
+	resp, err := this.Do("multi_zget", setName, key)
 
 	if err != nil {
 		return nil, nil, goerr.NewError(err, "MultiZget %s %s error", setName, key)
@@ -174,7 +174,7 @@ func (this *Client) MultiZdel(setName string, key ...string) (err error) {
 	if len(key) == 0 {
 		return nil
 	}
-	resp, err := this.Client.Do("multi_zdel", key)
+	resp, err := this.Do("multi_zdel", key)
 
 	if err != nil {
 		return goerr.NewError(err, "MultiZdel %s %s error", setName, key)
@@ -190,7 +190,7 @@ func (this *Client) Zincr(setName string, key string, num int64) (int64, error) 
 	if len(key) == 0 {
 		return 0, nil
 	}
-	resp, err := this.Client.Do("zincr", setName, key, this.encoding(num, false))
+	resp, err := this.Do("zincr", setName, key, this.encoding(num, false))
 	if err != nil {
 		return 0, goerr.NewError(err, "Zincr %s %s %v", setName, key, num)
 	}
@@ -202,7 +202,7 @@ func (this *Client) Zincr(setName string, key string, num int64) (int64, error) 
 }
 
 func (this *Client) Zlist(nameStart, nameEnd string, limit int64) ([]string, error) {
-	resp, err := this.Client.Do("zlist", nameStart, nameEnd, this.encoding(limit, false))
+	resp, err := this.Do("zlist", nameStart, nameEnd, this.encoding(limit, false))
 	if err != nil {
 		return nil, goerr.NewError(err, "Zlist %s %s %v error", nameStart, nameEnd, limit)
 	}

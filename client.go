@@ -5,17 +5,20 @@ import (
 	"github.com/seefan/goerr"
 	"github.com/seefan/to"
 	"github.com/ssdb/gossdb/ssdb"
+	"log"
 	//	"log"
 	"strconv"
 	"time"
 )
 
-//可关闭连接
+//可回收的连接，支持连接池。
+//非协程安全，多协程请使用多个连接。
 type Client struct {
 	ssdb.Client
 	pool     *Connectors //来源的连接池
 	lastTime time.Time   //最后的更新时间
 	isOpen   bool        //是否已连接
+	password string      //校验密码
 }
 
 //打开连接
@@ -23,6 +26,8 @@ func (this *Client) Start() error {
 	if this.isOpen {
 		return nil
 	}
+	log.Println("set pwd", AuthPassword)
+	this.password = AuthPassword
 	db, err := ssdb.Connect(this.pool.cfg.Host, this.pool.cfg.Port)
 	if err != nil {
 		return err
@@ -130,4 +135,30 @@ func makeError(resp []string, errKey ...interface{}) error {
 	} else {
 		return goerr.New("access ssdb error, code is %v", resp)
 	}
+}
+
+//通用调用方法，如果有需要在所有方法前执行的，可以在这里执行
+func (this *Client) Do(args ...interface{}) ([]string, error) {
+	log.Println("auth:", this.password, args)
+	if this.password != "" {
+		resp, err := this.Client.Do("auth", []string{this.password})
+		if err != nil {
+			return nil, goerr.NewError(err, "authentication failed")
+		}
+		if len(resp) > 0 && resp[0] == "ok" {
+			//验证成功
+			this.password = ""
+		} else {
+			return nil, makeError(resp, "Authentication failed,password is wrong")
+		}
+	}
+	return this.Client.Do(args...)
+}
+
+//配置密码, 之后将用于向服务器校验. 这个校验不是立即进行的, 而是等你执行第一条命令的时候才发给服务器. 注意, 密码是明文传输的!
+//优先使用gossdb.AuthPassowrd配置，本方法仅用于临时修改
+//  password 校验密码
+
+func (this *Client) Auth(password string) {
+	this.password = password
 }
