@@ -1,9 +1,6 @@
 package gossdb
 
-import (
-	"github.com/seefan/goerr"
-	"log"
-)
+import "github.com/seefan/goerr"
 
 //设置 hashmap 中指定 key 对应的值内容.
 //
@@ -100,7 +97,7 @@ func (this *Client) Hclear(setName string) (err error) {
 //  返回 err，执行的错误，操作成功返回 nil
 func (this *Client) Hscan(setName string, keyStart, keyEnd string, limit int64) (map[string]Value, error) {
 
-	resp, err := this.Client.Do("hscan", setName, keyStart, keyEnd, limit)
+	resp, err := this.Do("hscan", setName, keyStart, keyEnd, limit)
 
 	if err != nil {
 		return nil, goerr.NewError(err, "Hscan %s %s %s %v error", setName, keyStart, keyEnd, limit)
@@ -129,7 +126,7 @@ func (this *Client) MultiHset(setName string, kvs map[string]interface{}) (err e
 		args = append(args, k)
 		args = append(args, this.encoding(v, false))
 	}
-	resp, err := this.Client.Do("multi_hset", setName, args)
+	resp, err := this.Do("multi_hset", setName, args)
 
 	if err != nil {
 		return goerr.NewError(err, "MultiHset %s %s error", setName, kvs)
@@ -151,7 +148,7 @@ func (this *Client) MultiHget(setName string, key ...string) (val map[string]Val
 	if len(key) == 0 {
 		return make(map[string]Value), nil
 	}
-	resp, err := this.Client.Do("multi_hget", setName, key)
+	resp, err := this.Do("multi_hget", setName, key)
 
 	if err != nil {
 		return nil, goerr.NewError(err, "MultiHget %s %s error", setName, key)
@@ -177,7 +174,7 @@ func (this *Client) MultiHgetSlice(setName string, key ...string) (keys []string
 	if len(key) == 0 {
 		return []string{}, []Value{}, nil
 	}
-	resp, err := this.Client.Do("multi_hget", setName, key)
+	resp, err := this.Do("multi_hget", setName, key)
 
 	if err != nil {
 		return nil, nil, goerr.NewError(err, "MultiHgetSlice %s %s error", setName, key)
@@ -210,7 +207,7 @@ func (this *Client) MultiHdel(setName string, key ...string) (err error) {
 	if err != nil {
 		return goerr.NewError(err, "MultiHdel %s %s error", setName, key)
 	}
-	log.Println("MultiHdel", resp)
+
 	if len(resp) > 0 && resp[0] == "ok" {
 		return nil
 	}
