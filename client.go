@@ -2,13 +2,12 @@ package gossdb
 
 import (
 	"encoding/json"
+	"strconv"
+	"time"
+
 	"github.com/seefan/goerr"
 	"github.com/seefan/to"
 	"github.com/ssdb/gossdb/ssdb"
-	"log"
-	//	"log"
-	"strconv"
-	"time"
 )
 
 //可回收的连接，支持连接池。
@@ -26,7 +25,7 @@ func (this *Client) Start() error {
 	if this.isOpen {
 		return nil
 	}
-	log.Println("set pwd", AuthPassword)
+	//log.Println("set pwd", AuthPassword)
 	this.password = AuthPassword
 	db, err := ssdb.Connect(this.pool.cfg.Host, this.pool.cfg.Port)
 	if err != nil {
@@ -42,10 +41,14 @@ func (this *Client) Start() error {
 func (this *Client) Close() {
 	this.lastTime = time.Now()
 	if this.pool == nil { //连接池不存在，只关闭自己的连接
-		this.Client.Close()
-		this.isOpen = false
+		if this.isOpen {
+			this.Client.Close()
+			this.isOpen = false
+		}
 	} else {
-		this.pool.closeClient(this)
+		if this.isOpen {
+			this.pool.closeClient(this)
+		}
 	}
 }
 
@@ -139,10 +142,12 @@ func makeError(resp []string, errKey ...interface{}) error {
 
 //通用调用方法，如果有需要在所有方法前执行的，可以在这里执行
 func (this *Client) Do(args ...interface{}) ([]string, error) {
-	log.Println("auth:", this.password, args)
+	//log.Println("auth:", this.password, args)
 	if this.password != "" {
 		resp, err := this.Client.Do("auth", []string{this.password})
 		if err != nil {
+			this.Client.Close()
+			this.isOpen = false
 			return nil, goerr.NewError(err, "authentication failed")
 		}
 		if len(resp) > 0 && resp[0] == "ok" {
@@ -152,7 +157,12 @@ func (this *Client) Do(args ...interface{}) ([]string, error) {
 			return nil, makeError(resp, "Authentication failed,password is wrong")
 		}
 	}
-	return this.Client.Do(args...)
+	resp, err := this.Client.Do(args...)
+	if err != nil {
+		this.Client.Close()
+		this.isOpen = false
+	}
+	return resp, err
 }
 
 //配置密码, 之后将用于向服务器校验. 这个校验不是立即进行的, 而是等你执行第一条命令的时候才发给服务器. 注意, 密码是明文传输的!

@@ -3,7 +3,6 @@ package gossdb
 import (
 	"github.com/seefan/goerr"
 	"github.com/seefan/to"
-	"log"
 )
 
 func (this *Client) Zset(setName, key string, score int64) (err error) {
@@ -154,7 +153,7 @@ func (this *Client) MultiZget(setName string, key ...string) (keys []string, sco
 	if err != nil {
 		return nil, nil, goerr.NewError(err, "MultiZget %s %s error", setName, key)
 	}
-	log.Println("MultiZget", resp)
+
 	size := len(resp)
 	if size > 0 && resp[0] == "ok" {
 
@@ -179,7 +178,7 @@ func (this *Client) MultiZdel(setName string, key ...string) (err error) {
 	if err != nil {
 		return goerr.NewError(err, "MultiZdel %s %s error", setName, key)
 	}
-	log.Println("MultiZdel", resp)
+
 	if len(resp) > 0 && resp[0] == "ok" {
 		return nil
 	}
@@ -194,7 +193,7 @@ func (this *Client) Zincr(setName string, key string, num int64) (int64, error) 
 	if err != nil {
 		return 0, goerr.NewError(err, "Zincr %s %s %v", setName, key, num)
 	}
-	log.Println("Zincr", resp)
+
 	if len(resp) > 1 && resp[0] == "ok" {
 		return to.Int64(resp[1]), nil
 	}

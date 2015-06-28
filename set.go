@@ -1,10 +1,6 @@
 package gossdb
 
-import (
-	"log"
-	//	"fmt"
-	"github.com/seefan/goerr"
-)
+import "github.com/seefan/goerr"
 
 //设置指定 key 的值内容
 //
@@ -204,7 +200,7 @@ func (this *Client) MultiGet(key ...string) (val map[string]Value, err error) {
 	if err != nil {
 		return nil, goerr.NewError(err, "MultiGet %s error", key)
 	}
-	log.Println("MultiGet", resp)
+
 	size := len(resp)
 	if size > 0 && resp[0] == "ok" {
 		val = make(map[string]Value)
@@ -229,7 +225,7 @@ func (this *Client) MultiDel(key ...string) (err error) {
 	if err != nil {
 		return goerr.NewError(err, "MultiDel %s error", key)
 	}
-	log.Println("MultiDel", resp)
+
 	if len(resp) > 0 && resp[0] == "ok" {
 		return nil
 	}

@@ -2,8 +2,6 @@ package gossdb
 
 import (
 	"github.com/seefan/goerr"
-
-	//	"log"
 )
 
 var (
