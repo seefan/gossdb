@@ -125,7 +125,7 @@ func (this *Client) MultiZset(setName string, kvs map[string]int64) (err error) 
 	return makeError(resp, setName, kvs)
 }
 
-func (this *Client) MultiZgetMap(setName string, key ...string) (val map[string]int64, err error) {
+func (this *Client) MultiZget(setName string, key ...string) (val map[string]int64, err error) {
 	if len(key) == 0 {
 		return make(map[string]int64), nil
 	}
@@ -144,7 +144,7 @@ func (this *Client) MultiZgetMap(setName string, key ...string) (val map[string]
 	}
 	return nil, makeError(resp, key)
 }
-func (this *Client) MultiZget(setName string, key ...string) (keys []string, scores []int64, err error) {
+func (this *Client) MultiZgetSlice(setName string, key ...string) (keys []string, scores []int64, err error) {
 	if len(key) == 0 {
 		return []string{}, []int64{}, nil
 	}
