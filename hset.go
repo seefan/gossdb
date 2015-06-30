@@ -248,6 +248,57 @@ func (this *Client) MultiHgetSliceArray(setName string, key []string) (keys []st
 	return nil, nil, makeError(resp, key)
 }
 
+//批量获取 hashmap 中全部 对应的权重值.
+//
+//  setName - hashmap 的名字.
+//  keys - 包含 key 的数组 .
+//  返回 包含 key-value 的关联数组, 如果某个 key 不存在, 则它不会出现在返回数组中.
+//  返回 err，执行的错误，操作成功返回 nil
+func (this *Client) MultiHgetAll(setName string) (val map[string]Value, err error) {
+
+	resp, err := this.Do("hgetall", setName)
+
+	if err != nil {
+		return nil, goerr.NewError(err, "MultiHgetAll %s error", setName)
+	}
+	size := len(resp)
+	if size > 0 && resp[0] == "ok" {
+		val = make(map[string]Value)
+		for i := 1; i < size && i+1 < size; i += 2 {
+			val[resp[i]] = Value(resp[i+1])
+		}
+		return val, nil
+	}
+	return nil, makeError(resp)
+}
+
+//批量获取 hashmap 中全部 对应的权重值.
+//
+//  setName - hashmap 的名字.
+//  keys - 包含 key 的数组 .
+//  返回 包含 key和value 的有序数组, 如果某个 key 不存在, 则它不会出现在返回数组中.
+//  返回 err，执行的错误，操作成功返回 nil
+func (this *Client) MultiHgetAllSlice(setName string) (keys []string, values []Value, err error) {
+
+	resp, err := this.Do("hgetall", setName)
+
+	if err != nil {
+		return nil, nil, goerr.NewError(err, "MultiHgetAllSlice %s error", setName)
+	}
+	if len(resp) > 0 && resp[0] == "ok" {
+		size := len(resp)
+		keys := make([]string, 0, (size-1)/2)
+		values := make([]Value, 0, (size-1)/2)
+
+		for i := 1; i < size && i+1 < size; i += 2 {
+			keys = append(keys, resp[i])
+			values = append(values, Value(resp[i+1]))
+		}
+		return keys, values, nil
+	}
+	return nil, nil, makeError(resp)
+}
+
 //批量删除 hashmap 中的 key.
 //
 //  setName - hashmap 的名字.
