@@ -212,6 +212,36 @@ func (this *Client) MultiGet(key ...string) (val map[string]Value, err error) {
 	return nil, makeError(resp, key)
 }
 
+//批量获取一批 key 对应的值内容.
+//
+//  key，要获取的 key，可以为多个
+//  返回 keys和value分片
+//  返回 err，可能的错误，操作成功返回 nil
+func (this *Client) MultiGetSlice(key ...string) (keys []string, values []Value, err error) {
+	if len(key) == 0 {
+		return []string{}, []Value{}, nil
+	}
+	resp, err := this.Do("multi_get", key)
+
+	if err != nil {
+		return nil, nil, goerr.NewError(err, "MultiGet %s error", key)
+	}
+
+	size := len(resp)
+	if size > 0 && resp[0] == "ok" {
+
+		keys := make([]string, 0, (size-1)/2)
+		values := make([]Value, 0, (size-1)/2)
+
+		for i := 1; i < size && i+1 < size; i += 2 {
+			keys = append(keys, resp[i])
+			values = append(values, Value(resp[i+1]))
+		}
+		return keys, values, nil
+	}
+	return nil, nil, makeError(resp, key)
+}
+
 //批量删除一批 key 和其对应的值内容.
 //
 //  key，要删除的 key，可以为多个
