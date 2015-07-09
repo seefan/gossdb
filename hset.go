@@ -308,7 +308,28 @@ func (this *Client) MultiHdel(setName string, key ...string) (err error) {
 	if len(key) == 0 {
 		return nil
 	}
-	resp, err := this.Do("multi_hdel", key)
+	resp, err := this.Do("multi_hdel", setName, key)
+
+	if err != nil {
+		return goerr.NewError(err, "MultiHdel %s %s error", setName, key)
+	}
+
+	if len(resp) > 0 && resp[0] == "ok" {
+		return nil
+	}
+	return makeError(resp, key)
+}
+
+//批量删除 hashmap 中的 key.（输入分片）
+//
+//  setName - hashmap 的名字.
+//  keys - 包含 key 的数组.
+//  返回 err，执行的错误，操作成功返回 nil
+func (this *Client) MultiHdelArray(setName string, key []string) (err error) {
+	if len(key) == 0 {
+		return nil
+	}
+	resp, err := this.Do("multi_hdel", setName, key)
 
 	if err != nil {
 		return goerr.NewError(err, "MultiHdel %s %s error", setName, key)
