@@ -8,7 +8,7 @@ import "github.com/seefan/goerr"
 //  val 存贮的 value 值,val只支持基本的类型，如果要支持复杂的类型，需要开启连接池的 Encoding 选项
 //  ttl 可选，设置的过期时间，单位为秒
 //  返回 err，可能的错误，操作成功返回 nil
-func (this *Client) Set(key string, val interface{}, ttl ...int) (err error) {
+func (this *Client) Set(key string, val interface{}, ttl ...int64) (err error) {
 	var resp []string
 	if len(ttl) > 0 {
 		resp, err = this.Do("setx", key, this.encoding(val, false), ttl[0])
@@ -81,7 +81,7 @@ func (this *Client) Getset(key string, val interface{}) (Value, error) {
 //  ttl 存活时间(秒)
 //  返回 re，设置是否成功，如果当前 key 不存在返回 false
 //  返回 err，执行的错误，操作成功返回 nil
-func (this *Client) Expire(key string, ttl int) (re bool, err error) {
+func (this *Client) Expire(key string, ttl int64) (re bool, err error) {
 	resp, err := this.Do("expire", key, ttl)
 	if err != nil {
 		return false, goerr.NewError(err, "Expire %s error", key)
