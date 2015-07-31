@@ -141,6 +141,49 @@ func (this *Client) Qpop(name string, reverse ...bool) (v Value, err error) {
 	return "", makeError(resp, name)
 }
 
+//从队列首部弹出最后多个元素.
+//
+//  name 队列的名字
+//  返回 v，返回多个元素，并在队列中弹出多个元素；
+//  返回 err，执行的错误，操作成功返回 nil
+func (this *Client) Qpop_front_array(name string, size int64) (v []Value, err error) {
+	return this.QpopArray(name, size, false)
+}
+
+//从队列尾部弹出最后多个元素.
+//
+//  name 队列的名字
+//  返回 v，返回多个元素，并在队列中弹出多个元素；
+//  返回 err，执行的错误，操作成功返回 nil
+func (this *Client) Qpop_back_array(name string, size int64) (v []Value, err error) {
+	return this.QpopArray(name, size, true)
+}
+
+//从队列首部弹出最后多个个元素.
+//
+//  name 队列的名字
+//  返回 v，返回多个元素，并在队列中弹出多个元素；
+//  返回 err，执行的错误，操作成功返回 nil
+func (this *Client) QpopArray(name string, size int64, reverse ...bool) (v []Value, err error) {
+	index := 1
+	if len(reverse) > 0 && !reverse[0] {
+		index = 0
+	}
+	resp, err := this.Do(qpop_cmd[index], name, size)
+	if err != nil {
+		return nil, goerr.NewError(err, "%s %s error", qpop_cmd[index], name)
+	}
+
+	respsize := len(resp)
+	if respsize > 1 && resp[0] == "ok" {
+		for i := 1; i < respsize; i++ {
+			v = append(v, Value(resp[i]))
+		}
+		return
+	}
+	return nil, makeError(resp, name)
+}
+
 //返回下标处于区域 [offset, offset + limit] 的元素.
 //
 //  name queue 的名字.
