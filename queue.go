@@ -343,3 +343,25 @@ func (this *Client) Qget(key string, index int64) (Value, error) {
 	}
 	return "", makeError(resp, key)
 }
+
+func (this *Client) Qfront(key string) (Value, error) {
+	resp, err := this.Do("qfront", key)
+	if err != nil {
+		return "", goerr.NewError(err, "Qfront %s error", key)
+	}
+	if len(resp) == 2 && resp[0] == "ok" {
+		return Value(resp[1]), nil
+	}
+	return "", makeError(resp, key)
+}
+
+func (this *Client) Qback(key string) (Value, error) {
+	resp, err := this.Do("qback", key)
+	if err != nil {
+		return "", goerr.NewError(err, "Qback %s error", key)
+	}
+	if len(resp) == 2 && resp[0] == "ok" {
+		return Value(resp[1]), nil
+	}
+	return "", makeError(resp, key)
+}
