@@ -365,3 +365,62 @@ func (this *Client) Qback(key string) (Value, error) {
 	}
 	return "", makeError(resp, key)
 }
+
+//往队列的首部添加一个或者多个元素
+//
+//  name  队列的名字
+//  reverse 是否反向
+//  value  存贮的值，可以为多值.
+//  返回 size，添加元素之后, 队列的长度
+//  返回 err，执行的错误，操作成功返回 nil
+func (this *Client) qpush_array(name string, reverse bool, value []interface{}) (size int64, err error) {
+	if len(value) == 0 {
+		return -1, nil
+	}
+	index := 0
+	if reverse {
+		index = 1
+	}
+	args := []string{name}
+	for _, v := range value {
+		args = append(args, this.encoding(v, false))
+	}
+	resp, err := this.Do(qpush_cmd[index], args)
+	if err != nil {
+		return -1, goerr.NewError(err, "%s %s error", qpush_cmd[index], name)
+	}
+	if len(resp) == 2 && resp[0] == "ok" {
+		return Value(resp[1]).Int64(), nil
+	}
+	return -1, makeError(resp, name)
+}
+
+//往队列的尾部添加一个或者多个元素
+//
+//  name  队列的名字
+//  value  存贮的值，可以为多值.
+//  返回 size，添加元素之后, 队列的长度
+//  返回 err，执行的错误，操作成功返回 nil
+func (this *Client) Qpush_array(name string, value []interface{}) (size int64, err error) {
+	return this.qpush_array(name, true, value)
+}
+
+//往队列的尾部添加一个或者多个元素
+//
+//  name  队列的名字
+//  value  存贮的值，可以为多值.
+//  返回 size，添加元素之后, 队列的长度
+//  返回 err，执行的错误，操作成功返回 nil
+func (this *Client) Qpush_back_array(name string, value []interface{}) (size int64, err error) {
+	return this.qpush_array(name, true, value)
+}
+
+//往队列的首部添加一个或者多个元素
+//
+//  name  队列的名字
+//  value  存贮的值，可以为多值.
+//  返回 size，添加元素之后, 队列的长度
+//  返回 err，执行的错误，操作成功返回 nil
+func (this *Client) Qpush_front_array(name string, value []interface{}) (size int64, err error) {
+	return this.qpush_array(name, false, value)
+}
