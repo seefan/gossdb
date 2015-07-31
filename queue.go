@@ -318,3 +318,28 @@ func (this *Client) Qrlist(nameStart, nameEnd string, limit int64) ([]string, er
 	}
 	return nil, makeError(resp, nameStart, nameEnd, limit)
 }
+
+func (this *Client) Qset(key string, index int64, val interface{}) (err error) {
+	var resp []string
+
+	resp, err = this.Do("qset", key, index, this.encoding(val, false))
+
+	if err != nil {
+		return goerr.NewError(err, "Qset %s error", key)
+	}
+	if len(resp) > 0 && resp[0] == "ok" {
+		return nil
+	}
+	return makeError(resp, key)
+}
+
+func (this *Client) Qget(key string, index int64) (Value, error) {
+	resp, err := this.Do("qget", key, index)
+	if err != nil {
+		return "", goerr.NewError(err, "Qget %s error", key)
+	}
+	if len(resp) == 2 && resp[0] == "ok" {
+		return Value(resp[1]), nil
+	}
+	return "", makeError(resp, key)
+}
