@@ -141,6 +141,49 @@ func (this *Client) Qpop(name string, reverse ...bool) (v Value, err error) {
 	return "", makeError(resp, name)
 }
 
+//从队列首部弹出最后多个元素.
+//
+//  name 队列的名字
+//  返回 v，返回多个元素，并在队列中弹出多个元素；
+//  返回 err，执行的错误，操作成功返回 nil
+func (this *Client) Qpop_front_array(name string, size int64) (v []Value, err error) {
+	return this.QpopArray(name, size, false)
+}
+
+//从队列尾部弹出最后多个元素.
+//
+//  name 队列的名字
+//  返回 v，返回多个元素，并在队列中弹出多个元素；
+//  返回 err，执行的错误，操作成功返回 nil
+func (this *Client) Qpop_back_array(name string, size int64) (v []Value, err error) {
+	return this.QpopArray(name, size, true)
+}
+
+//从队列首部弹出最后多个个元素.
+//
+//  name 队列的名字
+//  返回 v，返回多个元素，并在队列中弹出多个元素；
+//  返回 err，执行的错误，操作成功返回 nil
+func (this *Client) QpopArray(name string, size int64, reverse ...bool) (v []Value, err error) {
+	index := 1
+	if len(reverse) > 0 && !reverse[0] {
+		index = 0
+	}
+	resp, err := this.Do(qpop_cmd[index], name, size)
+	if err != nil {
+		return nil, goerr.NewError(err, "%s %s error", qpop_cmd[index], name)
+	}
+
+	respsize := len(resp)
+	if respsize > 1 && resp[0] == "ok" {
+		for i := 1; i < respsize; i++ {
+			v = append(v, Value(resp[i]))
+		}
+		return
+	}
+	return nil, makeError(resp, name)
+}
+
 //返回下标处于区域 [offset, offset + limit] 的元素.
 //
 //  name queue 的名字.
@@ -274,4 +317,110 @@ func (this *Client) Qrlist(nameStart, nameEnd string, limit int64) ([]string, er
 		return keyList, nil
 	}
 	return nil, makeError(resp, nameStart, nameEnd, limit)
+}
+
+func (this *Client) Qset(key string, index int64, val interface{}) (err error) {
+	var resp []string
+
+	resp, err = this.Do("qset", key, index, this.encoding(val, false))
+
+	if err != nil {
+		return goerr.NewError(err, "Qset %s error", key)
+	}
+	if len(resp) > 0 && resp[0] == "ok" {
+		return nil
+	}
+	return makeError(resp, key)
+}
+
+func (this *Client) Qget(key string, index int64) (Value, error) {
+	resp, err := this.Do("qget", key, index)
+	if err != nil {
+		return "", goerr.NewError(err, "Qget %s error", key)
+	}
+	if len(resp) == 2 && resp[0] == "ok" {
+		return Value(resp[1]), nil
+	}
+	return "", makeError(resp, key)
+}
+
+func (this *Client) Qfront(key string) (Value, error) {
+	resp, err := this.Do("qfront", key)
+	if err != nil {
+		return "", goerr.NewError(err, "Qfront %s error", key)
+	}
+	if len(resp) == 2 && resp[0] == "ok" {
+		return Value(resp[1]), nil
+	}
+	return "", makeError(resp, key)
+}
+
+func (this *Client) Qback(key string) (Value, error) {
+	resp, err := this.Do("qback", key)
+	if err != nil {
+		return "", goerr.NewError(err, "Qback %s error", key)
+	}
+	if len(resp) == 2 && resp[0] == "ok" {
+		return Value(resp[1]), nil
+	}
+	return "", makeError(resp, key)
+}
+
+//往队列的首部添加一个或者多个元素
+//
+//  name  队列的名字
+//  reverse 是否反向
+//  value  存贮的值，可以为多值.
+//  返回 size，添加元素之后, 队列的长度
+//  返回 err，执行的错误，操作成功返回 nil
+func (this *Client) qpush_array(name string, reverse bool, value []interface{}) (size int64, err error) {
+	if len(value) == 0 {
+		return -1, nil
+	}
+	index := 0
+	if reverse {
+		index = 1
+	}
+	args := []string{name}
+	for _, v := range value {
+		args = append(args, this.encoding(v, false))
+	}
+	resp, err := this.Do(qpush_cmd[index], args)
+	if err != nil {
+		return -1, goerr.NewError(err, "%s %s error", qpush_cmd[index], name)
+	}
+	if len(resp) == 2 && resp[0] == "ok" {
+		return Value(resp[1]).Int64(), nil
+	}
+	return -1, makeError(resp, name)
+}
+
+//往队列的尾部添加一个或者多个元素
+//
+//  name  队列的名字
+//  value  存贮的值，可以为多值.
+//  返回 size，添加元素之后, 队列的长度
+//  返回 err，执行的错误，操作成功返回 nil
+func (this *Client) Qpush_array(name string, value []interface{}) (size int64, err error) {
+	return this.qpush_array(name, true, value)
+}
+
+//往队列的尾部添加一个或者多个元素
+//
+//  name  队列的名字
+//  value  存贮的值，可以为多值.
+//  返回 size，添加元素之后, 队列的长度
+//  返回 err，执行的错误，操作成功返回 nil
+func (this *Client) Qpush_back_array(name string, value []interface{}) (size int64, err error) {
+	return this.qpush_array(name, true, value)
+}
+
+//往队列的首部添加一个或者多个元素
+//
+//  name  队列的名字
+//  value  存贮的值，可以为多值.
+//  返回 size，添加元素之后, 队列的长度
+//  返回 err，执行的错误，操作成功返回 nil
+func (this *Client) Qpush_front_array(name string, value []interface{}) (size int64, err error) {
+	return this.qpush_array(name, false, value)
 }
