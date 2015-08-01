@@ -283,6 +283,13 @@ func (this *Client) Qtrim_back(name string, size int) (delSize int64, err error)
 	return this.Qtrim(name, size, true)
 }
 
+//列出名字处于区间 (name_start, name_end] 的 queue/list.
+//
+//  name_start  返回的起始名字(不包含), 空字符串表示 -inf.
+//  name_end  返回的结束名字(包含), 空字符串表示 +inf.
+//  limit  最多返回这么多个元素.
+//  返回 v，返回元素的数组，为空时返回 nil
+//  返回 err，执行的错误，操作成功返回 nil
 func (this *Client) Qlist(nameStart, nameEnd string, limit int64) ([]string, error) {
 	resp, err := this.Do("qlist", nameStart, nameEnd, this.encoding(limit, false))
 	if err != nil {
@@ -301,6 +308,13 @@ func (this *Client) Qlist(nameStart, nameEnd string, limit int64) ([]string, err
 	return nil, makeError(resp, nameStart, nameEnd, limit)
 }
 
+//列出名字处于区间 (name_start, name_end] 的 queue/list.
+//
+//  name_start  返回的起始名字(不包含), 空字符串表示 -inf.
+//  name_end  返回的结束名字(包含), 空字符串表示 +inf.
+//  limit  最多返回这么多个元素.
+//  返回 v，返回元素的数组，为空时返回 nil
+//  返回 err，执行的错误，操作成功返回 nil
 func (this *Client) Qrlist(nameStart, nameEnd string, limit int64) ([]string, error) {
 	resp, err := this.Do("qrlist", nameStart, nameEnd, this.encoding(limit, false))
 	if err != nil {
@@ -319,6 +333,12 @@ func (this *Client) Qrlist(nameStart, nameEnd string, limit int64) ([]string, er
 	return nil, makeError(resp, nameStart, nameEnd, limit)
 }
 
+//更新位于 index 位置的元素. 如果超过现有的元素范围, 会返回错误.
+//
+//  key  队列的名字
+//  index 指定的位置，可传负数.
+//  val  传入的值.
+//  返回 err，执行的错误，操作成功返回 nil
 func (this *Client) Qset(key string, index int64, val interface{}) (err error) {
 	var resp []string
 
@@ -333,6 +353,12 @@ func (this *Client) Qset(key string, index int64, val interface{}) (err error) {
 	return makeError(resp, key)
 }
 
+//返回指定位置的元素. 0 表示第一个元素, 1 是第二个 ... -1 是最后一个.
+//
+//  key  队列的名字
+//  index 指定的位置，可传负数.
+//  返回 val，返回的值.
+//  返回 err，执行的错误，操作成功返回 nil
 func (this *Client) Qget(key string, index int64) (Value, error) {
 	resp, err := this.Do("qget", key, index)
 	if err != nil {
@@ -344,6 +370,11 @@ func (this *Client) Qget(key string, index int64) (Value, error) {
 	return "", makeError(resp, key)
 }
 
+//返回队列的第一个元素.
+//
+//  key  队列的名字
+//  返回 val，返回的值.
+//  返回 err，执行的错误，操作成功返回 nil
 func (this *Client) Qfront(key string) (Value, error) {
 	resp, err := this.Do("qfront", key)
 	if err != nil {
@@ -355,6 +386,11 @@ func (this *Client) Qfront(key string) (Value, error) {
 	return "", makeError(resp, key)
 }
 
+//返回队列的最后一个元素.
+//
+//  key  队列的名字
+//  返回 val，返回的值.
+//  返回 err，执行的错误，操作成功返回 nil
 func (this *Client) Qback(key string) (Value, error) {
 	resp, err := this.Do("qback", key)
 	if err != nil {
