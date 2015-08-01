@@ -51,6 +51,19 @@ func (this *Client) Zexists(setName, key string) (re bool, err error) {
 	return false, makeError(resp, setName, key)
 }
 
+func (this *Client) Zcount(setName string, start, end interface{}) (count int64, err error) {
+	resp, err := this.Do("zcount", setName, this.encoding(start, false), this.encoding(end, false))
+	if err != nil {
+		return -1, goerr.NewError(err, "Zcount %s %v %v error", setName, start, end)
+	}
+
+	if len(resp) == 2 && resp[0] == "ok" {
+		return Value(resp[1]).Int64(), nil
+	}
+	return -1, makeError(resp, setName)
+
+}
+
 func (this *Client) Zclear(setName string) (err error) {
 	resp, err := this.Do("zclear", setName)
 	if err != nil {
