@@ -22,6 +22,8 @@
 
 更多说明请见[这里](https://gowalker.org/github.com/seefan/gossdb)
 
+所有的API基本上忠于ssdb的原始API用法，只针对go的特点增加部分方法。所以也可以参照官方文档使用。
+
 示例：
 
 
