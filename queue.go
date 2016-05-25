@@ -162,6 +162,8 @@ func (this *Client) Qpop_back_array(name string, size int64) (v []Value, err err
 //从队列首部弹出最后多个个元素.
 //
 //  name 队列的名字
+//  size 取出元素的数量
+//  reverse 是否反转取
 //  返回 v，返回多个元素，并在队列中弹出多个元素；
 //  返回 err，执行的错误，操作成功返回 nil
 func (this *Client) QpopArray(name string, size int64, reverse ...bool) (v []Value, err error) {

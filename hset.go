@@ -412,3 +412,21 @@ func (this *Client) Hincr(setName, key string, num int64) (val int64, err error)
 	}
 	return -1, makeError(resp, key)
 }
+
+//返回 hashmap 中的元素个数.
+//
+//  setName - hashmap 的名字.
+//  返回 val，整数，增加 num 后的新值
+//  返回 err，可能的错误，操作成功返回 nil
+func (this *Client) Hsize(setName string) (val int64, err error) {
+
+	resp, err := this.Do("hsize", setName)
+
+	if err != nil {
+		return -1, goerr.NewError(err, "Hsize %s error", setName)
+	}
+	if len(resp) == 2 && resp[0] == "ok" {
+		return Value(resp[1]).Int64(), nil
+	}
+	return -1, makeError(resp, setName)
+}
