@@ -5,6 +5,12 @@ import (
 	"github.com/seefan/to"
 )
 
+//设置 zset 中指定 key 对应的权重值.
+//
+//  setName zset名称
+//  key zset 中的 key.
+//  score 整数, key 对应的权重值
+//  返回 err，可能的错误，操作成功返回 nil
 func (this *Client) Zset(setName, key string, score int64) (err error) {
 	resp, err := this.Do("zset", setName, key, this.encoding(score, false))
 	if err != nil {
@@ -17,6 +23,12 @@ func (this *Client) Zset(setName, key string, score int64) (err error) {
 	return makeError(resp, setName, key)
 }
 
+//获取 zset 中指定 key 对应的权重值.
+//
+//  setName zset名称
+//  key zset 中的 key.
+//  返回 score 整数, key 对应的权重值
+//  返回 err，可能的错误，操作成功返回 nil
 func (this *Client) Zget(setName, key string) (score int64, err error) {
 	resp, err := this.Do("zget", setName, key)
 	if err != nil {
@@ -28,6 +40,11 @@ func (this *Client) Zget(setName, key string) (score int64, err error) {
 	return 0, makeError(resp, setName, key)
 }
 
+//删除 zset 中指定 key
+//
+//  setName zset名称
+//  key zset 中的 key.
+//  返回 err，可能的错误，操作成功返回 nil
 func (this *Client) Zdel(setName, key string) (err error) {
 	resp, err := this.Do("zdel", setName, key)
 	if err != nil {
@@ -39,6 +56,12 @@ func (this *Client) Zdel(setName, key string) (err error) {
 	return makeError(resp, setName, key)
 }
 
+//判断指定的 key 是否存在于 zset 中.
+//
+//  setName zset名称
+//  key zset 中的 key.
+//  返回 re 如果存在, 返回 true, 否则返回 false.
+//  返回 err，可能的错误，操作成功返回 nil
 func (this *Client) Zexists(setName, key string) (re bool, err error) {
 	resp, err := this.Do("zexists", setName, key)
 	if err != nil {
@@ -51,6 +74,13 @@ func (this *Client) Zexists(setName, key string) (re bool, err error) {
 	return false, makeError(resp, setName, key)
 }
 
+//返回处于区间 [start,end] key 数量.
+//
+//  setName zset名称
+//  start key 的最小权重值(包含), 空字符串表示 -inf.
+//  end key 的最大权重值(包含), 空字符串表示 +inf.
+//  返回 count 返回符合条件的 key 的数量.
+//  返回 err，可能的错误，操作成功返回 nil
 func (this *Client) Zcount(setName string, start, end interface{}) (count int64, err error) {
 	resp, err := this.Do("zcount", setName, this.encoding(start, false), this.encoding(end, false))
 	if err != nil {
@@ -61,9 +91,12 @@ func (this *Client) Zcount(setName string, start, end interface{}) (count int64,
 		return Value(resp[1]).Int64(), nil
 	}
 	return -1, makeError(resp, setName)
-
 }
 
+//删除 zset 中的所有 key.
+//
+//  setName zset名称
+//  返回 err，可能的错误，操作成功返回 nil
 func (this *Client) Zclear(setName string) (err error) {
 	resp, err := this.Do("zclear", setName)
 	if err != nil {
@@ -76,7 +109,19 @@ func (this *Client) Zclear(setName string) (err error) {
 	return makeError(resp, setName)
 }
 
-// scoreStart,scoreEnd 空字符串"" 或者 int64
+//列出 zset 中处于区间 (key_start+score_start, score_end] 的 key-score 列表.
+//
+//  如果 key_start 为空, 那么对应权重值大于或者等于 score_start 的 key 将被返回. 如果 key_start 不为空, 那么对应权重值大于 score_start 的 key, 或者大于 key_start 且对应权重值等于 score_start 的 key 将被返回.
+//  也就是说, 返回的 key 在 (key.score == score_start && key > key_start || key.score > score_start), 并且 key.score <= score_end 区间. 先判断 score_start, score_end, 然后判断 key_start.
+//
+//  setName zset名称
+//  keyStart score_start 对应的 key.
+//  scoreStart 返回 key 的最小权重值(可能不包含, 依赖 key_start), 空字符串表示 -inf.
+//  scoreEnd 返回 key 的最大权重值(包含), 空字符串表示 +inf.
+//  limit  最多返回这么多个元素.
+//  返回 keys 返回符合条件的 key 的数组.
+//  返回 scores 返回符合条件的 key 对应的权重.
+//  返回 err，可能的错误，操作成功返回 nil
 func (this *Client) Zscan(setName string, keyStart string, scoreStart, scoreEnd interface{}, limit int64) (keys []string, scores []int64, err error) {
 	resp, err := this.Do("zscan", setName, keyStart, this.encoding(scoreStart, false), this.encoding(scoreEnd, false), limit)
 
@@ -97,7 +142,16 @@ func (this *Client) Zscan(setName string, keyStart string, scoreStart, scoreEnd 
 	return nil, nil, makeError(resp, setName, keyStart, scoreStart, scoreEnd, limit)
 }
 
-// scoreStart,scoreEnd 空字符串"" 或者 int64
+//列出 zset 中的 key-score 列表, 反向顺序
+//
+//  setName zset名称
+//  keyStart score_start 对应的 key.
+//  scoreStart 返回 key 的最小权重值(可能不包含, 依赖 key_start), 空字符串表示 -inf.
+//  scoreEnd 返回 key 的最大权重值(包含), 空字符串表示 +inf.
+//  limit  最多返回这么多个元素.
+//  返回 keys 返回符合条件的 key 的数组.
+//  返回 scores 返回符合条件的 key 对应的权重.
+//  返回 err，可能的错误，操作成功返回 nil
 func (this *Client) Zrscan(setName string, keyStart string, scoreStart, scoreEnd interface{}, limit int64) (keys []string, scores []int64, err error) {
 	resp, err := this.Do("zrscan", setName, keyStart, this.encoding(scoreStart, false), this.encoding(scoreEnd, false), limit)
 
