@@ -588,3 +588,49 @@ func (this *Client) Zremrangebyscore(setName string, start, end int64) (err erro
 	}
 	return makeError(resp, setName, start, end)
 }
+
+//从 zset 首部删除并返回 `limit` 个元素.
+//
+//  setName zset名称
+//  limit 最多要删除并返回这么多个 key-score 对.
+//  返回 包含 key-score 的map
+//  返回 err，可能的错误，操作成功返回 nil
+func (this *Client) Zpopfront(setName string, limit int64) (val map[string]int64, err error) {
+	resp, err := this.Do("zpop_front", setName, this.encoding(limit))
+
+	if err != nil {
+		return nil, goerr.NewError(err, "Zpopfront %s %s  error", setName, limit)
+	}
+	size := len(resp)
+	if size > 0 && resp[0] == "ok" {
+		val = make(map[string]int64)
+		for i := 1; i < size && i+1 < size; i += 2 {
+			val[resp[i]] = Value(resp[i+1]).Int64()
+		}
+		return val, nil
+	}
+	return nil, makeError(resp, setName, limit)
+}
+
+//从 zset 尾部删除并返回 `limit` 个元素.
+//
+//  setName zset名称
+//  limit 最多要删除并返回这么多个 key-score 对.
+//  返回 包含 key-score 的map
+//  返回 err，可能的错误，操作成功返回 nil
+func (this *Client) Zpopback(setName string, limit int64) (val map[string]int64, err error) {
+	resp, err := this.Do("zpop_back", setName, this.encoding(limit))
+
+	if err != nil {
+		return nil, goerr.NewError(err, "Zpopback %s %s  error", setName, limit)
+	}
+	size := len(resp)
+	if size > 0 && resp[0] == "ok" {
+		val = make(map[string]int64)
+		for i := 1; i < size && i+1 < size; i += 2 {
+			val[resp[i]] = Value(resp[i+1]).Int64()
+		}
+		return val, nil
+	}
+	return nil, makeError(resp, setName, limit)
+}
