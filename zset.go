@@ -504,3 +504,51 @@ func (this *Client) Zrrank(setName, key string) (val int64, err error) {
 	}
 	return 0, makeError(resp, setName, key)
 }
+
+//根据下标索引区间 [offset, offset + limit) 获取 key-score 对, 下标从 0 开始.注意! 本方法在 offset 越来越大时, 会越慢!
+//
+//  setName zset名称
+//  offset 从此下标处开始返回. 从 0 开始.
+//  limit  最多返回这么多个 key-score 对.
+//  返回 val 排名
+//  返回 err，可能的错误，操作成功返回 nil
+func (this *Client) Zrange(setName string, offset, limit int64) (val map[string]int64, err error) {
+	resp, err := this.Do("zrange", setName, this.encoding(offset), this.encoding(limit))
+
+	if err != nil {
+		return nil, goerr.NewError(err, "Zrange %s %s  error", setName, offset, limit)
+	}
+	if len(resp) > 0 && resp[0] == "ok" {
+		size := len(resp)
+
+		for i := 1; i < size-1; i += 2 {
+			val[resp[i]] = Value(resp[i+1]).Int64()
+		}
+		return val, nil
+	}
+	return nil, makeError(resp, setName, offset, limit)
+}
+
+//根据下标索引区间 [offset, offset + limit) 获取 key-score 对, 反向顺序获取.注意! 本方法在 offset 越来越大时, 会越慢!
+//
+//  setName zset名称
+//  offset 从此下标处开始返回. 从 0 开始.
+//  limit  最多返回这么多个 key-score 对.
+//  返回 val 排名
+//  返回 err，可能的错误，操作成功返回 nil
+func (this *Client) Zrrange(setName string, offset, limit int64) (val map[string]int64, err error) {
+	resp, err := this.Do("zrrange", setName, this.encoding(offset), this.encoding(limit))
+
+	if err != nil {
+		return nil, goerr.NewError(err, "Zrrange %s %s  error", setName, offset, limit)
+	}
+	if len(resp) > 0 && resp[0] == "ok" {
+		size := len(resp)
+
+		for i := 1; i < size-1; i += 2 {
+			val[resp[i]] = Value(resp[i+1]).Int64()
+		}
+		return val, nil
+	}
+	return nil, makeError(resp, setName, offset, limit)
+}
