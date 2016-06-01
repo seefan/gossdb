@@ -466,3 +466,41 @@ func (this *Client) Zavg(setName string, scoreStart, scoreEnd interface{}) (val 
 	}
 	return 0, makeError(resp, setName, scoreStart, scoreEnd)
 }
+
+//返回指定 key 在 zset 中的排序位置(排名), 排名从 0 开始. 注意! 本方法可能会非常慢! 请在离线环境中使用.
+//
+//  setName zset名称
+//  key 指定key名
+//  返回 val 排名
+//  返回 err，可能的错误，操作成功返回 nil
+func (this *Client) Zrank(setName, key string) (val int64, err error) {
+	resp, err := this.Do("zrank", setName, key)
+
+	if err != nil {
+		return 0, goerr.NewError(err, "Zrank %s %s  error", setName, key)
+	}
+	if len(resp) > 0 && resp[0] == "ok" {
+		val = to.Int64(resp[1])
+		return val, nil
+	}
+	return 0, makeError(resp, setName, key)
+}
+
+//返回指定 key 在 zset 中的倒序排名.注意! 本方法可能会非常慢! 请在离线环境中使用.
+//
+//  setName zset名称
+//  key 指定key名
+//  返回 val 排名
+//  返回 err，可能的错误，操作成功返回 nil
+func (this *Client) Zrrank(setName, key string) (val int64, err error) {
+	resp, err := this.Do("zrrank", setName, key)
+
+	if err != nil {
+		return 0, goerr.NewError(err, "Zrrank %s %s  error", setName, key)
+	}
+	if len(resp) > 0 && resp[0] == "ok" {
+		val = to.Int64(resp[1])
+		return val, nil
+	}
+	return 0, makeError(resp, setName, key)
+}
