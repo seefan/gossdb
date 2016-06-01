@@ -173,6 +173,11 @@ func (this *Client) Zrscan(setName string, keyStart string, scoreStart, scoreEnd
 	return nil, nil, makeError(resp, setName, keyStart, scoreStart, scoreEnd, limit)
 }
 
+//批量设置 zset 中的 key-score.
+//
+//  setName zset名称
+//  kvs 包含 key-score 的map
+//  返回 err，可能的错误，操作成功返回 nil
 func (this *Client) MultiZset(setName string, kvs map[string]int64) (err error) {
 
 	args := []string{}
@@ -192,6 +197,12 @@ func (this *Client) MultiZset(setName string, kvs map[string]int64) (err error) 
 	return makeError(resp, setName, kvs)
 }
 
+//批量获取 zset 中的 key-score.
+//
+//  setName zset名称
+//  key 要获取key的列表，支持多个key
+//  返回 val 包含 key-score 的map
+//  返回 err，可能的错误，操作成功返回 nil
 func (this *Client) MultiZget(setName string, key ...string) (val map[string]int64, err error) {
 	if len(key) == 0 {
 		return make(map[string]int64), nil
@@ -211,6 +222,14 @@ func (this *Client) MultiZget(setName string, key ...string) (val map[string]int
 	}
 	return nil, makeError(resp, key)
 }
+
+//批量获取 zset 中的 key-score.
+//
+//  setName zset名称
+//  key 要获取key的列表，支持多个key
+//  返回 keys 包含 key的slice
+//  返回 scores 包含 key对应权重的slice
+//  返回 err，可能的错误，操作成功返回 nil
 func (this *Client) MultiZgetSlice(setName string, key ...string) (keys []string, scores []int64, err error) {
 	if len(key) == 0 {
 		return []string{}, []int64{}, nil
@@ -236,6 +255,12 @@ func (this *Client) MultiZgetSlice(setName string, key ...string) (keys []string
 	return nil, nil, makeError(resp, setName, key)
 }
 
+//批量获取 zset 中的 key-score.
+//
+//  setName zset名称
+//  key 要获取key的slice
+//  返回 val 包含 key-score 的map
+//  返回 err，可能的错误，操作成功返回 nil
 func (this *Client) MultiZgetArray(setName string, key []string) (val map[string]int64, err error) {
 	if len(key) == 0 {
 		return make(map[string]int64), nil
@@ -255,6 +280,14 @@ func (this *Client) MultiZgetArray(setName string, key []string) (val map[string
 	}
 	return nil, makeError(resp, key)
 }
+
+//批量获取 zset 中的 key-score.
+//
+//  setName zset名称
+//  key 要获取key的slice
+//  返回 keys 包含 key的slice
+//  返回 scores 包含 key对应权重的slice
+//  返回 err，可能的错误，操作成功返回 nil
 func (this *Client) MultiZgetSliceArray(setName string, key []string) (keys []string, scores []int64, err error) {
 	if len(key) == 0 {
 		return []string{}, []int64{}, nil
@@ -280,6 +313,11 @@ func (this *Client) MultiZgetSliceArray(setName string, key []string) (keys []st
 	return nil, nil, makeError(resp, setName, key)
 }
 
+//批量删除 zset 中的 key-score.
+//
+//  setName zset名称
+//  key 要删除key的列表，支持多个key
+//  返回 err，可能的错误，操作成功返回 nil
 func (this *Client) MultiZdel(setName string, key ...string) (err error) {
 	if len(key) == 0 {
 		return nil
@@ -296,6 +334,13 @@ func (this *Client) MultiZdel(setName string, key ...string) (err error) {
 	return makeError(resp, setName, key)
 }
 
+//使 zset 中的 key 对应的值增加 num. 参数 num 可以为负数.
+//
+//  setName zset名称
+//  key 要增加权重的key
+//  num 要增加权重值
+//  返回 int64 增加后的新权重值
+//  返回 err，可能的错误，操作成功返回 nil
 func (this *Client) Zincr(setName string, key string, num int64) (int64, error) {
 	if len(key) == 0 {
 		return 0, nil
@@ -311,6 +356,13 @@ func (this *Client) Zincr(setName string, key string, num int64) (int64, error) 
 	return 0, makeError(resp, setName, key)
 }
 
+//列出名字处于区间 (name_start, name_end] 的 zset.
+//
+//  name_start - 返回的起始名字(不包含), 空字符串表示 -inf.
+//  name_end - 返回的结束名字(包含), 空字符串表示 +inf.
+//  limit  最多返回这么多个元素.
+//  返回 []string 返回包含名字的slice.
+//  返回 err，可能的错误，操作成功返回 nil
 func (this *Client) Zlist(nameStart, nameEnd string, limit int64) ([]string, error) {
 	resp, err := this.Do("zlist", nameStart, nameEnd, this.encoding(limit, false))
 	if err != nil {
