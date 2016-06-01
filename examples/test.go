@@ -2,9 +2,11 @@ package main
 
 import (
 	//	"fmt"
-	"github.com/seefan/gossdb"
 	"log"
 	"runtime"
+
+	"github.com/seefan/gossdb"
+	"github.com/seefan/gossdb/ssdb"
 	//	"sync"
 	//"time"
 )
@@ -31,36 +33,27 @@ func main() {
 	//	return
 	runtime.GOMAXPROCS(runtime.NumCPU())
 	gossdb.AuthPassword = "qwertyuioplkjhgfdsazxcvbnmnbvcxz"
-	pool, err := gossdb.NewPool(&gossdb.Config{
-		Host:             "127.0.0.1",
-		Port:             8888,
-		MinPoolSize:      5,
-		MaxPoolSize:      50,
-		AcquireIncrement: 5,
-		GetClientTimeout: 10,
-		MaxWaitSize:      1000,
-		MaxIdleTime:      1,
-		HealthSecond:     2,
-	})
+	err := ssdb.Start()
 
 	if err != nil {
 		log.Println(err)
 		return
 	}
 	gossdb.Encoding = true
-	client, err := pool.NewClient()
+	client, err := ssdb.Client()
 	if err != nil {
 		log.Println(err.Error())
 		return
 	}
 	defer client.Close()
+	//v, err := client.Qpush("test")
 	client.Set("a", "hello1")
 	client.Set("b", "hello2")
 	client.Set("keys", "hello")
-	v, err := client.Rscan("z", "", 100)
-	log.Println(v, err)
-	err = client.Set("keys", "hello")
-	log.Println(err)
+	//v, err = client.Rscan("z", "", 100)
+	//log.Println(v, err)
+	//	err = client.Set("keys", "hello")
+	//	log.Println(err)
 	//	v, err := client.Setbit("keys", 3, 0)
 	//	log.Println(v, err)
 	//	v, err = client.Getbit("keys", 3)
@@ -82,8 +75,8 @@ func main() {
 	//	err = client.Hset("set", "key", 132)
 	//	log.Println(err)
 	//	//client.Client.Close()
-	//	v, err = client.Hget("set", "key")
-	//	log.Println(v, err)
+	v, err := client.Hget("set", "key")
+	log.Println(v, err)
 	//	v, err = client.Getset("keys", "key1")
 	//	log.Println(v, err)
 	//	v, err = client.Getset("keys", "key2")
