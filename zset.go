@@ -380,3 +380,21 @@ func (this *Client) Zlist(nameStart, nameEnd string, limit int64) ([]string, err
 	}
 	return nil, makeError(resp, nameStart, nameEnd, limit)
 }
+
+//返回 zset 中的元素个数.
+//
+//  name zset的名称.
+//  返回 val 返回包含名字元素的个数.
+//  返回 err，可能的错误，操作成功返回 nil
+func (this *Client) Zsize(name string) (val int64, err error) {
+	resp, err := this.Do("zsize", name)
+	if err != nil {
+		return 0, goerr.NewError(err, "Zsize %s  error", name)
+	}
+
+	if len(resp) > 0 && resp[0] == "ok" {
+		val = to.Int64(resp[1])
+		return val, nil
+	}
+	return 0, makeError(resp, name)
+}
