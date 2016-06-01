@@ -426,3 +426,26 @@ func (this *Client) Zkeys(setName string, keyStart string, scoreStart, scoreEnd 
 	}
 	return nil, makeError(resp, setName, keyStart, scoreStart, scoreEnd, limit)
 }
+
+//列出 zset 中的 key 列表. 参见 zscan().
+//
+//  setName zset名称
+//  keyStart score_start 对应的 key.
+//  scoreStart 返回 key 的最小权重值(可能不包含, 依赖 key_start), 空字符串表示 -inf.
+//  scoreEnd 返回 key 的最大权重值(包含), 空字符串表示 +inf.
+//  limit  最多返回这么多个元素.
+//  返回 keys 返回符合条件的 key 的数组.
+//  返回 scores 返回符合条件的 key 对应的权重.
+//  返回 err，可能的错误，操作成功返回 nil
+func (this *Client) Zsum(setName string, scoreStart, scoreEnd interface{}) (val int64, err error) {
+	resp, err := this.Do("zsum", setName, this.encoding(scoreStart, false), this.encoding(scoreEnd, false))
+
+	if err != nil {
+		return 0, goerr.NewError(err, "Zsum %s %v %v  error", setName, scoreStart, scoreEnd)
+	}
+	if len(resp) > 0 && resp[0] == "ok" {
+		val = to.Int64(resp[1])
+		return val, nil
+	}
+	return 0, makeError(resp, setName, scoreStart, scoreEnd)
+}
