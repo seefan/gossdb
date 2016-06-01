@@ -302,7 +302,6 @@ func (this *Client) MultiHgetAll(setName string) (val map[string]Value, err erro
 //批量获取 hashmap 中全部 对应的权重值.
 //
 //  setName - hashmap 的名字.
-//  keys - 包含 key 的数组 .
 //  返回 包含 key和value 的有序数组, 如果某个 key 不存在, 则它不会出现在返回数组中.
 //  返回 err，执行的错误，操作成功返回 nil
 func (this *Client) MultiHgetAllSlice(setName string) (keys []string, values []Value, err error) {
@@ -449,4 +448,13 @@ func (this *Client) Hkeys(setName, keyStart, keyEnd string, limit int64) ([]stri
 		return resp[1:], nil
 	}
 	return nil, makeError(resp, keyStart, keyEnd, limit)
+}
+
+//批量获取 hashmap 中全部 对应的权重值.
+//
+//  setName - hashmap 的名字.
+//  返回 包含 key-value 的关联数组, 如果某个 key 不存在, 则它不会出现在返回数组中.
+//  返回 err，执行的错误，操作成功返回 nil
+func (this *Client) HgetAll(setName string) (val map[string]Value, err error) {
+	return this.MultiHgetAll(setName)
 }
