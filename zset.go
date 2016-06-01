@@ -398,3 +398,31 @@ func (this *Client) Zsize(name string) (val int64, err error) {
 	}
 	return 0, makeError(resp, name)
 }
+
+//列出 zset 中的 key 列表. 参见 zscan().
+//
+//  setName zset名称
+//  keyStart score_start 对应的 key.
+//  scoreStart 返回 key 的最小权重值(可能不包含, 依赖 key_start), 空字符串表示 -inf.
+//  scoreEnd 返回 key 的最大权重值(包含), 空字符串表示 +inf.
+//  limit  最多返回这么多个元素.
+//  返回 keys 返回符合条件的 key 的数组.
+//  返回 scores 返回符合条件的 key 对应的权重.
+//  返回 err，可能的错误，操作成功返回 nil
+func (this *Client) Zkeys(setName string, keyStart string, scoreStart, scoreEnd interface{}, limit int64) (keys []string, err error) {
+	resp, err := this.Do("zkeys", setName, keyStart, this.encoding(scoreStart, false), this.encoding(scoreEnd, false), limit)
+
+	if err != nil {
+		return nil, goerr.NewError(err, "Zkeys %s %v %v %v %v error", setName, keyStart, scoreStart, scoreEnd, limit)
+	}
+	if len(resp) > 0 && resp[0] == "ok" {
+		size := len(resp)
+		keys := []string{}
+
+		for i := 1; i < size; i++ {
+			keys = append(keys, resp[i])
+		}
+		return keys, nil
+	}
+	return nil, makeError(resp, setName, keyStart, scoreStart, scoreEnd, limit)
+}
