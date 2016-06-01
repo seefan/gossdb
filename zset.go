@@ -552,3 +552,39 @@ func (this *Client) Zrrange(setName string, offset, limit int64) (val map[string
 	}
 	return nil, makeError(resp, setName, offset, limit)
 }
+
+//删除位置处于区间 [start,end] 的元素.
+//
+//  setName zset名称
+//  start 区间开始，包含start值
+//  end  区间结束，包含end值
+//  返回 err，可能的错误，操作成功返回 nil
+func (this *Client) Zremrangebyrank(setName string, start, end int64) (err error) {
+	resp, err := this.Do("zremrangebyrank", setName, this.encoding(start), this.encoding(end))
+
+	if err != nil {
+		return goerr.NewError(err, "Zremrangebyrank %s %s  error", setName, start, end)
+	}
+	if len(resp) > 0 && resp[0] == "ok" {
+		return nil
+	}
+	return makeError(resp, setName, start, end)
+}
+
+//删除权重处于区间 [start,end] 的元素.
+//
+//  setName zset名称
+//  start 区间开始，包含start值
+//  end  区间结束，包含end值
+//  返回 err，可能的错误，操作成功返回 nil
+func (this *Client) Zremrangebyscore(setName string, start, end int64) (err error) {
+	resp, err := this.Do("zremrangebyscore", setName, this.encoding(start), this.encoding(end))
+
+	if err != nil {
+		return goerr.NewError(err, "Zremrangebyscore %s %s  error", setName, start, end)
+	}
+	if len(resp) > 0 && resp[0] == "ok" {
+		return nil
+	}
+	return makeError(resp, setName, start, end)
+}
