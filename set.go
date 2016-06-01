@@ -418,6 +418,26 @@ func (this *Client) Keys(keyStart, keyEnd string, limit int64) ([]string, error)
 	return nil, makeError(resp, keyStart, keyEnd, limit)
 }
 
+//列出处于区间 (key_start, key_end] 的 key 列表.("", ""] 表示整个区间.反向选择
+//
+//  keyStart int 返回的起始 key(不包含), 空字符串表示 -inf.
+//  keyEnd int 返回的结束 key(包含), 空字符串表示 +inf.
+//  limit int 最多返回这么多个元素.
+//  返回 返回包含 key 的数组.
+//  返回 err，可能的错误，操作成功返回 nil
+func (this *Client) Rkeys(keyStart, keyEnd string, limit int64) ([]string, error) {
+
+	resp, err := this.Do("rkeys", keyStart, keyEnd, limit)
+
+	if err != nil {
+		return nil, goerr.NewError(err, "Rkeys %s error", keyStart, keyEnd, limit)
+	}
+	if len(resp) > 0 && resp[0] == "ok" {
+		return resp[1:], nil
+	}
+	return nil, makeError(resp, keyStart, keyEnd, limit)
+}
+
 //列出处于区间 (key_start, key_end] 的 key-value 列表.("", ""] 表示整个区间.
 //
 //  keyStart int 返回的起始 key(不包含), 空字符串表示 -inf.
