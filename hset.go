@@ -370,8 +370,8 @@ func (this *Client) MultiHdelArray(setName string, key []string) (err error) {
 
 //列出名字处于区间 (name_start, name_end] 的 hashmap. ("", ""] 表示整个区间.
 //
-//  keyStart - 返回的起始 key(不包含), 空字符串表示 -inf.
-//  keyEnd - 返回的结束 key(包含), 空字符串表示 +inf.
+//  nameStart - 返回的起始 key(不包含), 空字符串表示 -inf.
+//  nameEnd - 返回的结束 key(包含), 空字符串表示 +inf.
 //  limit - 最多返回这么多个元素.
 //  返回 包含名字的数组
 //  返回 err，执行的错误，操作成功返回 nil
@@ -429,4 +429,24 @@ func (this *Client) Hsize(setName string) (val int64, err error) {
 		return Value(resp[1]).Int64(), nil
 	}
 	return -1, makeError(resp, setName)
+}
+
+//列出 hashmap 中处于区间 (keyStart, keyEnd] 的 key 列表.
+//
+//  name - hashmap 的名字.
+//  keyStart - 返回的起始 key(不包含), 空字符串表示 -inf.
+//  keyEnd - 返回的结束 key(包含), 空字符串表示 +inf.
+//  limit - 最多返回这么多个元素.
+//  返回 包含名字的数组
+//  返回 err，执行的错误，操作成功返回 nil
+func (this *Client) Hkeys(setName, keyStart, keyEnd string, limit int64) ([]string, error) {
+	resp, err := this.Do("hkeys", setName, keyStart, keyEnd, this.encoding(limit, false))
+	if err != nil {
+		return nil, goerr.NewError(err, "Hkeys %s %s %s %v error", setName, keyStart, keyEnd, limit)
+	}
+
+	if len(resp) > 0 && resp[0] == "ok" {
+		return resp[1:], nil
+	}
+	return nil, makeError(resp, keyStart, keyEnd, limit)
 }
