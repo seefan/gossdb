@@ -194,7 +194,7 @@ func (this *Client) QpopArray(name string, size int64, reverse ...bool) (v []Val
 //  返回 v，返回元素的数组，为空时返回 nil
 //  返回 err，执行的错误，操作成功返回 nil
 func (this *Client) Qrange(name string, offset, limit int) (v []Value, err error) {
-	return this.slice(name, offset, limit, 1)
+	return this.slice(name, offset, offset+limit, 1)
 }
 
 //返回下标处于区域 [begin, end] 的元素. begin 和 end 可以是负数
@@ -226,6 +226,7 @@ func (this *Client) slice(name string, args ...int) (v []Value, err error) {
 	if len(args) > 1 {
 		end = args[1]
 	}
+
 	if len(args) > 2 {
 		index = args[2]
 	}
