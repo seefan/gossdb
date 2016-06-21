@@ -2,9 +2,10 @@ package gossdb
 
 import (
 	"fmt"
-	"github.com/seefan/goerr"
 	"sync"
 	"time"
+
+	"github.com/seefan/goerr"
 )
 
 const (
@@ -43,7 +44,7 @@ func (this *Connectors) Init(cfg *Config) {
 	this.setConfig(cfg)
 	this.pool = make(chan *Client, cfg.MaxPoolSize)
 	this.poolMap = make(map[*Client]bool)
-	this.timeHealth = time.NewTicker(time.Second * time.Duration(cfg.HealthSecond))
+	this.timeHealth = time.NewTicker(time.Second)
 }
 
 //启动连接池
@@ -64,8 +65,25 @@ func (this *Connectors) Start() error {
 	}
 	this.Status = PoolStart
 	go func() {
+		keep := 0
 		for range this.timeHealth.C {
-			this.healthWorker()
+			//db check
+			if keep%this.cfg.DBHealthSecond == 0 {
+				c, err := this.NewClient()
+				if err != nil {
+					keep = this.cfg.HealthSecond
+				} else {
+					if !c.Ping() {
+						keep = this.cfg.HealthSecond
+					}
+					c.Close()
+				}
+			}
+			keep += 1
+			if keep >= this.cfg.HealthSecond {
+				this.healthWorker()
+				keep = 0
+			}
 		}
 	}()
 	return nil
@@ -93,6 +111,9 @@ func (this *Connectors) setConfig(conf *Config) {
 	}
 	if conf.HealthSecond < 1 {
 		conf.HealthSecond = 300
+	}
+	if conf.DBHealthSecond < 1 {
+		conf.DBHealthSecond = 5
 	}
 	if conf.MinPoolSize > conf.MaxPoolSize {
 		conf.MinPoolSize = conf.MaxPoolSize

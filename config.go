@@ -19,6 +19,8 @@ type Config struct {
 	MaxIdleTime int
 	//最大等待数目，当连接池满后，新建连接将等待池中连接释放后才可以继续，本值限制最大等待的数量，超过本值后将抛出异常。默认值: 1000
 	MaxWaitSize int
-	//健康检查时间隔，单位为秒。默认值: 300
+	//连接池内缓存的连接状态检查时间隔，单位为秒。默认值: 300
 	HealthSecond int
+	//数据库状态检查，单位为秒。默认值: 5
+	DBHealthSecond int
 }
