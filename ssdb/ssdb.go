@@ -42,6 +42,7 @@ func Start(config ...string) error {
 	if len(config) > 0 {
 		ConfigName = config[0]
 	}
+
 	cfg, err := goconfig.LoadConfigFile(ConfigName)
 	if err == nil {
 		Host = cfg.MustValue("ssdb", "host", Host)
@@ -54,7 +55,7 @@ func Start(config ...string) error {
 		MaxWaitSize = cfg.MustInt("ssdb", "maxwaitsize", MaxWaitSize)
 		HealthSecond = cfg.MustInt("ssdb", "healthsecond", HealthSecond)
 	} else {
-		log.Warn("未找到SSDB的配置文件ssdb.ini，将使用默认值启动")
+		log.Warnf("未找到SSDB的配置文件%s，将使用默认值启动", ConfigName)
 	}
 	conn, err := gossdb.NewPool(&gossdb.Config{
 		//ssdb的ip或主机名
