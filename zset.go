@@ -519,6 +519,7 @@ func (this *Client) Zrange(setName string, offset, limit int64) (val map[string]
 		return nil, goerr.NewError(err, "Zrange %s %s  error", setName, offset, limit)
 	}
 	if len(resp) > 0 && resp[0] == "ok" {
+		val = make(map[string]int64)
 		size := len(resp)
 
 		for i := 1; i < size-1; i += 2 {
@@ -543,6 +544,7 @@ func (this *Client) Zrrange(setName string, offset, limit int64) (val map[string
 		return nil, goerr.NewError(err, "Zrrange %s %s  error", setName, offset, limit)
 	}
 	if len(resp) > 0 && resp[0] == "ok" {
+		val = make(map[string]int64)
 		size := len(resp)
 
 		for i := 1; i < size-1; i += 2 {
