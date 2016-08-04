@@ -95,12 +95,16 @@ func (this *Client) Hclear(setName string) (err error) {
 //  limit - 最多返回这么多个元素.
 //  返回包含 key-value 的关联字典.
 //  返回 err，执行的错误，操作成功返回 nil
-func (this *Client) Hscan(setName string, keyStart, keyEnd string, limit int64) (map[string]Value, error) {
+func (this *Client) Hscan(setName string, keyStart, keyEnd string, limit int64, reverse ...bool) (map[string]Value, error) {
+	cmd := "hscan"
+	if len(reverse) > 0 && reverse[0] == true {
+		cmd = "hrscan"
+	}
 
-	resp, err := this.Do("hscan", setName, keyStart, keyEnd, limit)
+	resp, err := this.Do(cmd, setName, keyStart, keyEnd, limit)
 
 	if err != nil {
-		return nil, goerr.NewError(err, "Hscan %s %s %s %v error", setName, keyStart, keyEnd, limit)
+		return nil, goerr.NewError(err, "%s %s %s %s %v error", cmd, setName, keyStart, keyEnd, limit)
 	}
 
 	if len(resp) > 0 && resp[0] == "ok" {
@@ -114,6 +118,50 @@ func (this *Client) Hscan(setName string, keyStart, keyEnd string, limit int64) 
 	return nil, makeError(resp, setName, keyStart, keyEnd, limit)
 }
 
+//列出 hashmap 中处于区间 (key_start, key_end] 的 key,value 列表. ("", ""] 表示整个区间.
+//
+//  setName - hashmap 的名字.
+//  keyStart - 返回的起始 key(不包含), 空字符串表示 -inf.
+//  keyEnd - 返回的结束 key(包含), 空字符串表示 +inf.
+//  limit - 最多返回这么多个元素.
+//  返回包含 key-value 的关联字典.
+//  返回 err，执行的错误，操作成功返回 nil
+func (this *Client) HscanArray(setName string, keyStart, keyEnd string, limit int64, reverse ...bool) ([]string, []Value, error) {
+	cmd := "hscan"
+	if len(reverse) > 0 && reverse[0] == true {
+		cmd = "hrscan"
+	}
+	resp, err := this.Do(cmd, setName, keyStart, keyEnd, limit)
+
+	if err != nil {
+		return nil, nil, goerr.NewError(err, "%s %s %s %s %v error", cmd, setName, keyStart, keyEnd, limit)
+	}
+
+	if len(resp) > 0 && resp[0] == "ok" {
+		keys := []string{}
+		values := []Value{}
+		size := len(resp)
+		for i := 1; i < size-1; i += 2 {
+			keys = append(keys, resp[i])
+			values = append(values, Value(resp[i+1]))
+		}
+		return keys, values, nil
+	}
+	return nil, nil, makeError(resp, setName, keyStart, keyEnd, limit)
+}
+
+//列出 hashmap 中处于区间 (key_start, key_end] 的 key,value 列表. ("", ""] 表示整个区间.
+//
+//  setName - hashmap 的名字.
+//  keyStart - 返回的起始 key(不包含), 空字符串表示 -inf.
+//  keyEnd - 返回的结束 key(包含), 空字符串表示 +inf.
+//  limit - 最多返回这么多个元素.
+//  返回包含 key-value 的关联字典.
+//  返回 err，执行的错误，操作成功返回 nil
+func (this *Client) HrscanArray(setName string, keyStart, keyEnd string, limit int64, reverse ...bool) ([]string, []Value, error) {
+	return this.HscanArray(setName, keyStart, keyEnd, limit, true)
+}
+
 //列出 hashmap 中处于区间 (key_start, key_end] 的 key-value 列表. ("", ""] 表示整个区间.
 //
 //  setName - hashmap 的名字.
@@ -123,22 +171,7 @@ func (this *Client) Hscan(setName string, keyStart, keyEnd string, limit int64) 
 //  返回包含 key-value 的关联字典.
 //  返回 err，执行的错误，操作成功返回 nil
 func (this *Client) Hrscan(setName string, keyStart, keyEnd string, limit int64) (map[string]Value, error) {
-
-	resp, err := this.Do("hrscan", setName, keyStart, keyEnd, limit)
-
-	if err != nil {
-		return nil, goerr.NewError(err, "Hrscan %s %s %s %v error", setName, keyStart, keyEnd, limit)
-	}
-
-	if len(resp) > 0 && resp[0] == "ok" {
-		re := make(map[string]Value)
-		size := len(resp)
-		for i := 1; i < size-1; i += 2 {
-			re[resp[i]] = Value(resp[i+1])
-		}
-		return re, nil
-	}
-	return nil, makeError(resp, setName, keyStart, keyEnd, limit)
+	return this.Hscan(setName, keyStart, keyEnd, limit, true)
 }
 
 //批量设置 hashmap 中的 key-value.
