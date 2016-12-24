@@ -156,7 +156,11 @@ func (this *Connectors) healthWorker() {
 			}
 		}
 	}
-
+	if this.Size > 0 && this.WaitCount > this.Size {
+		this.WaitCount -= this.Size
+	} else if this.WaitCount > 0 {
+		this.WaitCount -= 1
+	}
 }
 
 //归还连接到连接池
@@ -169,12 +173,14 @@ func (this *Connectors) closeClient(c *Client) {
 		return
 	}
 	this.ActiveCount -= 1
-	this.Size += 1
-	if this.Status == PoolStart {
+	if this.Status == PoolStart && c.IsOpen() {
 		this.poolMap[c] = false
 		this.pool <- c
+		this.Size += 1
 	} else {
-		c.Client.Close()
+		if c.IsOpen() {
+			c.Client.Close()
+		}
 		if this.poolMap != nil {
 			delete(this.poolMap, c)
 		}
@@ -223,7 +229,8 @@ func (this *Connectors) checkNew() error {
 	case PoolInit:
 		return goerr.New("the Connectors is not inited, can not get new client.")
 	}
-	if this.WaitCount >= this.cfg.MaxWaitSize {
+	if this.WaitCount > this.cfg.MaxWaitSize {
+		this.WaitCount -= 1
 		return goerr.New("ssdb pool is busy,Wait for connection creation has reached %d", this.WaitCount)
 	}
 	if this.Size < this.cfg.MinPoolSize && this.Size+this.ActiveCount < this.cfg.MaxPoolSize { //如果没有连接了，检查是否可以自动增加
