@@ -20,6 +20,11 @@ type Client struct {
 	password string      //校验密码
 }
 
+//连接是否有效
+func (this *Client) IsOpen() bool {
+	return this.isOpen
+}
+
 //打开连接
 func (this *Client) Start() error {
 	if this.isOpen {
@@ -46,9 +51,7 @@ func (this *Client) Close() {
 			this.isOpen = false
 		}
 	} else {
-		if this.isOpen {
-			this.pool.closeClient(this)
-		}
+		this.pool.closeClient(this)
 	}
 }
 
