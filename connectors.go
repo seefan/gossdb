@@ -234,7 +234,7 @@ func (this *Connectors) checkNew() error {
 		return goerr.New("ssdb pool is busy,Wait for connection creation has reached %d", this.WaitCount)
 	}
 	if this.Size < this.cfg.MinPoolSize && this.Size+this.ActiveCount < this.cfg.MaxPoolSize { //如果没有连接了，检查是否可以自动增加
-		for i := 0; i < this.cfg.AcquireIncrement; i++ {
+		for i := 0; i < this.cfg.AcquireIncrement && this.Size+this.ActiveCount < this.cfg.MaxPoolSize; i++ {
 			c := this.createClient()
 			if err := c.Start(); err == nil {
 				this.pool <- c
