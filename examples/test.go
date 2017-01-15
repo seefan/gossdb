@@ -32,6 +32,8 @@ func main() {
 	//	log.Println(v.Bytes())
 	//	return
 	runtime.GOMAXPROCS(runtime.NumCPU())
+	test3()
+	return
 	gossdb.AuthPassword = "qwertyuioplkjhgfdsazxcvbnmnbvcxz"
 	err := ssdb.Start()
 
