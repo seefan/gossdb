@@ -191,8 +191,8 @@ func (this *Connectors) closeClient(c *Client) {
 //
 //  返回 client，一个新的连接
 //  返回 err，可能的错误，操作成功返回 nil
-func (this *Connectors) NewClient() (*Client, error) {
-	if err := this.checkNew(); err != nil {
+func (this *Connectors) NewClient() (client *Client, err error) {
+	if err = this.checkNew(); err != nil {
 		return nil, err
 	}
 	this.lock.Lock()
@@ -201,6 +201,9 @@ func (this *Connectors) NewClient() (*Client, error) {
 	timeout := time.After(time.Duration(this.cfg.GetClientTimeout) * time.Second)
 	select {
 	case <-timeout:
+		this.lock.Lock()
+		this.WaitCount -= 1
+		this.lock.Unlock()
 		return nil, goerr.New("ssdb pool is busy,can not get new client in %d seconds", this.cfg.GetClientTimeout)
 	case c := <-this.pool:
 		if c == nil {
