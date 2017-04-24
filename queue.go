@@ -16,8 +16,8 @@ var (
 //  name  队列的名字
 //  返回 size，队列的长度；
 //  返回 err，执行的错误，操作成功返回 nil
-func (this *Client) Qsize(name string) (size int64, err error) {
-	resp, err := this.Do("qsize", name)
+func (c *Client) Qsize(name string) (size int64, err error) {
+	resp, err := c.Do("qsize", name)
 	if err != nil {
 		return -1, goerr.NewError(err, "Qsize %s error", name)
 	}
@@ -32,8 +32,8 @@ func (this *Client) Qsize(name string) (size int64, err error) {
 //
 //  name  队列的名字
 //  返回 err，执行的错误，操作成功返回 nil
-func (this *Client) Qclear(name string) (err error) {
-	resp, err := this.Do("qclear", name)
+func (c *Client) Qclear(name string) (err error) {
+	resp, err := c.Do("qclear", name)
 	if err != nil {
 		return goerr.NewError(err, "Qclear %s error", name)
 	}
@@ -50,8 +50,8 @@ func (this *Client) Qclear(name string) (err error) {
 //  value  存贮的值，可以为多值.
 //  返回 size，添加元素之后, 队列的长度
 //  返回 err，执行的错误，操作成功返回 nil
-func (this *Client) Qpush_front(name string, value ...interface{}) (size int64, err error) {
-	return this.qpush(name, false, value...)
+func (c *Client) Qpush_front(name string, value ...interface{}) (size int64, err error) {
+	return c.qpush(name, false, value...)
 }
 
 //往队列的首部添加一个或者多个元素
@@ -61,7 +61,7 @@ func (this *Client) Qpush_front(name string, value ...interface{}) (size int64, 
 //  value  存贮的值，可以为多值.
 //  返回 size，添加元素之后, 队列的长度
 //  返回 err，执行的错误，操作成功返回 nil
-func (this *Client) qpush(name string, reverse bool, value ...interface{}) (size int64, err error) {
+func (c *Client) qpush(name string, reverse bool, value ...interface{}) (size int64, err error) {
 	if len(value) == 0 {
 		return -1, nil
 	}
@@ -71,9 +71,9 @@ func (this *Client) qpush(name string, reverse bool, value ...interface{}) (size
 	}
 	args := []string{name}
 	for _, v := range value {
-		args = append(args, this.encoding(v, false))
+		args = append(args, c.encoding(v, false))
 	}
-	resp, err := this.Do(qpush_cmd[index], args)
+	resp, err := c.Do(qpush_cmd[index], args)
 	if err != nil {
 		return -1, goerr.NewError(err, "%s %s error", qpush_cmd[index], name)
 	}
@@ -89,8 +89,8 @@ func (this *Client) qpush(name string, reverse bool, value ...interface{}) (size
 //  value  存贮的值，可以为多值.
 //  返回 size，添加元素之后, 队列的长度
 //  返回 err，执行的错误，操作成功返回 nil
-func (this *Client) Qpush(name string, value ...interface{}) (size int64, err error) {
-	return this.qpush(name, true, value...)
+func (c *Client) Qpush(name string, value ...interface{}) (size int64, err error) {
+	return c.qpush(name, true, value...)
 }
 
 //往队列的尾部添加一个或者多个元素
@@ -99,8 +99,8 @@ func (this *Client) Qpush(name string, value ...interface{}) (size int64, err er
 //  value  存贮的值，可以为多值.
 //  返回 size，添加元素之后, 队列的长度
 //  返回 err，执行的错误，操作成功返回 nil
-func (this *Client) Qpush_back(name string, value ...interface{}) (size int64, err error) {
-	return this.qpush(name, true, value...)
+func (c *Client) Qpush_back(name string, value ...interface{}) (size int64, err error) {
+	return c.qpush(name, true, value...)
 }
 
 //从队列首部弹出最后一个元素.
@@ -108,8 +108,8 @@ func (this *Client) Qpush_back(name string, value ...interface{}) (size int64, e
 //  name 队列的名字
 //  返回 v，返回一个元素，并在队列中删除 v；队列为空时返回空值
 //  返回 err，执行的错误，操作成功返回 nil
-func (this *Client) Qpop_front(name string) (v Value, err error) {
-	return this.Qpop(name)
+func (c *Client) Qpop_front(name string) (v Value, err error) {
+	return c.Qpop(name)
 }
 
 //从队列尾部弹出最后一个元素.
@@ -117,8 +117,8 @@ func (this *Client) Qpop_front(name string) (v Value, err error) {
 //  name 队列的名字
 //  返回 v，返回一个元素，并在队列中删除 v；队列为空时返回空值
 //  返回 err，执行的错误，操作成功返回 nil
-func (this *Client) Qpop_back(name string) (v Value, err error) {
-	return this.Qpop(name, true)
+func (c *Client) Qpop_back(name string) (v Value, err error) {
+	return c.Qpop(name, true)
 }
 
 //从队列首部弹出最后一个元素.
@@ -126,12 +126,12 @@ func (this *Client) Qpop_back(name string) (v Value, err error) {
 //  name 队列的名字
 //  返回 v，返回一个元素，并在队列中删除 v；队列为空时返回空值
 //  返回 err，执行的错误，操作成功返回 nil
-func (this *Client) Qpop(name string, reverse ...bool) (v Value, err error) {
+func (c *Client) Qpop(name string, reverse ...bool) (v Value, err error) {
 	index := 1
 	if len(reverse) > 0 && !reverse[0] {
 		index = 0
 	}
-	resp, err := this.Do(qpop_cmd[index], name)
+	resp, err := c.Do(qpop_cmd[index], name)
 	if err != nil {
 		return "", goerr.NewError(err, "%s %s error", qpop_cmd[index], name)
 	}
@@ -146,8 +146,8 @@ func (this *Client) Qpop(name string, reverse ...bool) (v Value, err error) {
 //  name 队列的名字
 //  返回 v，返回多个元素，并在队列中弹出多个元素；
 //  返回 err，执行的错误，操作成功返回 nil
-func (this *Client) Qpop_front_array(name string, size int64) (v []Value, err error) {
-	return this.QpopArray(name, size, false)
+func (c *Client) Qpop_front_array(name string, size int64) (v []Value, err error) {
+	return c.QpopArray(name, size, false)
 }
 
 //从队列尾部弹出最后多个元素.
@@ -155,8 +155,8 @@ func (this *Client) Qpop_front_array(name string, size int64) (v []Value, err er
 //  name 队列的名字
 //  返回 v，返回多个元素，并在队列中弹出多个元素；
 //  返回 err，执行的错误，操作成功返回 nil
-func (this *Client) Qpop_back_array(name string, size int64) (v []Value, err error) {
-	return this.QpopArray(name, size, true)
+func (c *Client) Qpop_back_array(name string, size int64) (v []Value, err error) {
+	return c.QpopArray(name, size, true)
 }
 
 //从队列首部弹出最后多个个元素.
@@ -166,12 +166,12 @@ func (this *Client) Qpop_back_array(name string, size int64) (v []Value, err err
 //  reverse 是否反转取
 //  返回 v，返回多个元素，并在队列中弹出多个元素；
 //  返回 err，执行的错误，操作成功返回 nil
-func (this *Client) QpopArray(name string, size int64, reverse ...bool) (v []Value, err error) {
+func (c *Client) QpopArray(name string, size int64, reverse ...bool) (v []Value, err error) {
 	index := 1
 	if len(reverse) > 0 && !reverse[0] {
 		index = 0
 	}
-	resp, err := this.Do(qpop_cmd[index], name, size)
+	resp, err := c.Do(qpop_cmd[index], name, size)
 	if err != nil {
 		return nil, goerr.NewError(err, "%s %s error", qpop_cmd[index], name)
 	}
@@ -193,8 +193,8 @@ func (this *Client) QpopArray(name string, size int64, reverse ...bool) (v []Val
 //  limit 正整数, 最多返回这么多个元素.
 //  返回 v，返回元素的数组，为空时返回 nil
 //  返回 err，执行的错误，操作成功返回 nil
-func (this *Client) Qrange(name string, offset, limit int) (v []Value, err error) {
-	return this.slice(name, offset, limit, 1)
+func (c *Client) Qrange(name string, offset, limit int) (v []Value, err error) {
+	return c.slice(name, offset, limit, 1)
 }
 
 //返回下标处于区域 [begin, end] 的元素. begin 和 end 可以是负数
@@ -204,8 +204,8 @@ func (this *Client) Qrange(name string, offset, limit int) (v []Value, err error
 //  end 整数, 结束下标。可以是负数, 表示返回所有。
 //  返回 v，返回元素的数组，为空时返回 nil
 //  返回 err，执行的错误，操作成功返回 nil
-func (this *Client) Qslice(name string, begin, end int) (v []Value, err error) {
-	return this.slice(name, begin, end, 0)
+func (c *Client) Qslice(name string, begin, end int) (v []Value, err error) {
+	return c.slice(name, begin, end, 0)
 }
 
 //返回下标处于区域 [begin, end] 的元素. begin 和 end 可以是负数
@@ -216,7 +216,7 @@ func (this *Client) Qslice(name string, begin, end int) (v []Value, err error) {
 //  [slice，range] 命令
 //  返回 v，返回元素的数组，为空时返回 nil
 //  返回 err，执行的错误，操作成功返回 nil
-func (this *Client) slice(name string, args ...int) (v []Value, err error) {
+func (c *Client) slice(name string, args ...int) (v []Value, err error) {
 	begin := 0
 	end := -1
 	index := 0
@@ -230,7 +230,7 @@ func (this *Client) slice(name string, args ...int) (v []Value, err error) {
 	if len(args) > 2 {
 		index = args[2]
 	}
-	resp, err := this.Do(qslice_cmd[index], name, begin, end)
+	resp, err := c.Do(qslice_cmd[index], name, begin, end)
 	if err != nil {
 		return nil, goerr.NewError(err, "%s %s error", qslice_cmd[index], name)
 	}
@@ -251,12 +251,12 @@ func (this *Client) slice(name string, args ...int) (v []Value, err error) {
 //  reverse 可选，是否反向执行
 //  返回 delSize，返回被删除的元素数量
 //  返回 err，执行的错误，操作成功返回 nil
-func (this *Client) Qtrim(name string, size int, reverse ...bool) (delSize int64, err error) {
+func (c *Client) Qtrim(name string, size int, reverse ...bool) (delSize int64, err error) {
 	index := 0
 	if len(reverse) > 0 && reverse[0] {
 		index = 1
 	}
-	resp, err := this.Do(qtrim_cmd[index], name, size)
+	resp, err := c.Do(qtrim_cmd[index], name, size)
 	if err != nil {
 		return -1, goerr.NewError(err, "%s %s error", qtrim_cmd[index], name)
 	}
@@ -272,8 +272,8 @@ func (this *Client) Qtrim(name string, size int, reverse ...bool) (delSize int64
 //  size 最多从队列删除这么多个元素
 //  返回 v，返回元素的数组，为空时返回 nil
 //  返回 err，执行的错误，操作成功返回 nil
-func (this *Client) Qtrim_front(name string, size int) (delSize int64, err error) {
-	return this.Qtrim(name, size)
+func (c *Client) Qtrim_front(name string, size int) (delSize int64, err error) {
+	return c.Qtrim(name, size)
 }
 
 //从队列尾部删除多个元素.
@@ -282,8 +282,8 @@ func (this *Client) Qtrim_front(name string, size int) (delSize int64, err error
 //  size 最多从队列删除这么多个元素
 //  返回 v，返回元素的数组，为空时返回 nil
 //  返回 err，执行的错误，操作成功返回 nil
-func (this *Client) Qtrim_back(name string, size int) (delSize int64, err error) {
-	return this.Qtrim(name, size, true)
+func (c *Client) Qtrim_back(name string, size int) (delSize int64, err error) {
+	return c.Qtrim(name, size, true)
 }
 
 //列出名字处于区间 (name_start, name_end] 的 queue/list.
@@ -293,8 +293,8 @@ func (this *Client) Qtrim_back(name string, size int) (delSize int64, err error)
 //  limit  最多返回这么多个元素.
 //  返回 v，返回元素的数组，为空时返回 nil
 //  返回 err，执行的错误，操作成功返回 nil
-func (this *Client) Qlist(nameStart, nameEnd string, limit int64) ([]string, error) {
-	resp, err := this.Do("qlist", nameStart, nameEnd, this.encoding(limit, false))
+func (c *Client) Qlist(nameStart, nameEnd string, limit int64) ([]string, error) {
+	resp, err := c.Do("qlist", nameStart, nameEnd, c.encoding(limit, false))
 	if err != nil {
 		return nil, goerr.NewError(err, "Qlist %s %s %v error", nameStart, nameEnd, limit)
 	}
@@ -318,8 +318,8 @@ func (this *Client) Qlist(nameStart, nameEnd string, limit int64) ([]string, err
 //  limit  最多返回这么多个元素.
 //  返回 v，返回元素的数组，为空时返回 nil
 //  返回 err，执行的错误，操作成功返回 nil
-func (this *Client) Qrlist(nameStart, nameEnd string, limit int64) ([]string, error) {
-	resp, err := this.Do("qrlist", nameStart, nameEnd, this.encoding(limit, false))
+func (c *Client) Qrlist(nameStart, nameEnd string, limit int64) ([]string, error) {
+	resp, err := c.Do("qrlist", nameStart, nameEnd, c.encoding(limit, false))
 	if err != nil {
 		return nil, goerr.NewError(err, "Qrlist %s %s %v error", nameStart, nameEnd, limit)
 	}
@@ -342,10 +342,10 @@ func (this *Client) Qrlist(nameStart, nameEnd string, limit int64) ([]string, er
 //  index 指定的位置，可传负数.
 //  val  传入的值.
 //  返回 err，执行的错误，操作成功返回 nil
-func (this *Client) Qset(key string, index int64, val interface{}) (err error) {
+func (c *Client) Qset(key string, index int64, val interface{}) (err error) {
 	var resp []string
 
-	resp, err = this.Do("qset", key, index, this.encoding(val, false))
+	resp, err = c.Do("qset", key, index, c.encoding(val, false))
 
 	if err != nil {
 		return goerr.NewError(err, "Qset %s error", key)
@@ -362,8 +362,8 @@ func (this *Client) Qset(key string, index int64, val interface{}) (err error) {
 //  index 指定的位置，可传负数.
 //  返回 val，返回的值.
 //  返回 err，执行的错误，操作成功返回 nil
-func (this *Client) Qget(key string, index int64) (Value, error) {
-	resp, err := this.Do("qget", key, index)
+func (c *Client) Qget(key string, index int64) (Value, error) {
+	resp, err := c.Do("qget", key, index)
 	if err != nil {
 		return "", goerr.NewError(err, "Qget %s error", key)
 	}
@@ -378,8 +378,8 @@ func (this *Client) Qget(key string, index int64) (Value, error) {
 //  key  队列的名字
 //  返回 val，返回的值.
 //  返回 err，执行的错误，操作成功返回 nil
-func (this *Client) Qfront(key string) (Value, error) {
-	resp, err := this.Do("qfront", key)
+func (c *Client) Qfront(key string) (Value, error) {
+	resp, err := c.Do("qfront", key)
 	if err != nil {
 		return "", goerr.NewError(err, "Qfront %s error", key)
 	}
@@ -394,8 +394,8 @@ func (this *Client) Qfront(key string) (Value, error) {
 //  key  队列的名字
 //  返回 val，返回的值.
 //  返回 err，执行的错误，操作成功返回 nil
-func (this *Client) Qback(key string) (Value, error) {
-	resp, err := this.Do("qback", key)
+func (c *Client) Qback(key string) (Value, error) {
+	resp, err := c.Do("qback", key)
 	if err != nil {
 		return "", goerr.NewError(err, "Qback %s error", key)
 	}
@@ -412,7 +412,7 @@ func (this *Client) Qback(key string) (Value, error) {
 //  value  存贮的值，可以为多值.
 //  返回 size，添加元素之后, 队列的长度
 //  返回 err，执行的错误，操作成功返回 nil
-func (this *Client) qpush_array(name string, reverse bool, value []interface{}) (size int64, err error) {
+func (c *Client) qpush_array(name string, reverse bool, value []interface{}) (size int64, err error) {
 	if len(value) == 0 {
 		return -1, nil
 	}
@@ -422,9 +422,9 @@ func (this *Client) qpush_array(name string, reverse bool, value []interface{}) 
 	}
 	args := []string{name}
 	for _, v := range value {
-		args = append(args, this.encoding(v, false))
+		args = append(args, c.encoding(v, false))
 	}
-	resp, err := this.Do(qpush_cmd[index], args)
+	resp, err := c.Do(qpush_cmd[index], args)
 	if err != nil {
 		return -1, goerr.NewError(err, "%s %s error", qpush_cmd[index], name)
 	}
@@ -440,8 +440,8 @@ func (this *Client) qpush_array(name string, reverse bool, value []interface{}) 
 //  value  存贮的值，可以为多值.
 //  返回 size，添加元素之后, 队列的长度
 //  返回 err，执行的错误，操作成功返回 nil
-func (this *Client) Qpush_array(name string, value []interface{}) (size int64, err error) {
-	return this.qpush_array(name, true, value)
+func (c *Client) Qpush_array(name string, value []interface{}) (size int64, err error) {
+	return c.qpush_array(name, true, value)
 }
 
 //往队列的尾部添加一个或者多个元素
@@ -450,8 +450,8 @@ func (this *Client) Qpush_array(name string, value []interface{}) (size int64, e
 //  value  存贮的值，可以为多值.
 //  返回 size，添加元素之后, 队列的长度
 //  返回 err，执行的错误，操作成功返回 nil
-func (this *Client) Qpush_back_array(name string, value []interface{}) (size int64, err error) {
-	return this.qpush_array(name, true, value)
+func (c *Client) Qpush_back_array(name string, value []interface{}) (size int64, err error) {
+	return c.qpush_array(name, true, value)
 }
 
 //往队列的首部添加一个或者多个元素
@@ -460,6 +460,6 @@ func (this *Client) Qpush_back_array(name string, value []interface{}) (size int
 //  value  存贮的值，可以为多值.
 //  返回 size，添加元素之后, 队列的长度
 //  返回 err，执行的错误，操作成功返回 nil
-func (this *Client) Qpush_front_array(name string, value []interface{}) (size int64, err error) {
-	return this.qpush_array(name, false, value)
+func (c *Client) Qpush_front_array(name string, value []interface{}) (size int64, err error) {
+	return c.qpush_array(name, false, value)
 }

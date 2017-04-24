@@ -1,14 +1,12 @@
 package main
 
 import (
-	//	"fmt"
+	"fmt"
+	"github.com/seefan/gossdb"
+	//	"github.com/seefan/gossdb/ssdb"
 	"log"
 	"runtime"
-
-	"github.com/seefan/gossdb"
-	"github.com/seefan/gossdb/ssdb"
-	//	"sync"
-	//"time"
+	"time"
 )
 
 func main() {
@@ -32,28 +30,34 @@ func main() {
 	//	log.Println(v.Bytes())
 	//	return
 	runtime.GOMAXPROCS(runtime.NumCPU())
-	test3()
-	return
-	gossdb.AuthPassword = "qwertyuioplkjhgfdsazxcvbnmnbvcxz"
-	err := ssdb.Start()
+
+	ip := "192.168.56.101"
+	port := 8888
+
+	pool, err := gossdb.NewPool(&gossdb.Config{
+		Host:        ip,
+		Port:        port,
+		MaxPoolSize: 10,
+	})
 
 	if err != nil {
-		log.Println(err)
+		fmt.Errorf("error new pool %v", err)
 		return
 	}
 	gossdb.Encoding = true
-	client, err := ssdb.Client()
+
+	client, err := pool.NewClient()
 	if err != nil {
-		log.Println(err.Error())
+		fmt.Errorf("error new pool %v", err)
 		return
 	}
 	defer client.Close()
 	//v, err := client.Qpush("test")
-	client.Set("a", "hello1")
-	client.Set("b", "hello2")
-	client.Set("keys", "hello")
-	//v, err = client.Rscan("z", "", 100)
-	//log.Println(v, err)
+	client.Set("a", "heldfsdlo1")
+	//client.Set("b", "hello2")
+	//client.Set("keys", "hello")
+	v, err := client.Get("a")
+	log.Println(v, err)
 	//	err = client.Set("keys", "hello")
 	//	log.Println(err)
 	//	v, err := client.Setbit("keys", 3, 0)
@@ -77,8 +81,8 @@ func main() {
 	//	err = client.Hset("set", "key", 132)
 	//	log.Println(err)
 	//	//client.Client.Close()
-	v, err := client.Hget("set", "key")
-	log.Println(v, err)
+	//v, err = client.Hget("set", "key")
+	//log.Println(v, err)
 	//	v, err = client.Getset("keys", "key1")
 	//	log.Println(v, err)
 	//	v, err = client.Getset("keys", "key2")
@@ -128,29 +132,30 @@ func main() {
 	//	log.Println(vm, err)
 	//	log.Println("----------------")
 
-	//	for i := 0; i < 100; i++ {
-	//		go func(idx int) {
-	//			//log.Println(idx, "get client", pool.Info())
-	//			c, err := pool.NewClient()
-	//			if err != nil {
-	//				log.Println(err.Error(), idx)
-	//				return
-	//			}
-	//			defer c.Close()
-	//			err = c.Set(fmt.Sprintf("test%d", idx), fmt.Sprintf("test%d", idx))
-	//			if err != nil {
-	//				log.Println(err)
-	//			}
-	//			re, err := c.Get(fmt.Sprintf("test%d", idx))
-	//			if err != nil {
-	//				log.Println(err, re, "close client")
-	//			} else {
-	//				log.Println(idx, "close client")
-	//			}
-	//		}(i)
-	//		//time.Sleep(time.Millisecond)
-	//	}
-	//	time.Sleep(time.Second * 10)
+	for i := 0; i < 1000; i++ {
+		go func(idx int) {
+			log.Println(idx, "get client", pool.Info())
+			c, err := pool.NewClient()
+			if err != nil {
+				log.Println(err.Error(), idx)
+				return
+			}
+			defer c.Close()
+			err = c.Set(fmt.Sprintf("test%d", idx), fmt.Sprintf("test%d", idx))
+			if err != nil {
+				log.Println(err)
+			}
+			re, err := c.Get(fmt.Sprintf("test%d", idx))
+			if err != nil {
+				log.Println(err, "close client")
+			} else {
+				log.Println(idx, re, "close client", pool.Info())
+			}
+			time.Sleep(time.Microsecond)
+		}(i)
+		//time.Sleep(time.Millisecond)
+	}
+	time.Sleep(time.Second * 100)
 	//	log.Println(pool.Info())
 	//	time.Sleep(time.Second * 10)
 	//	pool.Close() //连接可能未处理完

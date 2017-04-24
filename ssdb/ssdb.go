@@ -26,9 +26,8 @@ var (
 	//最大空闲时间，指定秒内未使用则连接被丢弃。若为0则永不丢弃。默认值: 0
 	MaxIdleTime = 600
 	//最大等待数目，当连接池满后，新建连接将等待池中连接释放后才可以继续，本值限制最大等待的数量，超过本值后将抛出异常。默认值: 1000
-	MaxWaitSize = 20
-	//健康检查时间隔，单位为秒。默认值: 300
-	HealthSecond = 300
+	MaxWaitSize  = 1000
+	HealthSecond = 5
 	//默认配置文件名
 	ConfigName = "config.ini"
 )
