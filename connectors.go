@@ -34,6 +34,8 @@ func (c *Connectors) Init(cfg *Config) {
 	c.setConfig(cfg)
 	c.pool = make(chan *Client, cfg.MaxWaitSize)
 	c.poolMap = gopool.NewPool()
+	c.poolMap.WatchTime = c.cfg.HealthSecond
+	c.poolMap.MinPoolSize = c.cfg.MinPoolSize
 }
 
 //启动连接池
