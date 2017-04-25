@@ -6,6 +6,7 @@ import (
 	//	"github.com/seefan/gossdb/ssdb"
 	"log"
 	"runtime"
+	"sync"
 	"time"
 )
 
@@ -37,7 +38,9 @@ func main() {
 	pool, err := gossdb.NewPool(&gossdb.Config{
 		Host:        ip,
 		Port:        port,
-		MaxPoolSize: 10,
+		MaxPoolSize: 20,
+		MinPoolSize: 20,
+		MaxWaitSize: 20000,
 	})
 
 	if err != nil {
@@ -53,11 +56,11 @@ func main() {
 	}
 	defer client.Close()
 	//v, err := client.Qpush("test")
-	client.Set("a", "heldfsdlo1")
+	//client.Set("a", "heldfsdlo1")
 	//client.Set("b", "hello2")
 	//client.Set("keys", "hello")
-	v, err := client.Get("a")
-	log.Println(v, err)
+	//v, err := client.Get("a")
+	//log.Println(v, err)
 	//	err = client.Set("keys", "hello")
 	//	log.Println(err)
 	//	v, err := client.Setbit("keys", 3, 0)
@@ -131,34 +134,68 @@ func main() {
 	//	vm, err := client.MultiGet("a", "b", "a1")
 	//	log.Println(vm, err)
 	//	log.Println("----------------")
+	now := time.Now()
+	wait := new(sync.WaitGroup)
+	sk := new(Success)
 
-	for i := 0; i < 1000; i++ {
-		go func(idx int) {
-			log.Println(idx, "get client", pool.Info())
-			c, err := pool.NewClient()
-			if err != nil {
-				log.Println(err.Error(), idx)
-				return
-			}
-			defer c.Close()
-			err = c.Set(fmt.Sprintf("test%d", idx), fmt.Sprintf("test%d", idx))
-			if err != nil {
-				log.Println(err)
-			}
-			re, err := c.Get(fmt.Sprintf("test%d", idx))
-			if err != nil {
-				log.Println(err, "close client")
-			} else {
-				log.Println(idx, re, "close client", pool.Info())
-			}
-			time.Sleep(time.Microsecond)
-		}(i)
-		//time.Sleep(time.Millisecond)
-	}
-	time.Sleep(time.Second * 100)
+	run(wait, pool, sk)
+	//log.Println("get client", pool.Info())
+
+	wait.Wait()
+	println("time is ", time.Since(now).String(), sk.Show())
 	//	log.Println(pool.Info())
 	//	time.Sleep(time.Second * 10)
 	//	pool.Close() //连接可能未处理完
 	//	log.Println(pool.Info())
 	//	time.Sleep(time.Second * 10)
+}
+
+type Success struct {
+	count   int
+	success int
+	lock    sync.Mutex
+}
+
+func (s *Success) Add() {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+	s.count += 1
+}
+func (s *Success) Ok() {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+	s.success += 1
+}
+func (s *Success) Show() string {
+	return fmt.Sprintf("count:%d,success:%d", s.count, s.success)
+}
+
+func run(wait *sync.WaitGroup, pool *gossdb.Connectors, su *Success) {
+
+	for i := 0; i < 14000; i++ {
+		wait.Add(1)
+		go func(idx int) {
+			defer wait.Done()
+			su.Add()
+			c, err := pool.NewClient()
+			if err != nil {
+				//log.Println(err.Error(), idx, pool.Info())
+				return
+			}
+			defer c.Close()
+			//err = c.Set(fmt.Sprintf("test%d", idx), fmt.Sprintf("test%d", idx))
+			//if err != nil {
+			//	log.Println(err)
+			//}
+			_, err = c.Get(fmt.Sprintf("test%d", idx))
+			if err != nil {
+				log.Println(err, "get client")
+			} else {
+				//log.Println(idx, re, "close client", pool.Info())
+			}
+			//time.Sleep(time.Millisecond * 5)
+			su.Ok()
+			//
+		}(i)
+	}
 }

@@ -113,18 +113,22 @@ func (c *Connectors) closeClient(cc *Client) {
 //  返回 client，一个新的连接
 //  返回 err，可能的错误，操作成功返回 nil
 func (c *Connectors) NewClient() (client *Client, err error) {
-	if err = c.checkNew(); err != nil {
-		return nil, err
+	switch c.Status {
+	case PoolStop:
+		return nil, goerr.New("the Connectors is Closed, can not get new client.")
+	case PoolInit:
+		return nil, goerr.New("the Connectors is not inited, can not get new client.")
 	}
 	element, err := c.poolMap.Get()
 	if err == nil {
-		client = element.Value.(*Client)
-		return
+		return element.Value.(*Client), nil
+	}
+	//get slow conn
+	client, err = c.slowNew()
+	if client != nil || err != nil {
+		return client, err
 	}
 	//enter slow pool
-	c.lock.Lock()
-	c.WaitCount += 1
-	c.lock.Unlock()
 	timeout := time.After(time.Duration(c.cfg.GetClientTimeout) * time.Second)
 	select {
 	case <-timeout:
@@ -144,32 +148,31 @@ func (c *Connectors) NewClient() (client *Client, err error) {
 
 }
 
-//检查是否可以创建新连接，是否需要增加连接数
+//检查是否可以快速创建新连接
 //
 //  返回 err，可能的错误，操作成功返回 nil
-func (c *Connectors) checkNew() error {
+func (c *Connectors) slowNew() (*Client, error) {
 	c.lock.Lock()
 	defer c.lock.Unlock()
-	switch c.Status {
-	case PoolStop:
-		return goerr.New("the Connectors is Closed, can not get new client.")
-	case PoolInit:
-		return goerr.New("the Connectors is not inited, can not get new client.")
-	}
+	c.WaitCount += 1
 	if c.WaitCount > c.cfg.MaxWaitSize {
 		c.WaitCount -= 1
-		return goerr.New("ssdb pool is busy,Wait for connection creation has reached %d", c.WaitCount)
+		return nil, goerr.New("ssdb pool is busy,Wait for connection creation has reached %d", c.WaitCount)
 	}
-	if c.poolMap.Current == c.poolMap.Length && c.poolMap.Length < c.cfg.MaxPoolSize { //如果没有连接了，检查是否可以自动增加
+	if c.poolMap.Length < c.cfg.MaxPoolSize { //如果没有连接了，检查是否可以自动增加
 		for i := 0; i < c.cfg.AcquireIncrement && c.poolMap.Length < c.cfg.MaxPoolSize; i++ {
 			cc := NewClient(c)
 			if err := cc.Start(); err != nil {
-				return goerr.NewError(err, "扩展连接池出错")
+				return nil, goerr.NewError(err, "扩展连接池出错")
 			}
 			c.poolMap.Append(cc)
 		}
+		if client, err := c.poolMap.Get(); err == nil {
+			println("slow new")
+			return client.Value.(*Client), nil
+		}
 	}
-	return nil
+	return nil, nil //没有慢速连接可用
 }
 
 //关闭连接池
