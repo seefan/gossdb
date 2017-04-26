@@ -17,7 +17,7 @@ var (
 //  返回 size，队列的长度；
 //  返回 err，执行的错误，操作成功返回 nil
 func (c *Client) Qsize(name string) (size int64, err error) {
-	resp, err := c.Do("qsize", name)
+	resp, err := c.db.Do("qsize", name)
 	if err != nil {
 		return -1, goerr.NewError(err, "Qsize %s error", name)
 	}
@@ -33,7 +33,7 @@ func (c *Client) Qsize(name string) (size int64, err error) {
 //  name  队列的名字
 //  返回 err，执行的错误，操作成功返回 nil
 func (c *Client) Qclear(name string) (err error) {
-	resp, err := c.Do("qclear", name)
+	resp, err := c.db.Do("qclear", name)
 	if err != nil {
 		return goerr.NewError(err, "Qclear %s error", name)
 	}
@@ -73,7 +73,7 @@ func (c *Client) qpush(name string, reverse bool, value ...interface{}) (size in
 	for _, v := range value {
 		args = append(args, c.encoding(v, false))
 	}
-	resp, err := c.Do(qpush_cmd[index], args)
+	resp, err := c.db.Do(qpush_cmd[index], args)
 	if err != nil {
 		return -1, goerr.NewError(err, "%s %s error", qpush_cmd[index], name)
 	}
@@ -131,7 +131,7 @@ func (c *Client) Qpop(name string, reverse ...bool) (v Value, err error) {
 	if len(reverse) > 0 && !reverse[0] {
 		index = 0
 	}
-	resp, err := c.Do(qpop_cmd[index], name)
+	resp, err := c.db.Do(qpop_cmd[index], name)
 	if err != nil {
 		return "", goerr.NewError(err, "%s %s error", qpop_cmd[index], name)
 	}
@@ -171,7 +171,7 @@ func (c *Client) QpopArray(name string, size int64, reverse ...bool) (v []Value,
 	if len(reverse) > 0 && !reverse[0] {
 		index = 0
 	}
-	resp, err := c.Do(qpop_cmd[index], name, size)
+	resp, err := c.db.Do(qpop_cmd[index], name, size)
 	if err != nil {
 		return nil, goerr.NewError(err, "%s %s error", qpop_cmd[index], name)
 	}
@@ -230,7 +230,7 @@ func (c *Client) slice(name string, args ...int) (v []Value, err error) {
 	if len(args) > 2 {
 		index = args[2]
 	}
-	resp, err := c.Do(qslice_cmd[index], name, begin, end)
+	resp, err := c.db.Do(qslice_cmd[index], name, begin, end)
 	if err != nil {
 		return nil, goerr.NewError(err, "%s %s error", qslice_cmd[index], name)
 	}
@@ -256,7 +256,7 @@ func (c *Client) Qtrim(name string, size int, reverse ...bool) (delSize int64, e
 	if len(reverse) > 0 && reverse[0] {
 		index = 1
 	}
-	resp, err := c.Do(qtrim_cmd[index], name, size)
+	resp, err := c.db.Do(qtrim_cmd[index], name, size)
 	if err != nil {
 		return -1, goerr.NewError(err, "%s %s error", qtrim_cmd[index], name)
 	}
@@ -294,7 +294,7 @@ func (c *Client) Qtrim_back(name string, size int) (delSize int64, err error) {
 //  返回 v，返回元素的数组，为空时返回 nil
 //  返回 err，执行的错误，操作成功返回 nil
 func (c *Client) Qlist(nameStart, nameEnd string, limit int64) ([]string, error) {
-	resp, err := c.Do("qlist", nameStart, nameEnd, c.encoding(limit, false))
+	resp, err := c.db.Do("qlist", nameStart, nameEnd, c.encoding(limit, false))
 	if err != nil {
 		return nil, goerr.NewError(err, "Qlist %s %s %v error", nameStart, nameEnd, limit)
 	}
@@ -319,7 +319,7 @@ func (c *Client) Qlist(nameStart, nameEnd string, limit int64) ([]string, error)
 //  返回 v，返回元素的数组，为空时返回 nil
 //  返回 err，执行的错误，操作成功返回 nil
 func (c *Client) Qrlist(nameStart, nameEnd string, limit int64) ([]string, error) {
-	resp, err := c.Do("qrlist", nameStart, nameEnd, c.encoding(limit, false))
+	resp, err := c.db.Do("qrlist", nameStart, nameEnd, c.encoding(limit, false))
 	if err != nil {
 		return nil, goerr.NewError(err, "Qrlist %s %s %v error", nameStart, nameEnd, limit)
 	}
@@ -345,7 +345,7 @@ func (c *Client) Qrlist(nameStart, nameEnd string, limit int64) ([]string, error
 func (c *Client) Qset(key string, index int64, val interface{}) (err error) {
 	var resp []string
 
-	resp, err = c.Do("qset", key, index, c.encoding(val, false))
+	resp, err = c.db.Do("qset", key, index, c.encoding(val, false))
 
 	if err != nil {
 		return goerr.NewError(err, "Qset %s error", key)
@@ -363,7 +363,7 @@ func (c *Client) Qset(key string, index int64, val interface{}) (err error) {
 //  返回 val，返回的值.
 //  返回 err，执行的错误，操作成功返回 nil
 func (c *Client) Qget(key string, index int64) (Value, error) {
-	resp, err := c.Do("qget", key, index)
+	resp, err := c.db.Do("qget", key, index)
 	if err != nil {
 		return "", goerr.NewError(err, "Qget %s error", key)
 	}
@@ -379,7 +379,7 @@ func (c *Client) Qget(key string, index int64) (Value, error) {
 //  返回 val，返回的值.
 //  返回 err，执行的错误，操作成功返回 nil
 func (c *Client) Qfront(key string) (Value, error) {
-	resp, err := c.Do("qfront", key)
+	resp, err := c.db.Do("qfront", key)
 	if err != nil {
 		return "", goerr.NewError(err, "Qfront %s error", key)
 	}
@@ -395,7 +395,7 @@ func (c *Client) Qfront(key string) (Value, error) {
 //  返回 val，返回的值.
 //  返回 err，执行的错误，操作成功返回 nil
 func (c *Client) Qback(key string) (Value, error) {
-	resp, err := c.Do("qback", key)
+	resp, err := c.db.Do("qback", key)
 	if err != nil {
 		return "", goerr.NewError(err, "Qback %s error", key)
 	}
@@ -424,7 +424,7 @@ func (c *Client) qpush_array(name string, reverse bool, value []interface{}) (si
 	for _, v := range value {
 		args = append(args, c.encoding(v, false))
 	}
-	resp, err := c.Do(qpush_cmd[index], args)
+	resp, err := c.db.Do(qpush_cmd[index], args)
 	if err != nil {
 		return -1, goerr.NewError(err, "%s %s error", qpush_cmd[index], name)
 	}

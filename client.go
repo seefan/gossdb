@@ -5,45 +5,26 @@ import (
 	"github.com/seefan/goerr"
 	"github.com/seefan/gopool"
 	"github.com/seefan/to"
-	"github.com/ssdb/gossdb/ssdb"
-	//	"log"
 	"strconv"
 )
 
 //可回收的连接，支持连接池。
 //非协程安全，多协程请使用多个连接。
 type Client struct {
-	db *ssdb.Client
+	db ISSDBClient
 	gopool.Element
-	pool     *Connectors //来源的连接池
-	password string      //校验密码
-	isOpen   bool
-}
-
-//创建一个新的连接
-func NewClient(p *Connectors) *Client {
-	return &Client{
-		password: AuthPassword,
-		pool:     p,
-	}
+	pool   *Connectors //来源的连接池
 }
 
 //打开连接
 func (c *Client) Start() error {
-	c.password = AuthPassword
-	db, err := ssdb.Connect(c.pool.cfg.Host, c.pool.cfg.Port)
-	if err != nil {
-		return err
-	}
-	c.db = db
-	c.isOpen = true
-	return nil
+	return c.db.Start()
 }
 
 //关闭连接
 func (c *Client) Close() error {
 	if c.pool == nil { //连接池不存在，只关闭自己的连接
-		if c.isOpen {
+		if c.db.IsOpen() {
 			c.db.Close()
 		}
 	} else {
@@ -65,7 +46,7 @@ func (c *Client) Ping() bool {
 //  返回 re，返回数据库的估计大小, 以字节为单位. 如果服务器开启了压缩, 返回压缩后的大小.
 //  返回 err，执行的错误
 func (c *Client) DbSize() (re int, err error) {
-	resp, err := c.Do("dbsize")
+	resp, err := c.db.Do("dbsize")
 	if err != nil {
 		return -1, err
 	}
@@ -80,7 +61,7 @@ func (c *Client) DbSize() (re int, err error) {
 //  返回 re，返回数据库的估计大小, 以字节为单位. 如果服务器开启了压缩, 返回压缩后的大小.
 //  返回 err，执行的错误
 func (c *Client) Info() (re []string, err error) {
-	resp, err := c.Do("info")
+	resp, err := c.db.Do("info")
 	if err != nil {
 		return nil, err
 	}
@@ -138,37 +119,4 @@ func makeError(resp []string, errKey ...interface{}) error {
 	} else {
 		return goerr.New("access ssdb error, code is %v", resp)
 	}
-}
-
-//通用调用方法，如果有需要在所有方法前执行的，可以在这里执行
-func (c *Client) Do(args ...interface{}) ([]string, error) {
-
-	if c.password != "" {
-		resp, err := c.db.Do("auth", []string{c.password})
-		if err != nil {
-			c.db.Close()
-			c.isOpen = false
-			return nil, goerr.NewError(err, "authentication failed")
-		}
-		if len(resp) > 0 && resp[0] == "ok" {
-			//验证成功
-			c.password = ""
-		} else {
-			return nil, makeError(resp, "Authentication failed,password is wrong")
-		}
-	}
-	resp, err := c.db.Do(args...)
-	if err != nil {
-		c.db.Close()
-		c.isOpen = false
-	}
-	return resp, err
-}
-
-//配置密码, 之后将用于向服务器校验. 这个校验不是立即进行的, 而是等你执行第一条命令的时候才发给服务器. 注意, 密码是明文传输的!
-//优先使用gossdb.AuthPassowrd配置，本方法仅用于临时修改
-//  password 校验密码
-
-func (c *Client) Auth(password string) {
-	c.password = password
 }

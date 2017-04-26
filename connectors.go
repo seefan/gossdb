@@ -44,11 +44,11 @@ func (c *Connectors) Init(cfg *Config) {
 func (c *Connectors) Start() error {
 	c.WaitCount = 0
 	for i := 0; i < c.cfg.MinPoolSize; i++ {
-		cc := NewClient(c)
+		cc := c.newClient(c)
 		if err := cc.Start(); err != nil {
 			return goerr.NewError(err, "启动连接池出错")
 		}
-		c.poolMap.Append(cc)
+		cc.Element=*c.poolMap.Append(cc)
 	}
 	c.Status = PoolStart
 	return nil
@@ -94,7 +94,7 @@ func (c *Connectors) closeClient(cc *Client) {
 	c.lock.RLock()
 	defer c.lock.RUnlock()
 	if c.Status == PoolStart {
-		if cc.isOpen {
+		if cc.db.IsOpen() {
 			if c.WaitCount > 0 { //有等待的连接
 				c.pool <- cc
 			} else {
@@ -104,7 +104,7 @@ func (c *Connectors) closeClient(cc *Client) {
 			c.poolMap.CloseClient(&cc.Element)
 		}
 	} else {
-		if cc.isOpen {
+		if cc.db.IsOpen() {
 			cc.db.Close()
 		}
 	}
@@ -123,7 +123,8 @@ func (c *Connectors) NewClient() (client *Client, err error) {
 	}
 	element, err := c.poolMap.Get()
 	if err == nil {
-		return element.Value.(*Client), nil
+		client = element.Value.(*Client)
+		return
 	}
 	//get slow conn
 	client, err = c.slowNew()
@@ -163,15 +164,15 @@ func (c *Connectors) slowNew() (*Client, error) {
 	}
 	if c.poolMap.Length < c.cfg.MaxPoolSize { //如果没有连接了，检查是否可以自动增加
 		for i := 0; i < c.cfg.AcquireIncrement && c.poolMap.Length < c.cfg.MaxPoolSize; i++ {
-			cc := NewClient(c)
+			cc := c.newClient(c)
 			if err := cc.Start(); err != nil {
 				return nil, goerr.NewError(err, "扩展连接池出错")
 			}
-			c.poolMap.Append(cc)
+			cc.Element=*c.poolMap.Append(cc)
 		}
-		if client, err := c.poolMap.Get(); err == nil {
+		if element, err := c.poolMap.Get(); err == nil {
 			println("slow new")
-			return client.Value.(*Client), nil
+			return element.Value.(*Client), nil
 		}
 	}
 	return nil, nil //没有慢速连接可用
@@ -201,4 +202,16 @@ func (c *Connectors) Info() string {
 	defer c.lock.RUnlock()
 	return fmt.Sprintf(`pool size:%d	actived client:%d	wait create:%d	config max pool size:%d	config Increment:%d`,
 		c.poolMap.Length, c.poolMap.Current, c.WaitCount, c.cfg.MaxPoolSize, c.cfg.AcquireIncrement)
+}
+
+//创建一个新的连接
+func (c *Connectors) newClient(p *Connectors) *Client {
+	return &Client{
+		db: &SSDBClient{
+			host:     c.cfg.Host,
+			port:     c.cfg.Port,
+			password: c.cfg.Password,
+		},
+		pool: p,
+	}
 }

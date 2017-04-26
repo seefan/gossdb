@@ -3,8 +3,6 @@ package gossdb
 var (
 	//是否启动编码，启用后会对struct 进行 json 编码，以支持更多类型
 	Encoding bool
-	//配置密码, 之后将用于向服务器校验
-	AuthPassword string
 )
 
 //根据配置初始化连接池
@@ -23,8 +21,9 @@ var (
 //	MaxIdleTime int 最大空闲时间，指定秒内未使用则连接被丢弃。若为0则永不丢弃。默认值: 0
 //  MaxWaitSize int 最大等待数目，当连接池满后，新建连接将排除等待池中连接释放，本值限制最大等待的数量。默认值: 1000
 func NewPool(conf *Config, password ...string) (*Connectors, error) {
+
 	if len(password) > 0 {
-		AuthPassword = password[0]
+		conf.Password = password[0]
 	}
 	//默认值处理
 	c := new(Connectors)

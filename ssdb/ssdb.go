@@ -41,7 +41,6 @@ func Start(config ...string) error {
 	if len(config) > 0 {
 		ConfigName = config[0]
 	}
-
 	cfg, err := goconfig.LoadConfigFile(ConfigName)
 	if err == nil {
 		Host = cfg.MustValue("ssdb", "host", Host)
@@ -64,7 +63,6 @@ func Start(config ...string) error {
 		MaxPoolSize:      MaxPoolSize,
 		MinPoolSize:      MinPoolSize,
 		AcquireIncrement: AcquireIncrement,
-		MaxIdleTime:      MaxIdleTime,
 		MaxWaitSize:      MaxWaitSize,
 		HealthSecond:     HealthSecond,
 	})

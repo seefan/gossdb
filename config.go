@@ -15,10 +15,12 @@ type Config struct {
 	MinPoolSize int
 	//当连接池中的连接耗尽的时候一次同时获取的连接数。默认值: 5
 	AcquireIncrement int
-	//最大空闲时间，指定秒内未使用则连接被丢弃。若为0则永不丢弃。默认值: 0
+	//最大空闲时间，指定秒内未使用则连接被丢弃。若为0则永不丢弃。默认值: 0//废弃
 	MaxIdleTime int
 	//最大等待数目，当连接池满后，新建连接将等待池中连接释放后才可以继续，本值限制最大等待的数量，超过本值后将抛出异常。默认值: 1000
 	MaxWaitSize int
 	//连接池内缓存的连接状态检查时间隔，单位为秒。默认值: 5
 	HealthSecond int
+	//连接的密钥
+	Password string
 }

@@ -9,7 +9,7 @@ import "github.com/seefan/goerr"
 //  value key 的值
 //  返回 err，执行的错误
 func (c *Client) Hset(setName, key string, value interface{}) (err error) {
-	resp, err := c.Do("hset", setName, key, c.encoding(value, false))
+	resp, err := c.db.Do("hset", setName, key, c.encoding(value, false))
 	if err != nil {
 		return goerr.NewError(err, "Hset %s/%s error", setName, key)
 	}
@@ -27,7 +27,7 @@ func (c *Client) Hset(setName, key string, value interface{}) (err error) {
 //  返回 value key 的值
 //  返回 err，执行的错误
 func (c *Client) Hget(setName, key string) (value Value, err error) {
-	resp, err := c.Do("hget", setName, key)
+	resp, err := c.db.Do("hget", setName, key)
 	if err != nil {
 		return "", goerr.NewError(err, "Hget %s/%s error", setName, key)
 	}
@@ -43,7 +43,7 @@ func (c *Client) Hget(setName, key string) (value Value, err error) {
 //  key hashmap 的 key
 //  返回 err，执行的错误
 func (c *Client) Hdel(setName, key string) (err error) {
-	resp, err := c.Do("hdel", setName, key)
+	resp, err := c.db.Do("hdel", setName, key)
 	if err != nil {
 		return goerr.NewError(err, "Hdel %s/%s error", setName, key)
 	}
@@ -60,7 +60,7 @@ func (c *Client) Hdel(setName, key string) (err error) {
 //  返回 re，如果当前 key 不存在返回 false
 //  返回 err，执行的错误，操作成功返回 nil
 func (c *Client) Hexists(setName, key string) (re bool, err error) {
-	resp, err := c.Do("hexists", setName, key)
+	resp, err := c.db.Do("hexists", setName, key)
 	if err != nil {
 		return false, goerr.NewError(err, "Hexists %s/%s error", setName, key)
 	}
@@ -76,7 +76,7 @@ func (c *Client) Hexists(setName, key string) (re bool, err error) {
 //  setName hashmap 的名字
 //  返回 err，执行的错误，操作成功返回 nil
 func (c *Client) Hclear(setName string) (err error) {
-	resp, err := c.Do("hclear", setName)
+	resp, err := c.db.Do("hclear", setName)
 	if err != nil {
 		return goerr.NewError(err, "Hclear %s error", setName)
 	}
@@ -101,7 +101,7 @@ func (c *Client) Hscan(setName string, keyStart, keyEnd string, limit int64, rev
 		cmd = "hrscan"
 	}
 
-	resp, err := c.Do(cmd, setName, keyStart, keyEnd, limit)
+	resp, err := c.db.Do(cmd, setName, keyStart, keyEnd, limit)
 
 	if err != nil {
 		return nil, goerr.NewError(err, "%s %s %s %s %v error", cmd, setName, keyStart, keyEnd, limit)
@@ -131,7 +131,7 @@ func (c *Client) HscanArray(setName string, keyStart, keyEnd string, limit int64
 	if len(reverse) > 0 && reverse[0] == true {
 		cmd = "hrscan"
 	}
-	resp, err := c.Do(cmd, setName, keyStart, keyEnd, limit)
+	resp, err := c.db.Do(cmd, setName, keyStart, keyEnd, limit)
 
 	if err != nil {
 		return nil, nil, goerr.NewError(err, "%s %s %s %s %v error", cmd, setName, keyStart, keyEnd, limit)
@@ -186,7 +186,7 @@ func (c *Client) MultiHset(setName string, kvs map[string]interface{}) (err erro
 		args = append(args, k)
 		args = append(args, c.encoding(v, false))
 	}
-	resp, err := c.Do("multi_hset", setName, args)
+	resp, err := c.db.Do("multi_hset", setName, args)
 
 	if err != nil {
 		return goerr.NewError(err, "MultiHset %s %s error", setName, kvs)
@@ -208,7 +208,7 @@ func (c *Client) MultiHget(setName string, key ...string) (val map[string]Value,
 	if len(key) == 0 {
 		return make(map[string]Value), nil
 	}
-	resp, err := c.Do("multi_hget", setName, key)
+	resp, err := c.db.Do("multi_hget", setName, key)
 
 	if err != nil {
 		return nil, goerr.NewError(err, "MultiHget %s %s error", setName, key)
@@ -234,7 +234,7 @@ func (c *Client) MultiHgetSlice(setName string, key ...string) (keys []string, v
 	if len(key) == 0 {
 		return []string{}, []Value{}, nil
 	}
-	resp, err := c.Do("multi_hget", setName, key)
+	resp, err := c.db.Do("multi_hget", setName, key)
 
 	if err != nil {
 		return nil, nil, goerr.NewError(err, "MultiHgetSlice %s %s error", setName, key)
@@ -263,7 +263,7 @@ func (c *Client) MultiHgetArray(setName string, key []string) (val map[string]Va
 	if len(key) == 0 {
 		return make(map[string]Value), nil
 	}
-	resp, err := c.Do("multi_hget", setName, key)
+	resp, err := c.db.Do("multi_hget", setName, key)
 
 	if err != nil {
 		return nil, goerr.NewError(err, "MultiHget %s %s error", setName, key)
@@ -289,7 +289,7 @@ func (c *Client) MultiHgetSliceArray(setName string, key []string) (keys []strin
 	if len(key) == 0 {
 		return []string{}, []Value{}, nil
 	}
-	resp, err := c.Do("multi_hget", setName, key)
+	resp, err := c.db.Do("multi_hget", setName, key)
 
 	if err != nil {
 		return nil, nil, goerr.NewError(err, "MultiHgetSlice %s %s error", setName, key)
@@ -316,7 +316,7 @@ func (c *Client) MultiHgetSliceArray(setName string, key []string) (keys []strin
 //  返回 err，执行的错误，操作成功返回 nil
 func (c *Client) MultiHgetAll(setName string) (val map[string]Value, err error) {
 
-	resp, err := c.Do("hgetall", setName)
+	resp, err := c.db.Do("hgetall", setName)
 
 	if err != nil {
 		return nil, goerr.NewError(err, "MultiHgetAll %s error", setName)
@@ -339,7 +339,7 @@ func (c *Client) MultiHgetAll(setName string) (val map[string]Value, err error) 
 //  返回 err，执行的错误，操作成功返回 nil
 func (c *Client) MultiHgetAllSlice(setName string) (keys []string, values []Value, err error) {
 
-	resp, err := c.Do("hgetall", setName)
+	resp, err := c.db.Do("hgetall", setName)
 
 	if err != nil {
 		return nil, nil, goerr.NewError(err, "MultiHgetAllSlice %s error", setName)
@@ -367,7 +367,7 @@ func (c *Client) MultiHdel(setName string, key ...string) (err error) {
 	if len(key) == 0 {
 		return nil
 	}
-	resp, err := c.Do("multi_hdel", setName, key)
+	resp, err := c.db.Do("multi_hdel", setName, key)
 
 	if err != nil {
 		return goerr.NewError(err, "MultiHdel %s %s error", setName, key)
@@ -388,7 +388,7 @@ func (c *Client) MultiHdelArray(setName string, key []string) (err error) {
 	if len(key) == 0 {
 		return nil
 	}
-	resp, err := c.Do("multi_hdel", setName, key)
+	resp, err := c.db.Do("multi_hdel", setName, key)
 
 	if err != nil {
 		return goerr.NewError(err, "MultiHdel %s %s error", setName, key)
@@ -408,7 +408,7 @@ func (c *Client) MultiHdelArray(setName string, key []string) (err error) {
 //  返回 包含名字的数组
 //  返回 err，执行的错误，操作成功返回 nil
 func (c *Client) Hlist(nameStart, nameEnd string, limit int64) ([]string, error) {
-	resp, err := c.Do("hlist", nameStart, nameEnd, c.encoding(limit, false))
+	resp, err := c.db.Do("hlist", nameStart, nameEnd, c.encoding(limit, false))
 	if err != nil {
 		return nil, goerr.NewError(err, "Hlist %s %s %v error", nameStart, nameEnd, limit)
 	}
@@ -434,7 +434,7 @@ func (c *Client) Hlist(nameStart, nameEnd string, limit int64) ([]string, error)
 //  返回 err，可能的错误，操作成功返回 nil
 func (c *Client) Hincr(setName, key string, num int64) (val int64, err error) {
 
-	resp, err := c.Do("hincr", setName, key, num)
+	resp, err := c.db.Do("hincr", setName, key, num)
 
 	if err != nil {
 		return -1, goerr.NewError(err, "Hincr %s error", key)
@@ -452,7 +452,7 @@ func (c *Client) Hincr(setName, key string, num int64) (val int64, err error) {
 //  返回 err，可能的错误，操作成功返回 nil
 func (c *Client) Hsize(setName string) (val int64, err error) {
 
-	resp, err := c.Do("hsize", setName)
+	resp, err := c.db.Do("hsize", setName)
 
 	if err != nil {
 		return -1, goerr.NewError(err, "Hsize %s error", setName)
@@ -472,7 +472,7 @@ func (c *Client) Hsize(setName string) (val int64, err error) {
 //  返回 包含名字的数组
 //  返回 err，执行的错误，操作成功返回 nil
 func (c *Client) Hkeys(setName, keyStart, keyEnd string, limit int64) ([]string, error) {
-	resp, err := c.Do("hkeys", setName, keyStart, keyEnd, c.encoding(limit, false))
+	resp, err := c.db.Do("hkeys", setName, keyStart, keyEnd, c.encoding(limit, false))
 	if err != nil {
 		return nil, goerr.NewError(err, "Hkeys %s %s %s %v error", setName, keyStart, keyEnd, limit)
 	}

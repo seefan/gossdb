@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/seefan/gossdb"
 	//	"github.com/seefan/gossdb/ssdb"
-	"log"
+	//	"log"
 	"runtime"
 	"sync"
 	"time"
@@ -38,9 +38,9 @@ func main() {
 	pool, err := gossdb.NewPool(&gossdb.Config{
 		Host:        ip,
 		Port:        port,
-		MaxPoolSize: 20,
-		MinPoolSize: 20,
-		MaxWaitSize: 20000,
+		MaxPoolSize: 10,
+		MinPoolSize: 10,
+		MaxWaitSize: 10000,
 	})
 
 	if err != nil {
@@ -49,12 +49,6 @@ func main() {
 	}
 	gossdb.Encoding = true
 
-	client, err := pool.NewClient()
-	if err != nil {
-		fmt.Errorf("error new pool %v", err)
-		return
-	}
-	defer client.Close()
 	//v, err := client.Qpush("test")
 	//client.Set("a", "heldfsdlo1")
 	//client.Set("b", "hello2")
@@ -172,7 +166,7 @@ func (s *Success) Show() string {
 
 func run(wait *sync.WaitGroup, pool *gossdb.Connectors, su *Success) {
 
-	for i := 0; i < 14000; i++ {
+	for i := 0; i < 100000; i++ {
 		wait.Add(1)
 		go func(idx int) {
 			defer wait.Done()
@@ -187,12 +181,12 @@ func run(wait *sync.WaitGroup, pool *gossdb.Connectors, su *Success) {
 			//if err != nil {
 			//	log.Println(err)
 			//}
-			_, err = c.Get(fmt.Sprintf("test%d", idx))
-			if err != nil {
-				log.Println(err, "get client")
-			} else {
-				//log.Println(idx, re, "close client", pool.Info())
-			}
+			//_, err = c.Get(fmt.Sprintf("test%d", idx))
+			//if err != nil {
+			//	log.Println(err, "get client")
+			//} else {
+			//	//log.Println(idx, "close client", pool.Info())
+			//}
 			//time.Sleep(time.Millisecond * 5)
 			su.Ok()
 			//
