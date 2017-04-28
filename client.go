@@ -3,7 +3,7 @@ package gossdb
 import (
 	"encoding/json"
 	"github.com/seefan/goerr"
-	"github.com/seefan/gopool"
+	"github.com/seefan/gossdb/client"
 	"github.com/seefan/to"
 	"strconv"
 )
@@ -11,26 +11,13 @@ import (
 //可回收的连接，支持连接池。
 //非协程安全，多协程请使用多个连接。
 type Client struct {
-	db ISSDBClient
-	gopool.Element
-	pool   *Connectors //来源的连接池
-}
-
-//打开连接
-func (c *Client) Start() error {
-	return c.db.Start()
+	db   client.IClient
+	pool *Connectors //来源的连接池
 }
 
 //关闭连接
-func (c *Client) Close() error {
-	if c.pool == nil { //连接池不存在，只关闭自己的连接
-		if c.db.IsOpen() {
-			c.db.Close()
-		}
-	} else {
-		c.pool.closeClient(c)
-	}
-	return nil
+func (c *Client) Close() {
+	c.pool.closeClient(c)
 }
 
 //检查连接情况

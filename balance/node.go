@@ -1,4 +1,4 @@
-package gossdb
+package balance
 
 import (
 	"crypto/md5"
@@ -30,6 +30,10 @@ func NewNodeManager() *NodeManager {
 	n.nodes = new(PriorityNode)
 	return n
 }
+func (n *NodeManager) Reset() {
+	n.nodes = new(PriorityNode)
+	n.root = nil
+}
 func (n *NodeManager) Append(node *Node, weight int) {
 	n.lock.Lock()
 	defer n.lock.Unlock()
@@ -54,17 +58,17 @@ func (n *NodeManager) GetNode(key ...string) (string, error) {
 	pk := n.hash(strings.Join(key, ":"))
 
 	if n.root.Priority > pk {
-		println("pk", pk,n.root.Priority)
+		println("pk", pk, n.root.Priority)
 		return n.root.ID, nil
 	}
 	for i := 1; i < n.nodes.Len(); i++ {
 		node := n.nodes.Get(i)
 		if node.Priority > pk {
-			println("pk", pk,node.Priority)
+			println("pk", pk, node.Priority)
 			return node.ID, nil
 		}
 	}
-	println("pk", pk,n.root.Priority)
+	println("pk", pk, n.root.Priority)
 	return n.root.ID, nil
 }
 func (n *NodeManager) String() string {

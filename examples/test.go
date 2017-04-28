@@ -3,8 +3,9 @@ package main
 import (
 	"fmt"
 	"github.com/seefan/gossdb"
-	//	"github.com/seefan/gossdb/ssdb"
 	//	"log"
+	"github.com/seefan/gossdb/conf"
+	"log"
 	"runtime"
 	"sync"
 	"time"
@@ -35,11 +36,11 @@ func main() {
 	ip := "192.168.56.101"
 	port := 8888
 
-	pool, err := gossdb.NewPool(&gossdb.Config{
+	pool, err := gossdb.NewPool(conf.Config{
 		Host:        ip,
 		Port:        port,
 		MaxPoolSize: 10,
-		MinPoolSize: 10,
+		MinPoolSize: 5,
 		MaxWaitSize: 10000,
 	})
 
@@ -129,13 +130,13 @@ func main() {
 	//	log.Println(vm, err)
 	//	log.Println("----------------")
 	now := time.Now()
-	wait := new(sync.WaitGroup)
 	sk := new(Success)
-
-	run(wait, pool, sk)
+	for i := 0; i < 1; i++ {
+		go run(pool, sk)
+	}
 	//log.Println("get client", pool.Info())
+	time.Sleep(time.Second)
 
-	wait.Wait()
 	println("time is ", time.Since(now).String(), sk.Show())
 	//	log.Println(pool.Info())
 	//	time.Sleep(time.Second * 10)
@@ -147,49 +148,64 @@ func main() {
 type Success struct {
 	count   int
 	success int
+	fail    int
 	lock    sync.Mutex
+	wait    sync.WaitGroup
 }
 
 func (s *Success) Add() {
 	s.lock.Lock()
 	defer s.lock.Unlock()
+	//s.wait.Add(1)
 	s.count += 1
 }
 func (s *Success) Ok() {
 	s.lock.Lock()
 	defer s.lock.Unlock()
+	//s.wait.Done()
 	s.success += 1
 }
-func (s *Success) Show() string {
-	return fmt.Sprintf("count:%d,success:%d", s.count, s.success)
+func (s *Success) Fail() {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+	//s.wait.Done()
+	s.fail += 1
 }
 
-func run(wait *sync.WaitGroup, pool *gossdb.Connectors, su *Success) {
+func (s *Success) Show() string {
+	//s.wait.Wait()
+	return fmt.Sprintf("count:%d,success:%d,fail %d", s.count, s.success, s.fail)
+}
+func run(pool *gossdb.Connectors, su *Success) {
 
-	for i := 0; i < 100000; i++ {
-		wait.Add(1)
+	for i := 0; i < 1000; i++ {
+		su.Add()
 		go func(idx int) {
-			defer wait.Done()
-			su.Add()
+
 			c, err := pool.NewClient()
 			if err != nil {
-				//log.Println(err.Error(), idx, pool.Info())
+				su.Fail()
+				log.Println(err)
 				return
 			}
 			defer c.Close()
-			//err = c.Set(fmt.Sprintf("test%d", idx), fmt.Sprintf("test%d", idx))
-			//if err != nil {
-			//	log.Println(err)
-			//}
-			//_, err = c.Get(fmt.Sprintf("test%d", idx))
-			//if err != nil {
-			//	log.Println(err, "get client")
-			//} else {
-			//	//log.Println(idx, "close client", pool.Info())
-			//}
-			//time.Sleep(time.Millisecond * 5)
+
+			err = c.Set(fmt.Sprintf("test%d", idx), fmt.Sprintf("test-%d", idx))
+			if err != nil {
+				log.Println(err)
+				su.Fail()
+			}
+			re, err := c.Get(fmt.Sprintf("test%d", idx))
+			if err != nil {
+				log.Println(err, "get client")
+				su.Fail()
+			} else {
+				log.Println(idx, "close client", re)
+			}
 			su.Ok()
+			////time.Sleep(time.Millisecond * 5)
 			//
 		}(i)
+		time.Sleep(time.Millisecond)
 	}
 }
