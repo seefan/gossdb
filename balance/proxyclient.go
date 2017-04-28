@@ -1,18 +1,22 @@
 package balance
 
+import "github.com/seefan/gossdb/client"
+
 type ProxyClient struct {
-	pool *Pool
+	pool *BalancePool
 }
 
-func (p *ProxyClient) Close() error {
-	return nil
-}
-func (p *ProxyClient) Start() error {
-	return nil
-}
-func (p *ProxyClient) IsOpen() bool {
-	return true
+func NewProxyClient(pool *BalancePool) *ProxyClient {
+	return &ProxyClient{
+		pool: pool,
+	}
 }
 func (p *ProxyClient) Do(args ...interface{}) ([]string, error) {
-	return nil, nil
+	pc, id, err := p.pool.Get(args)
+	if err != nil {
+		return nil, err
+	}
+	defer p.pool.Set(pc, id)
+	conn := pc.Client.(client.IClient)
+	return conn.Do(args...)
 }

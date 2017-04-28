@@ -12,7 +12,7 @@ import (
 //非协程安全，多协程请使用多个连接。
 type Client struct {
 	db   client.IClient
-	pool *Connectors //来源的连接池
+	pool *Connectors
 }
 
 //关闭连接

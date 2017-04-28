@@ -11,7 +11,6 @@ type SSDBClient struct {
 	Password string
 	Host     string
 	Port     int
-	Client   interface{}
 }
 
 //打开连接

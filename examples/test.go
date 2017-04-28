@@ -34,18 +34,34 @@ func main() {
 	runtime.GOMAXPROCS(runtime.NumCPU())
 
 	ip := "192.168.56.101"
-	port := 8888
+	//	port := 8888
 
 	pool, err := gossdb.NewPool(conf.Config{
 		Host:        ip,
-		Port:        port,
+		Port:        8888,
 		MaxPoolSize: 10,
 		MinPoolSize: 5,
 		MaxWaitSize: 10000,
-	})
+		Weight:      2,
+	}, conf.Config{
+		Host:        ip,
+		Port:        8887,
+		MaxPoolSize: 10,
+		MinPoolSize: 5,
+		MaxWaitSize: 10000,
+		Weight:      2,
+	},
+		conf.Config{
+			Host:        ip,
+			Port:        8886,
+			MaxPoolSize: 10,
+			MinPoolSize: 5,
+			MaxWaitSize: 10000,
+			Weight:      2,
+		})
 
 	if err != nil {
-		fmt.Errorf("error new pool %v", err)
+		log.Println("error new pool %v", err)
 		return
 	}
 	gossdb.Encoding = true
@@ -131,7 +147,7 @@ func main() {
 	//	log.Println("----------------")
 	now := time.Now()
 	sk := new(Success)
-	for i := 0; i < 1; i++ {
+	for i := 0; i < 500; i++ {
 		go run(pool, sk)
 	}
 	//log.Println("get client", pool.Info())
@@ -190,18 +206,18 @@ func run(pool *gossdb.Connectors, su *Success) {
 			}
 			defer c.Close()
 
-			err = c.Set(fmt.Sprintf("test%d", idx), fmt.Sprintf("test-%d", idx))
-			if err != nil {
-				log.Println(err)
-				su.Fail()
-			}
-			re, err := c.Get(fmt.Sprintf("test%d", idx))
-			if err != nil {
-				log.Println(err, "get client")
-				su.Fail()
-			} else {
-				log.Println(idx, "close client", re)
-			}
+			//err = c.Set(fmt.Sprintf("test%d", idx), fmt.Sprintf("test-%d", idx))
+			//if err != nil {
+			//	log.Println(err)
+			//	su.Fail()
+			//}
+			//_, err = c.Get(fmt.Sprintf("test%d", idx))
+			//if err != nil {
+			//	log.Println(err, "get client")
+			//	su.Fail()
+			//} else {
+			//	//log.Println(idx, "close client", re)
+			//}
 			su.Ok()
 			////time.Sleep(time.Millisecond * 5)
 			//

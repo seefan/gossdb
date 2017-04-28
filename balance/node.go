@@ -8,7 +8,6 @@ import (
 	//	"container/heap"
 	"github.com/seefan/goerr"
 	"sort"
-	"strings"
 	"sync"
 )
 
@@ -49,26 +48,23 @@ func (n *NodeManager) Append(node *Node, weight int) {
 		n.root = n.nodes.Get(0)
 	}
 }
-func (n *NodeManager) GetNode(key ...string) (string, error) {
+func (n *NodeManager) GetNode(key string) (string, error) {
 	n.lock.RLock()
 	defer n.lock.RUnlock()
 	if n.root == nil {
 		return "", goerr.New("not any node")
 	}
-	pk := n.hash(strings.Join(key, ":"))
+	pk := n.hash(key)
 
 	if n.root.Priority > pk {
-		println("pk", pk, n.root.Priority)
 		return n.root.ID, nil
 	}
 	for i := 1; i < n.nodes.Len(); i++ {
 		node := n.nodes.Get(i)
 		if node.Priority > pk {
-			println("pk", pk, node.Priority)
 			return node.ID, nil
 		}
 	}
-	println("pk", pk, n.root.Priority)
 	return n.root.ID, nil
 }
 func (n *NodeManager) String() string {
