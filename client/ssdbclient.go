@@ -33,6 +33,10 @@ func (s *SSDBClient) Close() error {
 func (s *SSDBClient) IsOpen() bool {
 	return s.isOpen
 }
+func (s *SSDBClient) Ping() bool {
+	_, err := s.Do("info")
+	return err == nil
+}
 
 //通用调用方法，如果有需要在所有方法前执行的，可以在这里执行
 func (s *SSDBClient) Do(args ...interface{}) ([]string, error) {
