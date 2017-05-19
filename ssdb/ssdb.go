@@ -11,6 +11,26 @@ import (
 var (
 	//连接池实例
 	pool *gossdb.Connectors
+	//ssdb的ip或主机名
+	Host = "127.0.0.1"
+	// ssdb的端口
+	Port = 8888
+	//获取连接超时时间，单位为秒。默认值: 5
+	GetClientTimeout = 5
+	//最大连接池个数。默认值: 20
+	MaxPoolSize = 100
+	//最小连接池数。默认值: 5
+	MinPoolSize = 5
+	//当连接池中的连接耗尽的时候一次同时获取的连接数。默认值: 5
+	AcquireIncrement = 5
+	//最大空闲时间，指定秒内未使用则连接被丢弃。若为0则永不丢弃。默认值: 0
+	MaxIdleTime = 600
+	//最大等待数目，当连接池满后，新建连接将等待池中连接释放后才可以继续，本值限制最大等待的数量，超过本值后将抛出异常。默认值: 1000
+	MaxWaitSize = 20
+	//健康检查时间隔，单位为秒。默认值: 300
+	HealthSecond = 300
+	//默认配置文件名
+	ConfigName = "config.ini"
 )
 
 //启动服务
@@ -22,6 +42,7 @@ func Start(config ...string) error {
 	if len(config) > 0 {
 		ConfigName = config[0]
 	}
+
 	cfg, err := goconfig.LoadConfigFile(ConfigName)
 	if err == nil {
 		Host = cfg.MustValue("ssdb", "host", Host)
@@ -44,6 +65,7 @@ func Start(config ...string) error {
 		MaxPoolSize:      MaxPoolSize,
 		MinPoolSize:      MinPoolSize,
 		AcquireIncrement: AcquireIncrement,
+		MaxIdleTime:      MaxIdleTime,
 		MaxWaitSize:      MaxWaitSize,
 		HealthSecond:     HealthSecond,
 	})

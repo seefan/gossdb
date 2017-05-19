@@ -20,14 +20,14 @@
 //	}
 //
 //
-//	s, err := pool.NewClient()
+//	c, err := pool.NewClient()
 //	if err != nil {
 //		log.Println(idx, err.Error())
 //		return
 //	}
-//	defer s.Close()
-//	s.Set("test","hello world.")
-//	re, err := s.Get("test")
+//	defer c.Close()
+//	c.Set("test","hello world.")
+//	re, err := c.Get("test")
 //	if err != nil {
 //		log.Println(err)
 //	} else {
