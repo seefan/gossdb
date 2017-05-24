@@ -18,7 +18,7 @@ func getConfig(c *goconfig.ConfigFile, name string) conf.Config {
 		Port:             c.MustInt(name, "port", conf.Port),
 		Host:             c.MustValue(name, "host", conf.Host),
 		HealthSecond:     c.MustInt(name, "health_second", conf.HealthSecond),
-		Weight:           c.MustInt(name, "wait", conf.Weight),
+		Weight:           c.MustInt(name, "weight", conf.Weight),
 		Password:         c.MustValue(name, "password", ""),
 		MaxWaitSize:      c.MustInt(name, "max_wait_size", conf.MaxWaitSize),
 		AcquireIncrement: c.MustInt(name, "acquire_increment", conf.AcquireIncrement),
