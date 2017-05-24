@@ -11,8 +11,8 @@ import (
 //  key zset 中的 key.
 //  score 整数, key 对应的权重值
 //  返回 err，可能的错误，操作成功返回 nil
-func (this *Client) Zset(setName, key string, score int64) (err error) {
-	resp, err := this.Do("zset", setName, key, this.encoding(score, false))
+func (c *Client) Zset(setName, key string, score int64) (err error) {
+	resp, err := c.Do("zset", setName, key, score)
 	if err != nil {
 		return goerr.NewError(err, "Zset %s/%s error", setName, key)
 	}
@@ -29,8 +29,8 @@ func (this *Client) Zset(setName, key string, score int64) (err error) {
 //  key zset 中的 key.
 //  返回 score 整数, key 对应的权重值
 //  返回 err，可能的错误，操作成功返回 nil
-func (this *Client) Zget(setName, key string) (score int64, err error) {
-	resp, err := this.Do("zget", setName, key)
+func (c *Client) Zget(setName, key string) (score int64, err error) {
+	resp, err := c.Do("zget", setName, key)
 	if err != nil {
 		return 0, goerr.NewError(err, "Zget %s/%s error", setName, key)
 	}
@@ -45,8 +45,8 @@ func (this *Client) Zget(setName, key string) (score int64, err error) {
 //  setName zset名称
 //  key zset 中的 key.
 //  返回 err，可能的错误，操作成功返回 nil
-func (this *Client) Zdel(setName, key string) (err error) {
-	resp, err := this.Do("zdel", setName, key)
+func (c *Client) Zdel(setName, key string) (err error) {
+	resp, err := c.Do("zdel", setName, key)
 	if err != nil {
 		return goerr.NewError(err, "Zdel %s/%s error", setName, key)
 	}
@@ -62,8 +62,8 @@ func (this *Client) Zdel(setName, key string) (err error) {
 //  key zset 中的 key.
 //  返回 re 如果存在, 返回 true, 否则返回 false.
 //  返回 err，可能的错误，操作成功返回 nil
-func (this *Client) Zexists(setName, key string) (re bool, err error) {
-	resp, err := this.Do("zexists", setName, key)
+func (c *Client) Zexists(setName, key string) (re bool, err error) {
+	resp, err := c.Do("zexists", setName, key)
 	if err != nil {
 		return false, goerr.NewError(err, "Zexists %s/%s error", setName, key)
 	}
@@ -81,8 +81,8 @@ func (this *Client) Zexists(setName, key string) (re bool, err error) {
 //  end key 的最大权重值(包含), 空字符串表示 +inf.
 //  返回 count 返回符合条件的 key 的数量.
 //  返回 err，可能的错误，操作成功返回 nil
-func (this *Client) Zcount(setName string, start, end interface{}) (count int64, err error) {
-	resp, err := this.Do("zcount", setName, this.encoding(start, false), this.encoding(end, false))
+func (c *Client) Zcount(setName string, start, end interface{}) (count int64, err error) {
+	resp, err := c.Do("zcount", setName, start, end)
 	if err != nil {
 		return -1, goerr.NewError(err, "Zcount %s %v %v error", setName, start, end)
 	}
@@ -97,8 +97,8 @@ func (this *Client) Zcount(setName string, start, end interface{}) (count int64,
 //
 //  setName zset名称
 //  返回 err，可能的错误，操作成功返回 nil
-func (this *Client) Zclear(setName string) (err error) {
-	resp, err := this.Do("zclear", setName)
+func (c *Client) Zclear(setName string) (err error) {
+	resp, err := c.Do("zclear", setName)
 	if err != nil {
 		return goerr.NewError(err, "Zclear %s error", setName)
 	}
@@ -122,8 +122,8 @@ func (this *Client) Zclear(setName string) (err error) {
 //  返回 keys 返回符合条件的 key 的数组.
 //  返回 scores 返回符合条件的 key 对应的权重.
 //  返回 err，可能的错误，操作成功返回 nil
-func (this *Client) Zscan(setName string, keyStart string, scoreStart, scoreEnd interface{}, limit int64) (keys []string, scores []int64, err error) {
-	resp, err := this.Do("zscan", setName, keyStart, this.encoding(scoreStart, false), this.encoding(scoreEnd, false), limit)
+func (c *Client) Zscan(setName string, keyStart string, scoreStart, scoreEnd interface{}, limit int64) (keys []string, scores []int64, err error) {
+	resp, err := c.Do("zscan", setName, keyStart, scoreStart, scoreEnd, limit)
 
 	if err != nil {
 		return nil, nil, goerr.NewError(err, "Zscan %s %v %v %v %v error", setName, keyStart, scoreStart, scoreEnd, limit)
@@ -152,8 +152,8 @@ func (this *Client) Zscan(setName string, keyStart string, scoreStart, scoreEnd 
 //  返回 keys 返回符合条件的 key 的数组.
 //  返回 scores 返回符合条件的 key 对应的权重.
 //  返回 err，可能的错误，操作成功返回 nil
-func (this *Client) Zrscan(setName string, keyStart string, scoreStart, scoreEnd interface{}, limit int64) (keys []string, scores []int64, err error) {
-	resp, err := this.Do("zrscan", setName, keyStart, this.encoding(scoreStart, false), this.encoding(scoreEnd, false), limit)
+func (c *Client) Zrscan(setName string, keyStart string, scoreStart, scoreEnd interface{}, limit int64) (keys []string, scores []int64, err error) {
+	resp, err := c.Do("zrscan", setName, keyStart, scoreStart, scoreEnd, limit)
 
 	if err != nil {
 		return nil, nil, goerr.NewError(err, "Zrscan %s %v %v %v %v error", setName, keyStart, scoreStart, scoreEnd, limit)
@@ -178,14 +178,14 @@ func (this *Client) Zrscan(setName string, keyStart string, scoreStart, scoreEnd
 //  setName zset名称
 //  kvs 包含 key-score 的map
 //  返回 err，可能的错误，操作成功返回 nil
-func (this *Client) MultiZset(setName string, kvs map[string]int64) (err error) {
+func (c *Client) MultiZset(setName string, kvs map[string]int64) (err error) {
 
-	args := []string{}
+	args := []interface{}{}
 	for k, v := range kvs {
 		args = append(args, k)
-		args = append(args, this.encoding(v, false))
+		args = append(args, v)
 	}
-	resp, err := this.Do("multi_zset", setName, args)
+	resp, err := c.Do("multi_zset", setName, args)
 
 	if err != nil {
 		return goerr.NewError(err, "MultiZset %s %s error", setName, kvs)
@@ -203,11 +203,11 @@ func (this *Client) MultiZset(setName string, kvs map[string]int64) (err error) 
 //  key 要获取key的列表，支持多个key
 //  返回 val 包含 key-score 的map
 //  返回 err，可能的错误，操作成功返回 nil
-func (this *Client) MultiZget(setName string, key ...string) (val map[string]int64, err error) {
+func (c *Client) MultiZget(setName string, key ...string) (val map[string]int64, err error) {
 	if len(key) == 0 {
 		return make(map[string]int64), nil
 	}
-	resp, err := this.Do("multi_zget", setName, key)
+	resp, err := c.Do("multi_zget", setName, key)
 
 	if err != nil {
 		return nil, goerr.NewError(err, "MultiZget %s %s error", setName, key)
@@ -230,11 +230,11 @@ func (this *Client) MultiZget(setName string, key ...string) (val map[string]int
 //  返回 keys 包含 key的slice
 //  返回 scores 包含 key对应权重的slice
 //  返回 err，可能的错误，操作成功返回 nil
-func (this *Client) MultiZgetSlice(setName string, key ...string) (keys []string, scores []int64, err error) {
+func (c *Client) MultiZgetSlice(setName string, key ...string) (keys []string, scores []int64, err error) {
 	if len(key) == 0 {
 		return []string{}, []int64{}, nil
 	}
-	resp, err := this.Do("multi_zget", setName, key)
+	resp, err := c.Do("multi_zget", setName, key)
 
 	if err != nil {
 		return nil, nil, goerr.NewError(err, "MultiZget %s %s error", setName, key)
@@ -261,11 +261,11 @@ func (this *Client) MultiZgetSlice(setName string, key ...string) (keys []string
 //  key 要获取key的slice
 //  返回 val 包含 key-score 的map
 //  返回 err，可能的错误，操作成功返回 nil
-func (this *Client) MultiZgetArray(setName string, key []string) (val map[string]int64, err error) {
+func (c *Client) MultiZgetArray(setName string, key []string) (val map[string]int64, err error) {
 	if len(key) == 0 {
 		return make(map[string]int64), nil
 	}
-	resp, err := this.Do("multi_zget", setName, key)
+	resp, err := c.Do("multi_zget", setName, key)
 
 	if err != nil {
 		return nil, goerr.NewError(err, "MultiZget %s %s error", setName, key)
@@ -288,11 +288,11 @@ func (this *Client) MultiZgetArray(setName string, key []string) (val map[string
 //  返回 keys 包含 key的slice
 //  返回 scores 包含 key对应权重的slice
 //  返回 err，可能的错误，操作成功返回 nil
-func (this *Client) MultiZgetSliceArray(setName string, key []string) (keys []string, scores []int64, err error) {
+func (c *Client) MultiZgetSliceArray(setName string, key []string) (keys []string, scores []int64, err error) {
 	if len(key) == 0 {
 		return []string{}, []int64{}, nil
 	}
-	resp, err := this.Do("multi_zget", setName, key)
+	resp, err := c.Do("multi_zget", setName, key)
 
 	if err != nil {
 		return nil, nil, goerr.NewError(err, "MultiZget %s %s error", setName, key)
@@ -318,11 +318,11 @@ func (this *Client) MultiZgetSliceArray(setName string, key []string) (keys []st
 //  setName zset名称
 //  key 要删除key的列表，支持多个key
 //  返回 err，可能的错误，操作成功返回 nil
-func (this *Client) MultiZdel(setName string, key ...string) (err error) {
+func (c *Client) MultiZdel(setName string, key ...string) (err error) {
 	if len(key) == 0 {
 		return nil
 	}
-	resp, err := this.Do("multi_zdel", key)
+	resp, err := c.Do("multi_zdel", key)
 
 	if err != nil {
 		return goerr.NewError(err, "MultiZdel %s %s error", setName, key)
@@ -341,11 +341,11 @@ func (this *Client) MultiZdel(setName string, key ...string) (err error) {
 //  num 要增加权重值
 //  返回 int64 增加后的新权重值
 //  返回 err，可能的错误，操作成功返回 nil
-func (this *Client) Zincr(setName string, key string, num int64) (int64, error) {
+func (c *Client) Zincr(setName string, key string, num int64) (int64, error) {
 	if len(key) == 0 {
 		return 0, nil
 	}
-	resp, err := this.Do("zincr", setName, key, this.encoding(num, false))
+	resp, err := c.Do("zincr", setName, key, num)
 	if err != nil {
 		return 0, goerr.NewError(err, "Zincr %s %s %v", setName, key, num)
 	}
@@ -363,8 +363,8 @@ func (this *Client) Zincr(setName string, key string, num int64) (int64, error) 
 //  limit  最多返回这么多个元素.
 //  返回 []string 返回包含名字的slice.
 //  返回 err，可能的错误，操作成功返回 nil
-func (this *Client) Zlist(nameStart, nameEnd string, limit int64) ([]string, error) {
-	resp, err := this.Do("zlist", nameStart, nameEnd, this.encoding(limit, false))
+func (c *Client) Zlist(nameStart, nameEnd string, limit int64) ([]string, error) {
+	resp, err := c.Do("zlist", nameStart, nameEnd, limit)
 	if err != nil {
 		return nil, goerr.NewError(err, "Zlist %s %s %v error", nameStart, nameEnd, limit)
 	}
@@ -386,8 +386,8 @@ func (this *Client) Zlist(nameStart, nameEnd string, limit int64) ([]string, err
 //  name zset的名称.
 //  返回 val 返回包含名字元素的个数.
 //  返回 err，可能的错误，操作成功返回 nil
-func (this *Client) Zsize(name string) (val int64, err error) {
-	resp, err := this.Do("zsize", name)
+func (c *Client) Zsize(name string) (val int64, err error) {
+	resp, err := c.Do("zsize", name)
 	if err != nil {
 		return 0, goerr.NewError(err, "Zsize %s  error", name)
 	}
@@ -409,8 +409,8 @@ func (this *Client) Zsize(name string) (val int64, err error) {
 //  返回 keys 返回符合条件的 key 的数组.
 //  返回 scores 返回符合条件的 key 对应的权重.
 //  返回 err，可能的错误，操作成功返回 nil
-func (this *Client) Zkeys(setName string, keyStart string, scoreStart, scoreEnd interface{}, limit int64) (keys []string, err error) {
-	resp, err := this.Do("zkeys", setName, keyStart, this.encoding(scoreStart, false), this.encoding(scoreEnd, false), limit)
+func (c *Client) Zkeys(setName string, keyStart string, scoreStart, scoreEnd interface{}, limit int64) (keys []string, err error) {
+	resp, err := c.Do("zkeys", setName, keyStart, scoreStart, scoreEnd, limit)
 
 	if err != nil {
 		return nil, goerr.NewError(err, "Zkeys %s %v %v %v %v error", setName, keyStart, scoreStart, scoreEnd, limit)
@@ -434,8 +434,8 @@ func (this *Client) Zkeys(setName string, keyStart string, scoreStart, scoreEnd 
 //  scoreEnd  key 的最大权重值(包含), 空字符串表示 +inf.
 //  返回 val 符合条件的 score 的求和
 //  返回 err，可能的错误，操作成功返回 nil
-func (this *Client) Zsum(setName string, scoreStart, scoreEnd interface{}) (val int64, err error) {
-	resp, err := this.Do("zsum", setName, this.encoding(scoreStart, false), this.encoding(scoreEnd, false))
+func (c *Client) Zsum(setName string, scoreStart, scoreEnd interface{}) (val int64, err error) {
+	resp, err := c.Do("zsum", setName, scoreStart, scoreEnd)
 
 	if err != nil {
 		return 0, goerr.NewError(err, "Zsum %s %v %v  error", setName, scoreStart, scoreEnd)
@@ -454,8 +454,8 @@ func (this *Client) Zsum(setName string, scoreStart, scoreEnd interface{}) (val 
 //  scoreEnd  key 的最大权重值(包含), 空字符串表示 +inf.
 //  返回 val 符合条件的 score 的平均值
 //  返回 err，可能的错误，操作成功返回 nil
-func (this *Client) Zavg(setName string, scoreStart, scoreEnd interface{}) (val int64, err error) {
-	resp, err := this.Do("zavg", setName, this.encoding(scoreStart, false), this.encoding(scoreEnd, false))
+func (c *Client) Zavg(setName string, scoreStart, scoreEnd interface{}) (val int64, err error) {
+	resp, err := c.Do("zavg", setName, scoreStart, scoreEnd)
 
 	if err != nil {
 		return 0, goerr.NewError(err, "Zavg %s %v %v  error", setName, scoreStart, scoreEnd)
@@ -473,8 +473,8 @@ func (this *Client) Zavg(setName string, scoreStart, scoreEnd interface{}) (val 
 //  key 指定key名
 //  返回 val 排名
 //  返回 err，可能的错误，操作成功返回 nil
-func (this *Client) Zrank(setName, key string) (val int64, err error) {
-	resp, err := this.Do("zrank", setName, key)
+func (c *Client) Zrank(setName, key string) (val int64, err error) {
+	resp, err := c.Do("zrank", setName, key)
 
 	if err != nil {
 		return 0, goerr.NewError(err, "Zrank %s %s  error", setName, key)
@@ -492,8 +492,8 @@ func (this *Client) Zrank(setName, key string) (val int64, err error) {
 //  key 指定key名
 //  返回 val 排名
 //  返回 err，可能的错误，操作成功返回 nil
-func (this *Client) Zrrank(setName, key string) (val int64, err error) {
-	resp, err := this.Do("zrrank", setName, key)
+func (c *Client) Zrrank(setName, key string) (val int64, err error) {
+	resp, err := c.Do("zrrank", setName, key)
 
 	if err != nil {
 		return 0, goerr.NewError(err, "Zrrank %s %s  error", setName, key)
@@ -512,8 +512,8 @@ func (this *Client) Zrrank(setName, key string) (val int64, err error) {
 //  limit  最多返回这么多个 key-score 对.
 //  返回 val 排名
 //  返回 err，可能的错误，操作成功返回 nil
-func (this *Client) Zrange(setName string, offset, limit int64) (val map[string]int64, err error) {
-	resp, err := this.Do("zrange", setName, this.encoding(offset), this.encoding(limit))
+func (c *Client) Zrange(setName string, offset, limit int64) (val map[string]int64, err error) {
+	resp, err := c.Do("zrange", setName, offset, limit)
 
 	if err != nil {
 		return nil, goerr.NewError(err, "Zrange %s %s  error", setName, offset, limit)
@@ -537,8 +537,8 @@ func (this *Client) Zrange(setName string, offset, limit int64) (val map[string]
 //  limit  最多返回这么多个 key-score 对.
 //  返回 val 排名
 //  返回 err，可能的错误，操作成功返回 nil
-func (this *Client) Zrrange(setName string, offset, limit int64) (val map[string]int64, err error) {
-	resp, err := this.Do("zrrange", setName, this.encoding(offset), this.encoding(limit))
+func (c *Client) Zrrange(setName string, offset, limit int64) (val map[string]int64, err error) {
+	resp, err := c.Do("zrrange", setName, offset, limit)
 
 	if err != nil {
 		return nil, goerr.NewError(err, "Zrrange %s %s  error", setName, offset, limit)
@@ -561,8 +561,8 @@ func (this *Client) Zrrange(setName string, offset, limit int64) (val map[string
 //  start 区间开始，包含start值
 //  end  区间结束，包含end值
 //  返回 err，可能的错误，操作成功返回 nil
-func (this *Client) Zremrangebyrank(setName string, start, end int64) (err error) {
-	resp, err := this.Do("zremrangebyrank", setName, this.encoding(start), this.encoding(end))
+func (c *Client) Zremrangebyrank(setName string, start, end int64) (err error) {
+	resp, err := c.Do("zremrangebyrank", setName, start, end)
 
 	if err != nil {
 		return goerr.NewError(err, "Zremrangebyrank %s %s  error", setName, start, end)
@@ -579,8 +579,8 @@ func (this *Client) Zremrangebyrank(setName string, start, end int64) (err error
 //  start 区间开始，包含start值
 //  end  区间结束，包含end值
 //  返回 err，可能的错误，操作成功返回 nil
-func (this *Client) Zremrangebyscore(setName string, start, end int64) (err error) {
-	resp, err := this.Do("zremrangebyscore", setName, this.encoding(start), this.encoding(end))
+func (c *Client) Zremrangebyscore(setName string, start, end int64) (err error) {
+	resp, err := c.Do("zremrangebyscore", setName, start, end)
 
 	if err != nil {
 		return goerr.NewError(err, "Zremrangebyscore %s %s  error", setName, start, end)
@@ -597,8 +597,8 @@ func (this *Client) Zremrangebyscore(setName string, start, end int64) (err erro
 //  limit 最多要删除并返回这么多个 key-score 对.
 //  返回 包含 key-score 的map
 //  返回 err，可能的错误，操作成功返回 nil
-func (this *Client) Zpopfront(setName string, limit int64) (val map[string]int64, err error) {
-	resp, err := this.Do("zpop_front", setName, this.encoding(limit))
+func (c *Client) Zpopfront(setName string, limit int64) (val map[string]int64, err error) {
+	resp, err := c.Do("zpop_front", setName, limit)
 
 	if err != nil {
 		return nil, goerr.NewError(err, "Zpopfront %s %s  error", setName, limit)
@@ -620,8 +620,8 @@ func (this *Client) Zpopfront(setName string, limit int64) (val map[string]int64
 //  limit 最多要删除并返回这么多个 key-score 对.
 //  返回 包含 key-score 的map
 //  返回 err，可能的错误，操作成功返回 nil
-func (this *Client) Zpopback(setName string, limit int64) (val map[string]int64, err error) {
-	resp, err := this.Do("zpop_back", setName, this.encoding(limit))
+func (c *Client) Zpopback(setName string, limit int64) (val map[string]int64, err error) {
+	resp, err := c.Do("zpop_back", setName, limit)
 
 	if err != nil {
 		return nil, goerr.NewError(err, "Zpopback %s %s  error", setName, limit)
