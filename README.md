@@ -49,7 +49,7 @@
 示例：
 
 
-	pool, err := gossdb.NewPool(&gossdb.Config{
+	pool, err := gossdb.NewPool(&conf.Config{
 		Host:             "127.0.0.1",
 		Port:             6380,
 		MinPoolSize:      5,
