@@ -14,7 +14,7 @@ type Client struct {
 	pool   *Connectors
 }
 
-//关闭连接
+//关闭连接，连接关闭后只是放回到连接池，不会物理关闭。
 func (c *Client) Close() error {
 	c.pool.closeClient(c)
 	return nil
