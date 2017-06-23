@@ -14,7 +14,7 @@ type Connectors struct {
 //用配置文件进行初始化
 //
 //  cfg 配置文件
-func (c *Connectors) Init(cfg conf.Config) {
+func (c *Connectors) Init(cfg *conf.Config) {
 	c.pool = gopool.NewPool()
 	c.pool.NewClient = func() gopool.IClient {
 		return &SSDBClient{

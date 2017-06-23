@@ -13,8 +13,8 @@ var (
 	pool *gossdb.Connectors
 )
 
-func getConfig(c *goconfig.ConfigFile, name string) conf.Config {
-	cfg := conf.Config{
+func getConfig(c *goconfig.ConfigFile, name string) *conf.Config {
+	cfg := &conf.Config{
 		Port:             c.MustInt(name, "port", conf.Port),
 		Host:             c.MustValue(name, "host", conf.Host),
 		HealthSecond:     c.MustInt(name, "health_second", conf.HealthSecond),
@@ -39,13 +39,13 @@ func Start(config ...string) error {
 	if len(config) > 0 {
 		configName = config[0]
 	}
-	var cfg conf.Config
+
 	cf, err := goconfig.LoadConfigFile(configName)
 	if err != nil {
 		log.Warnf("未找到SSDB的配置文件%s，将使用默认值启动", configName)
 		cf = new(goconfig.ConfigFile)
 	}
-	cfg = getConfig(cf, "ssdb")
+	cfg := getConfig(cf, "ssdb")
 	conn, err := gossdb.NewPool(cfg)
 	if err != nil {
 		return err
