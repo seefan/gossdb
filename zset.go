@@ -521,13 +521,38 @@ func (c *Client) Zrange(setName string, offset, limit int64) (val map[string]int
 	if len(resp) > 0 && resp[0] == "ok" {
 		val = make(map[string]int64)
 		size := len(resp)
-
 		for i := 1; i < size-1; i += 2 {
 			val[resp[i]] = Value(resp[i+1]).Int64()
 		}
 		return val, nil
 	}
 	return nil, makeError(resp, setName, offset, limit)
+}
+
+//根据下标索引区间 [offset, offset + limit) 获取 获取 key和score 数组对, 下标从 0 开始.注意! 本方法在 offset 越来越大时, 会越慢!
+//
+//  setName zset名称
+//  offset 从此下标处开始返回. 从 0 开始.
+//  limit  最多返回这么多个 key-score 对.
+//  返回 val 排名
+//  返回 err，可能的错误，操作成功返回 nil
+func (c *Client) Zrange_slice(setName string, offset, limit int64) (key []string, val []int64, err error) {
+	resp, err := c.Do("zrange", setName, offset, limit)
+
+	if err != nil {
+		return nil, nil, goerr.NewError(err, "Zrange_slice %s %s  error", setName, offset, limit)
+	}
+	if len(resp) > 0 && resp[0] == "ok" {
+		val = []int64{}
+		key = []string{}
+		size := len(resp)
+		for i := 1; i < size-1; i += 2 {
+			key = append(key, resp[i])
+			val = append(val, Value(resp[i+1]).Int64())
+		}
+		return key, val, nil
+	}
+	return nil, nil, makeError(resp, setName, offset, limit)
 }
 
 //根据下标索引区间 [offset, offset + limit) 获取 key-score 对, 反向顺序获取.注意! 本方法在 offset 越来越大时, 会越慢!
@@ -553,6 +578,33 @@ func (c *Client) Zrrange(setName string, offset, limit int64) (val map[string]in
 		return val, nil
 	}
 	return nil, makeError(resp, setName, offset, limit)
+}
+
+//根据下标索引区间 [offset, offset + limit) 获取 key和score 数组对, 反向顺序获取.注意! 本方法在 offset 越来越大时, 会越慢!
+//
+//  setName zset名称
+//  offset 从此下标处开始返回. 从 0 开始.
+//  limit  最多返回这么多个 key-score 对.
+//  返回 val 排名
+//  返回 err，可能的错误，操作成功返回 nil
+func (c *Client) Zrrange_slice(setName string, offset, limit int64) (key []string, val []int64, err error) {
+	resp, err := c.Do("zrrange", setName, offset, limit)
+
+	if err != nil {
+		return nil, nil, goerr.NewError(err, "Zrrange_slice %s %s  error", setName, offset, limit)
+	}
+	if len(resp) > 0 && resp[0] == "ok" {
+		val = []int64{}
+		key = []string{}
+		size := len(resp)
+
+		for i := 1; i < size-1; i += 2 {
+			key = append(key, resp[i])
+			val = append(val, Value(resp[i+1]).Int64())
+		}
+		return key, val, nil
+	}
+	return nil, nil, makeError(resp, setName, offset, limit)
 }
 
 //删除位置处于区间 [start,end] 的元素.
