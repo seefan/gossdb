@@ -180,12 +180,12 @@ func (c *Client) Zrscan(setName string, keyStart string, scoreStart, scoreEnd in
 //  返回 err，可能的错误，操作成功返回 nil
 func (c *Client) MultiZset(setName string, kvs map[string]int64) (err error) {
 
-	args := []interface{}{}
+	args := []interface{}{"multi_zset", setName}
 	for k, v := range kvs {
 		args = append(args, k)
 		args = append(args, v)
 	}
-	resp, err := c.Do("multi_zset", setName, args)
+	resp, err := c.Do(args...)
 
 	if err != nil {
 		return goerr.NewError(err, "MultiZset %s %s error", setName, kvs)
@@ -207,7 +207,11 @@ func (c *Client) MultiZget(setName string, key ...string) (val map[string]int64,
 	if len(key) == 0 {
 		return make(map[string]int64), nil
 	}
-	resp, err := c.Do("multi_zget", setName, key)
+	args := []interface{}{"multi_zget", setName}
+	for _, v := range key {
+		args = append(args, v)
+	}
+	resp, err := c.Do(args...)
 
 	if err != nil {
 		return nil, goerr.NewError(err, "MultiZget %s %s error", setName, key)
@@ -234,7 +238,11 @@ func (c *Client) MultiZgetSlice(setName string, key ...string) (keys []string, s
 	if len(key) == 0 {
 		return []string{}, []int64{}, nil
 	}
-	resp, err := c.Do("multi_zget", setName, key)
+	args := []interface{}{"multi_zget", setName}
+	for _, v := range key {
+		args = append(args, v)
+	}
+	resp, err := c.Do(args...)
 
 	if err != nil {
 		return nil, nil, goerr.NewError(err, "MultiZget %s %s error", setName, key)
@@ -262,23 +270,7 @@ func (c *Client) MultiZgetSlice(setName string, key ...string) (keys []string, s
 //  返回 val 包含 key-score 的map
 //  返回 err，可能的错误，操作成功返回 nil
 func (c *Client) MultiZgetArray(setName string, key []string) (val map[string]int64, err error) {
-	if len(key) == 0 {
-		return make(map[string]int64), nil
-	}
-	resp, err := c.Do("multi_zget", setName, key)
-
-	if err != nil {
-		return nil, goerr.NewError(err, "MultiZget %s %s error", setName, key)
-	}
-	size := len(resp)
-	if size > 0 && resp[0] == "ok" {
-		val = make(map[string]int64)
-		for i := 1; i < size && i+1 < size; i += 2 {
-			val[resp[i]] = Value(resp[i+1]).Int64()
-		}
-		return val, nil
-	}
-	return nil, makeError(resp, key)
+	return c.MultiZget(setName, key...)
 }
 
 //批量获取 zset 中的 key-score.
@@ -289,28 +281,7 @@ func (c *Client) MultiZgetArray(setName string, key []string) (val map[string]in
 //  返回 scores 包含 key对应权重的slice
 //  返回 err，可能的错误，操作成功返回 nil
 func (c *Client) MultiZgetSliceArray(setName string, key []string) (keys []string, scores []int64, err error) {
-	if len(key) == 0 {
-		return []string{}, []int64{}, nil
-	}
-	resp, err := c.Do("multi_zget", setName, key)
-
-	if err != nil {
-		return nil, nil, goerr.NewError(err, "MultiZget %s %s error", setName, key)
-	}
-
-	size := len(resp)
-	if size > 0 && resp[0] == "ok" {
-
-		keys := make([]string, (size-1)/2)
-		scores := make([]int64, (size-1)/2)
-
-		for i := 1; i < size && i+1 < size; i += 2 {
-			keys = append(keys, resp[i])
-			scores = append(scores, Value(resp[i+1]).Int64())
-		}
-		return keys, scores, nil
-	}
-	return nil, nil, makeError(resp, setName, key)
+	return c.MultiZgetSlice(setName, key...)
 }
 
 //批量删除 zset 中的 key-score.
@@ -322,8 +293,11 @@ func (c *Client) MultiZdel(setName string, key ...string) (err error) {
 	if len(key) == 0 {
 		return nil
 	}
-	resp, err := c.Do("multi_zdel", key)
-
+	args := []interface{}{"multi_zdel", setName}
+	for _, v := range key {
+		args = append(args, v)
+	}
+	resp, err := c.Do(args...)
 	if err != nil {
 		return goerr.NewError(err, "MultiZdel %s %s error", setName, key)
 	}

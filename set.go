@@ -169,13 +169,13 @@ func (c *Client) Incr(key string, num int64) (val int64, err error) {
 //  返回 err，可能的错误，操作成功返回 nil
 func (c *Client) MultiSet(kvs map[string]interface{}) (err error) {
 
-	args := []interface{}{}
+	args := []interface{}{"multi_set"}
 
 	for k, v := range kvs {
 		args = append(args, k)
 		args = append(args, v)
 	}
-	resp, err := c.Do("multi_set", args)
+	resp, err := c.Do(args...)
 
 	if err != nil {
 		return goerr.NewError(err, "MultiSet %s error", kvs)
@@ -196,7 +196,11 @@ func (c *Client) MultiGet(key ...string) (val map[string]Value, err error) {
 	if len(key) == 0 {
 		return make(map[string]Value), nil
 	}
-	resp, err := c.Do("multi_get", key)
+	data := []interface{}{"multi_get"}
+	for _, k := range key {
+		data = append(data, k)
+	}
+	resp, err := c.Do(data...)
 
 	if err != nil {
 		return nil, goerr.NewError(err, "MultiGet %s error", key)
@@ -222,7 +226,11 @@ func (c *Client) MultiGetSlice(key ...string) (keys []string, values []Value, er
 	if len(key) == 0 {
 		return []string{}, []Value{}, nil
 	}
-	resp, err := c.Do("multi_get", key)
+	data := []interface{}{"multi_get"}
+	for _, k := range key {
+		data = append(data, k)
+	}
+	resp, err := c.Do(data...)
 
 	if err != nil {
 		return nil, nil, goerr.NewError(err, "MultiGet %s error", key)
@@ -243,60 +251,22 @@ func (c *Client) MultiGetSlice(key ...string) (keys []string, values []Value, er
 	return nil, nil, makeError(resp, key)
 }
 
-//批量获取一批 key 对应的值内容.（输入分片）
+//批量获取一批 key 对应的值内容.（输入分片）,MultiGet的别名
 //
 //  key，要获取的 key，可以为多个
 //  返回 val，一个包含返回的 map
 //  返回 err，可能的错误，操作成功返回 nil
 func (c *Client) MultiGetArray(key []string) (val map[string]Value, err error) {
-	if len(key) == 0 {
-		return make(map[string]Value), nil
-	}
-	resp, err := c.Do("multi_get", key)
-
-	if err != nil {
-		return nil, goerr.NewError(err, "MultiGet %s error", key)
-	}
-
-	size := len(resp)
-	if size > 0 && resp[0] == "ok" {
-		val = make(map[string]Value)
-		for i := 1; i < size && i+1 < size; i += 2 {
-			val[resp[i]] = Value(resp[i+1])
-		}
-		return val, nil
-	}
-	return nil, makeError(resp, key)
+	return c.MultiGet(key...)
 }
 
-//批量获取一批 key 对应的值内容.（输入分片）
+//批量获取一批 key 对应的值内容.（输入分片）,MultiGetSlice的别名
 //
 //  key，要获取的 key，可以为多个
 //  返回 keys和value分片
 //  返回 err，可能的错误，操作成功返回 nil
 func (c *Client) MultiGetSliceArray(key []string) (keys []string, values []Value, err error) {
-	if len(key) == 0 {
-		return []string{}, []Value{}, nil
-	}
-	resp, err := c.Do("multi_get", key)
-
-	if err != nil {
-		return nil, nil, goerr.NewError(err, "MultiGet %s error", key)
-	}
-
-	size := len(resp)
-	if size > 0 && resp[0] == "ok" {
-
-		keys := make([]string, 0, (size-1)/2)
-		values := make([]Value, 0, (size-1)/2)
-
-		for i := 1; i < size && i+1 < size; i += 2 {
-			keys = append(keys, resp[i])
-			values = append(values, Value(resp[i+1]))
-		}
-		return keys, values, nil
-	}
-	return nil, nil, makeError(resp, key)
+	return c.MultiGetSlice(key...)
 }
 
 //批量删除一批 key 和其对应的值内容.
@@ -307,8 +277,11 @@ func (c *Client) MultiDel(key ...string) (err error) {
 	if len(key) == 0 {
 		return nil
 	}
-	resp, err := c.Do("multi_del", key)
-
+	data := []interface{}{"multi_del"}
+	for _, k := range key {
+		data = append(data, k)
+	}
+	resp, err := c.Do(data...)
 	if err != nil {
 		return goerr.NewError(err, "MultiDel %s error", key)
 	}

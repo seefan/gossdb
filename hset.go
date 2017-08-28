@@ -181,12 +181,12 @@ func (c *Client) Hrscan(setName string, keyStart, keyEnd string, limit int64) (m
 //  返回 err，执行的错误，操作成功返回 nil
 func (c *Client) MultiHset(setName string, kvs map[string]interface{}) (err error) {
 
-	args := []interface{}{}
+	args := []interface{}{"multi_hset", setName}
 	for k, v := range kvs {
 		args = append(args, k)
 		args = append(args, v)
 	}
-	resp, err := c.Do("multi_hset", setName, args)
+	resp, err := c.Do(args...)
 
 	if err != nil {
 		return goerr.NewError(err, "MultiHset %s %s error", setName, kvs)
@@ -208,8 +208,12 @@ func (c *Client) MultiHget(setName string, key ...string) (val map[string]Value,
 	if len(key) == 0 {
 		return make(map[string]Value), nil
 	}
-	resp, err := c.Do("multi_hget", setName, key)
 
+	args := []interface{}{"multi_hget", setName}
+	for _, v := range key {
+		args = append(args, v)
+	}
+	resp, err := c.Do(args...)
 	if err != nil {
 		return nil, goerr.NewError(err, "MultiHget %s %s error", setName, key)
 	}
@@ -234,7 +238,11 @@ func (c *Client) MultiHgetSlice(setName string, key ...string) (keys []string, v
 	if len(key) == 0 {
 		return []string{}, []Value{}, nil
 	}
-	resp, err := c.Do("multi_hget", setName, key)
+	args := []interface{}{"multi_hget", setName}
+	for _, v := range key {
+		args = append(args, v)
+	}
+	resp, err := c.Do(args...)
 
 	if err != nil {
 		return nil, nil, goerr.NewError(err, "MultiHgetSlice %s %s error", setName, key)
@@ -260,23 +268,7 @@ func (c *Client) MultiHgetSlice(setName string, key ...string) (keys []string, v
 //  返回 包含 key-value 的关联数组, 如果某个 key 不存在, 则它不会出现在返回数组中.
 //  返回 err，执行的错误，操作成功返回 nil
 func (c *Client) MultiHgetArray(setName string, key []string) (val map[string]Value, err error) {
-	if len(key) == 0 {
-		return make(map[string]Value), nil
-	}
-	resp, err := c.Do("multi_hget", setName, key)
-
-	if err != nil {
-		return nil, goerr.NewError(err, "MultiHget %s %s error", setName, key)
-	}
-	size := len(resp)
-	if size > 0 && resp[0] == "ok" {
-		val = make(map[string]Value)
-		for i := 1; i < size && i+1 < size; i += 2 {
-			val[resp[i]] = Value(resp[i+1])
-		}
-		return val, nil
-	}
-	return nil, makeError(resp, key)
+	return c.MultiHget(setName, key...)
 }
 
 //批量获取 hashmap 中多个 key 对应的权重值.（输入分片）
@@ -286,26 +278,7 @@ func (c *Client) MultiHgetArray(setName string, key []string) (val map[string]Va
 //  返回 包含 key和value 的有序数组, 如果某个 key 不存在, 则它不会出现在返回数组中.
 //  返回 err，执行的错误，操作成功返回 nil
 func (c *Client) MultiHgetSliceArray(setName string, key []string) (keys []string, values []Value, err error) {
-	if len(key) == 0 {
-		return []string{}, []Value{}, nil
-	}
-	resp, err := c.Do("multi_hget", setName, key)
-
-	if err != nil {
-		return nil, nil, goerr.NewError(err, "MultiHgetSlice %s %s error", setName, key)
-	}
-	if len(resp) > 0 && resp[0] == "ok" {
-		size := len(resp)
-		keys := make([]string, 0, (size-1)/2)
-		values := make([]Value, 0, (size-1)/2)
-
-		for i := 1; i < size && i+1 < size; i += 2 {
-			keys = append(keys, resp[i])
-			values = append(values, Value(resp[i+1]))
-		}
-		return keys, values, nil
-	}
-	return nil, nil, makeError(resp, key)
+	return c.MultiHgetSlice(setName, key...)
 }
 
 //批量获取 hashmap 中全部 对应的权重值.
@@ -367,8 +340,11 @@ func (c *Client) MultiHdel(setName string, key ...string) (err error) {
 	if len(key) == 0 {
 		return nil
 	}
-	resp, err := c.Do("multi_hdel", setName, key)
-
+	args := []interface{}{"multi_hdel", setName}
+	for _, v := range key {
+		args = append(args, v)
+	}
+	resp, err := c.Do(args...)
 	if err != nil {
 		return goerr.NewError(err, "MultiHdel %s %s error", setName, key)
 	}
@@ -385,19 +361,7 @@ func (c *Client) MultiHdel(setName string, key ...string) (err error) {
 //  keys - 包含 key 的数组.
 //  返回 err，执行的错误，操作成功返回 nil
 func (c *Client) MultiHdelArray(setName string, key []string) (err error) {
-	if len(key) == 0 {
-		return nil
-	}
-	resp, err := c.Do("multi_hdel", setName, key)
-
-	if err != nil {
-		return goerr.NewError(err, "MultiHdel %s %s error", setName, key)
-	}
-
-	if len(resp) > 0 && resp[0] == "ok" {
-		return nil
-	}
-	return makeError(resp, key)
+	return c.MultiHdel(setName, key...)
 }
 
 //列出名字处于区间 (name_start, name_end] 的 hashmap. ("", ""] 表示整个区间.
