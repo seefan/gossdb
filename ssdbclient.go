@@ -2,7 +2,6 @@ package gossdb
 
 import (
 	"bufio"
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"github.com/seefan/goerr"
@@ -17,8 +16,7 @@ type SSDBClient struct {
 	Port     int
 	client   *Client
 	sock     *net.TCPConn
-	buf      *bufio.Reader
-	send_buf bytes.Buffer
+	send_buf *bufio.Writer
 }
 
 //打开连接
@@ -31,12 +29,11 @@ func (s *SSDBClient) Start() error {
 	if err != nil {
 		return err
 	}
-	sock.SetReadBuffer(1024)
-	sock.SetWriteBuffer(1024)
-
+	sock.SetReadBuffer(8192)
+	//sock.SetWriteBuffer(1024)
+	s.send_buf = bufio.NewWriter(sock)
 	s.sock = sock
 
-	s.buf = bufio.NewReader(sock)
 	s.isOpen = true
 	return nil
 }
@@ -89,7 +86,7 @@ func (s *SSDBClient) Send(args ...interface{}) error {
 }
 
 func (s *SSDBClient) send(args []interface{}) error {
-	s.send_buf.Reset()
+
 	for _, arg := range args {
 		switch arg := arg.(type) {
 		case string:
@@ -183,8 +180,7 @@ func (s *SSDBClient) send(args []interface{}) error {
 		s.send_buf.WriteByte('\n')
 	}
 	s.send_buf.WriteByte('\n')
-	_, err := s.send_buf.WriteTo(s.sock)
-	return err
+	return s.send_buf.Flush()
 }
 
 func (s *SSDBClient) Recv() (resp []string, err error) {
@@ -192,8 +188,10 @@ func (s *SSDBClient) Recv() (resp []string, err error) {
 	drop := 1
 	bufSize := 0
 	packet := []byte{}
+	sbuf := bufio.NewReader(s.sock)
+
 	for {
-		buf, err := s.buf.ReadBytes('\n')
+		buf, err := sbuf.ReadBytes('\n')
 		if err != nil {
 			return nil, err
 		}
