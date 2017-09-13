@@ -38,7 +38,8 @@ func Test_hset1(pool *gossdb.Connectors) {
 
 	c, err := pool.NewClient()
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
+		return
 	}
 
 	defer c.Close()
@@ -49,20 +50,20 @@ func Test_hset1(pool *gossdb.Connectors) {
 	} else {
 		log.Println(re, "is get")
 	}
-	//log.Println(pool.Info())
-	//md := make(map[string]interface{})
-	//md["abc"] = "abc1"
-	//md["ab"] = "abc"
-	//err = c.MultiHset("hset", md)
-	//if err != nil {
-	//	log.Println(err)
-	//} else {
-	//	log.Println("is mhset")
-	//}
-	//m, err := c.MultiHget("hset", "ab", "test1")
-	//if err != nil {
-	//	log.Println(err)
-	//} else {
-	//	log.Println(m, "is mhget")
-	//}
+	log.Println(pool.Info())
+	md := make(map[string]interface{})
+	md["abc"] = "abc1"
+	md["ab"] = "abc"
+	err = c.MultiHset("hset", md)
+	if err != nil {
+		log.Println(err)
+	} else {
+		log.Println("is mhset")
+	}
+	m, err := c.MultiHget("hset", "ab", "test1")
+	if err != nil {
+		log.Println(err)
+	} else {
+		log.Println(m, "is mhget")
+	}
 }
