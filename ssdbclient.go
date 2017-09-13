@@ -183,42 +183,38 @@ func (s *SSDBClient) send(args []interface{}) error {
 		s.send_buf.WriteByte('\n')
 	}
 	s.send_buf.WriteByte('\n')
-	//_, err := s.buf.Write(s.send_buf.Bytes())
-	//if err == nil {
-	//	err = s.buf.Flush()
-	//}
-	_, err := s.sock.Write(s.send_buf.Bytes())
+	_, err := s.send_buf.WriteTo(s.sock)
 	return err
 }
 
-func (s *SSDBClient) Recv() ([]string, error) {
-	resp := []string{}
+func (s *SSDBClient) Recv() (resp []string, err error) {
+	packetSize := -1
+	drop := 1
+	bufSize := 0
+	packet := []byte{}
 	for {
-		p, err := s.buf.ReadBytes('\n')
+		buf, err := s.buf.ReadBytes('\n')
 		if err != nil {
-			break
+			return nil, err
 		}
-		p = p[:len(p)-1]
-		if len(p) == 0 || (len(p) == 1 && p[0] == '\r') {
-			if len(resp) == 0 {
-				continue
-			} else {
-				return resp, nil
-			}
+		bufSize = len(buf)
+		if packetSize == -1 && (bufSize == 1 || bufSize == 2 && buf[0] == '\r') { //空行，说明一个数据包结束
+			return resp, nil
 		}
-		size := ToNum(p)
-
-		for {
-			bs, err := s.buf.Peek(size)
-			if err != nil {
-				continue
+		if len(buf) > 2 && buf[bufSize-2] == '\r' { // drop end
+			drop = 2
+		} else {
+			drop = 1
+		}
+		if packetSize == -1 {
+			packetSize = ToNum(buf[:(bufSize - drop)])
+		} else {
+			packet = append(packet, buf...)
+			if len(packet) == packetSize+drop {
+				resp = append(resp, string(packet[:(packetSize)]))
+				packet = []byte{}
+				packetSize = -1
 			}
-			resp = append(resp, string(bs))
-			_, err = s.buf.Discard(size + 1)
-			if err != nil {
-				return nil, err
-			}
-			break
 		}
 	}
 	return resp, nil
