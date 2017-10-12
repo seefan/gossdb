@@ -209,7 +209,15 @@ func (s *SSDBClient) Recv() (resp []string, err error) {
 		if packetSize == -1 {
 			packetSize = ToNum(buf[:(bufSize - drop)])
 		} else {
-			if s.packetBuf.Len()+bufSize == packetSize+drop {
+			//data endwith '\n' or '\r\n',
+			drop = 0
+			if s.packetBuf.Len()+bufSize == packetSize+1 { //
+				drop = 1
+			}
+			if s.packetBuf.Len()+bufSize == packetSize+2 {
+				drop = 2
+			}
+			if drop > 0 {
 				s.packetBuf.Write(buf[:bufSize-drop])
 				resp = append(resp, s.packetBuf.String())
 				s.packetBuf.Reset()
