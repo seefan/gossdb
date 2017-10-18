@@ -4,17 +4,17 @@ import (
 	"github.com/seefan/gossdb"
 	"github.com/seefan/gossdb/conf"
 	"log"
-	"net/http"
+	//"net/http"
 	_ "net/http/pprof"
 	"time"
 )
 
 func main() {
-	go func() {
-		http.ListenAndServe("0.0.0.0:6060", nil) // 启动默认的 http 服务，可以使用自带的路由
-	}()
+	//go func() {
+	//	http.ListenAndServe("0.0.0.0:6060", nil) // 启动默认的 http 服务，可以使用自带的路由
+	//}()
 	pool, err := gossdb.NewPool(&conf.Config{
-		Host:             "192.168.56.101",
+		Host:             "127.0.0.1",
 		Port:             8888,
 		MinPoolSize:      5,
 		MaxPoolSize:      500,

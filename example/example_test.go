@@ -9,7 +9,7 @@ import (
 
 func Test_set(t *testing.T) {
 	pool, err := gossdb.NewPool(&conf.Config{
-		Host:             "192.168.56.101",
+		Host:             "127.0.0.1",
 		Port:             8888,
 		MinPoolSize:      5,
 		MaxPoolSize:      50,
@@ -49,7 +49,7 @@ func Test_set(t *testing.T) {
 }
 func Test_hset(t *testing.T) {
 	pool, err := gossdb.NewPool(&conf.Config{
-		Host:             "192.168.56.101",
+		Host:             "127.0.0.1",
 		Port:             8888,
 		MinPoolSize:      5,
 		MaxPoolSize:      50,
@@ -99,7 +99,7 @@ func Test_hset(t *testing.T) {
 
 func Test_zset(t *testing.T) {
 	pool, err := gossdb.NewPool(&conf.Config{
-		Host:             "192.168.56.101",
+		Host:             "127.0.0.1",
 		Port:             8888,
 		MinPoolSize:      5,
 		MaxPoolSize:      50,

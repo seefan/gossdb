@@ -192,33 +192,26 @@ func (s *SSDBClient) Recv() (resp []string, err error) {
 	drop := 1
 	bufSize := 0
 	s.packetBuf.Reset()
+	//数据包分解，发现长度，找到结尾，循环发现，发现空行，结束
 	for {
 		buf, err := s.buf.ReadBytes('\n')
 		if err != nil {
 			return nil, err
 		}
 		bufSize = len(buf)
-		if packetSize == -1 && (bufSize == 1 || bufSize == 2 && buf[0] == '\r') { //空行，说明一个数据包结束
-			return resp, nil
-		}
-		if bufSize > 2 && buf[bufSize-2] == '\r' { // drop end
-			drop = 2
-		} else {
-			drop = 1
-		}
 		if packetSize == -1 {
-			packetSize = ToNum(buf[:(bufSize - drop)])
+			if bufSize == 1 || bufSize == 2 && buf[0] == '\r' { //空行，说明一个数据包结束
+				return resp, nil
+			}
+			//数据包开始，包长度解析
+			packetSize = ToNum(buf[:])
 		} else {
 			//data endwith '\n' or '\r\n',
-			drop = 0
-			if s.packetBuf.Len()+bufSize == packetSize+1 { //
-				drop = 1
-			}
-			if s.packetBuf.Len()+bufSize == packetSize+2 {
-				drop = 2
-			}
+			drop = s.packetBuf.Len() + bufSize - packetSize
 			if drop > 0 {
-				s.packetBuf.Write(buf[:bufSize-drop])
+				if _, err = s.packetBuf.Write(buf[:bufSize-drop]); err != nil {
+					return nil, err
+				}
 				resp = append(resp, s.packetBuf.String())
 				s.packetBuf.Reset()
 				packetSize = -1
