@@ -5,9 +5,10 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/seefan/goerr"
 	"net"
 	"strconv"
+
+	"github.com/seefan/goerr"
 )
 
 type SSDBClient struct {
@@ -201,6 +202,9 @@ func (s *SSDBClient) Recv() (resp []string, err error) {
 		bufSize = len(buf)
 		if packetSize == -1 {
 			if bufSize == 1 || bufSize == 2 && buf[0] == '\r' { //空行，说明一个数据包结束
+				if len(resp) == 0 { //发现空行，如果还没有数据，说明数据包还没有开始
+					continue
+				}
 				return resp, nil
 			}
 			//数据包开始，包长度解析
