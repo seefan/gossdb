@@ -26,4 +26,6 @@ type Config struct {
 	WriteBufferSize int
 	//连接读缓冲，默认为8k，单位为kb
 	ReadBufferSize int
+	//是否启用重试，设置为true时，如果请求失败会再重试一次。
+	RetryEnabled bool
 }

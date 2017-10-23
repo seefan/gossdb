@@ -24,6 +24,8 @@ type SSDBClient struct {
 	WriteBufferSize int
 	//连接读缓冲，默认为8k，单位为kb
 	ReadBufferSize int
+	//是否重试
+	RetryEnabled bool
 }
 
 //打开连接
@@ -58,6 +60,9 @@ func (s *SSDBClient) Ping() bool {
 	return err == nil
 }
 func (s *SSDBClient) do(args ...interface{}) ([]string, error) {
+	if !s.isOpen {
+		return nil, goerr.New("gossdb client is closed.")
+	}
 	err := s.send(args)
 	if err != nil {
 		return nil, err
@@ -84,8 +89,15 @@ func (s *SSDBClient) Do(args ...interface{}) ([]string, error) {
 	}
 	resp, err := s.do(args...)
 	if err != nil {
-		s.sock.Close()
-		s.isOpen = false
+		s.Close()
+		if s.RetryEnabled { //如果允许重试，就重新打开一次连接
+			if err = s.Start(); err == nil {
+				resp, err = s.do(args...)
+				if err != nil {
+					s.Close()
+				}
+			}
+		}
 	}
 	return resp, err
 }
