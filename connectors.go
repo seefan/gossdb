@@ -16,11 +16,19 @@ type Connectors struct {
 //  cfg 配置文件
 func (c *Connectors) Init(cfg *conf.Config) {
 	c.pool = gopool.NewPool()
+	if cfg.WriteBufferSize < 1 {
+		cfg.WriteBufferSize = 8
+	}
+	if cfg.ReadBufferSize < 1 {
+		cfg.ReadBufferSize = 8
+	}
 	c.pool.NewClient = func() gopool.IClient {
 		return &SSDBClient{
-			Host:     cfg.Host,
-			Port:     cfg.Port,
-			Password: cfg.Password,
+			Host:            cfg.Host,
+			Port:            cfg.Port,
+			Password:        cfg.Password,
+			ReadBufferSize:  cfg.ReadBufferSize,
+			WriteBufferSize: cfg.WriteBufferSize,
 			client: &Client{
 				pool: c,
 			},

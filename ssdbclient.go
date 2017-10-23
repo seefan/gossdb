@@ -20,6 +20,10 @@ type SSDBClient struct {
 	sock      *net.TCPConn
 	buf       *bufio.ReadWriter
 	packetBuf bytes.Buffer
+	//连接写缓冲，默认为8k，单位为kb
+	WriteBufferSize int
+	//连接读缓冲，默认为8k，单位为kb
+	ReadBufferSize int
 }
 
 //打开连接
@@ -32,8 +36,8 @@ func (s *SSDBClient) Start() error {
 	if err != nil {
 		return err
 	}
-	sock.SetReadBuffer(8192)
-	//sock.SetWriteBuffer(1024)
+	sock.SetReadBuffer(s.ReadBufferSize * 1024)
+	sock.SetWriteBuffer(s.WriteBufferSize * 1024)
 	s.buf = bufio.NewReadWriter(bufio.NewReader(sock), bufio.NewWriter(sock))
 	s.sock = sock
 

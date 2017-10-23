@@ -22,4 +22,8 @@ type Config struct {
 	Password string
 	//权重，只在负载均衡模式下启用
 	Weight int
+	//连接写缓冲，默认为8k，单位为kb
+	WriteBufferSize int
+	//连接读缓冲，默认为8k，单位为kb
+	ReadBufferSize int
 }
