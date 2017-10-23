@@ -114,6 +114,14 @@ func (s *SSDBClient) send(args []interface{}) error {
 			s.buf.Write(strconv.AppendInt(nil, int64(len(arg)), 10))
 			s.buf.WriteByte('\n')
 			s.buf.WriteString(arg)
+		case []string:
+			for _, a := range arg {
+				s.buf.Write(strconv.AppendInt(nil, int64(len(a)), 10))
+				s.buf.WriteByte('\n')
+				s.buf.WriteString(a)
+				s.buf.WriteByte('\n')
+			}
+			continue
 		case []byte:
 			s.buf.Write(strconv.AppendInt(nil, int64(len(arg)), 10))
 			s.buf.WriteByte('\n')
