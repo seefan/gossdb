@@ -1,6 +1,7 @@
 package gossdb
 
 import (
+	"github.com/seefan/goerr"
 	"github.com/seefan/gopool"
 	"github.com/seefan/gossdb/conf"
 )
@@ -69,6 +70,9 @@ func (c *Connectors) NewClient() (*Client, error) {
 	cc := pc.Client.(*SSDBClient)
 	cc.client.cached = pc
 	cc.client.db = cc
+	if !cc.isOpen {
+		return nil, goerr.New("get client error")
+	}
 	return cc.client, nil
 }
 func (c *Connectors) closeClient(cc *Client) {
