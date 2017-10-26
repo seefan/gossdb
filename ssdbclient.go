@@ -212,11 +212,12 @@ func (s *SSDBClient) send(args []interface{}) error {
 	packetBuf.WriteByte('\n')
 
 	for _, err := packetBuf.WriteTo(s.sock); packetBuf.Len() > 0; {
-		packetBuf.Reset()
 		if err != nil {
+			packetBuf.Reset()
 			return goerr.NewError(err, "client socket write error")
 		}
 	}
+	packetBuf.Reset()
 	return nil
 }
 
