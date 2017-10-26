@@ -44,19 +44,26 @@ func (s *SSDBClient) Start() error {
 	s.isOpen = true
 	return nil
 }
+
+//关闭连接
 func (s *SSDBClient) Close() error {
 	s.isOpen = false
 	s.readBuf = nil
 	return s.sock.Close()
 }
-func (s *SSDBClient) IsOpen() bool {
 
+//是否为打开状态
+func (s *SSDBClient) IsOpen() bool {
 	return s.isOpen
 }
+
+//状态检查
 func (s *SSDBClient) Ping() bool {
 	_, err := s.Do("info")
 	return err == nil
 }
+
+//执行ssdb命令
 func (s *SSDBClient) do(args ...interface{}) ([]string, error) {
 	if !s.isOpen {
 		return nil, goerr.New("gossdb client is closed.")
@@ -103,10 +110,12 @@ func (s *SSDBClient) Do(args ...interface{}) ([]string, error) {
 	return resp, err
 }
 
+//发送数据
 func (s *SSDBClient) Send(args ...interface{}) error {
 	return s.send(args)
 }
 
+//发送数据
 func (s *SSDBClient) send(args []interface{}) error {
 	var packetBuf bytes.Buffer
 	for _, arg := range args {
@@ -221,6 +230,7 @@ func (s *SSDBClient) send(args []interface{}) error {
 	return nil
 }
 
+//接收数据
 func (s *SSDBClient) Recv() (resp []string, err error) {
 	bufSize := 0
 	packetBuf := []byte{}
@@ -250,6 +260,8 @@ func (s *SSDBClient) Recv() (resp []string, err error) {
 	packetBuf = nil
 	return resp, nil
 }
+
+//解析数据为string的slice
 func (s *SSDBClient) parse(buf []byte) (resp string, size int) {
 	n := bytes.IndexByte(buf, '\n')
 	blockSize := -1
