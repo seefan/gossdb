@@ -17,7 +17,7 @@ type SSDBClient struct {
 	Port     int
 	client   *Client
 	sock     *net.TCPConn
-
+	readBuf  []byte
 	//packetBuf bytes.Buffer
 	//连接写缓冲，默认为8k，单位为kb
 	WriteBufferSize int
@@ -39,12 +39,14 @@ func (s *SSDBClient) Start() error {
 	}
 	sock.SetReadBuffer(s.ReadBufferSize * 1024)
 	sock.SetWriteBuffer(s.WriteBufferSize * 1024)
+	s.readBuf = make([]byte, s.ReadBufferSize*1024)
 	s.sock = sock
 	s.isOpen = true
 	return nil
 }
 func (s *SSDBClient) Close() error {
 	s.isOpen = false
+	s.readBuf = nil
 	return s.sock.Close()
 }
 func (s *SSDBClient) IsOpen() bool {
@@ -210,6 +212,7 @@ func (s *SSDBClient) send(args []interface{}) error {
 	packetBuf.WriteByte('\n')
 
 	for _, err := packetBuf.WriteTo(s.sock); packetBuf.Len() > 0; {
+		packetBuf.Reset()
 		if err != nil {
 			return goerr.NewError(err, "client socket write error")
 		}
@@ -220,17 +223,16 @@ func (s *SSDBClient) send(args []interface{}) error {
 func (s *SSDBClient) Recv() (resp []string, err error) {
 	bufSize := 0
 	packetBuf := []byte{}
-	buf := make([]byte, 1024)
 	//数据包分解，发现长度，找到结尾，循环发现，发现空行，结束
 	for {
-		bufSize, err = s.sock.Read(buf)
+		bufSize, err = s.sock.Read(s.readBuf)
 		if err != nil {
 			return nil, goerr.NewError(err, "client socket read error")
 		}
 		if bufSize < 1 {
 			continue
 		}
-		packetBuf = append(packetBuf, buf[:bufSize]...)
+		packetBuf = append(packetBuf, s.readBuf[:bufSize]...)
 
 		for {
 			rsp, n := s.parse(packetBuf)
@@ -244,6 +246,7 @@ func (s *SSDBClient) Recv() (resp []string, err error) {
 			}
 		}
 	}
+	packetBuf = nil
 	return resp, nil
 }
 func (s *SSDBClient) parse(buf []byte) (resp string, size int) {
