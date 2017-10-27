@@ -18,7 +18,7 @@ func (c *Client) Set(key string, val interface{}, ttl ...int64) (err error) {
 	if err != nil {
 		return goerr.NewError(err, "Set %s error", key)
 	}
-	if len(resp) > 0 && resp[0] == "ok" {
+	if len(resp) > 0 && resp[0] == OK {
 		return nil
 	}
 	return makeError(resp, key)
@@ -36,7 +36,7 @@ func (c *Client) Setnx(key string, val interface{}) (Value, error) {
 	if err != nil {
 		return "", goerr.NewError(err, "Setnx %s error", key)
 	}
-	if len(resp) > 0 && resp[0] == "ok" {
+	if len(resp) > 0 && resp[0] == OK {
 		return Value(resp[1]), nil
 	}
 	return "", makeError(resp, key)
@@ -52,7 +52,7 @@ func (c *Client) Get(key string) (Value, error) {
 	if err != nil {
 		return "", goerr.NewError(err, "Get %s error", key)
 	}
-	if len(resp) == 2 && resp[0] == "ok" {
+	if len(resp) == 2 && resp[0] == OK {
 		return Value(resp[1]), nil
 	}
 	return "", makeError(resp, key)
@@ -69,7 +69,7 @@ func (c *Client) Getset(key string, val interface{}) (Value, error) {
 	if err != nil {
 		return "", goerr.NewError(err, "Getset %s error", key)
 	}
-	if len(resp) == 2 && resp[0] == "ok" {
+	if len(resp) == 2 && resp[0] == OK {
 		return Value(resp[1]), nil
 	}
 	return "", makeError(resp, key)
@@ -86,7 +86,7 @@ func (c *Client) Expire(key string, ttl int64) (re bool, err error) {
 	if err != nil {
 		return false, goerr.NewError(err, "Expire %s error", key)
 	}
-	if len(resp) == 2 && resp[0] == "ok" {
+	if len(resp) == 2 && resp[0] == OK {
 		return resp[1] == "1", nil
 	}
 	return false, makeError(resp, key, ttl)
@@ -103,7 +103,7 @@ func (c *Client) Exists(key string) (re bool, err error) {
 		return false, goerr.NewError(err, "Exists %s error", key)
 	}
 
-	if len(resp) == 2 && resp[0] == "ok" {
+	if len(resp) == 2 && resp[0] == OK {
 		return resp[1] == "1", nil
 	}
 	return false, makeError(resp, key)
@@ -120,7 +120,7 @@ func (c *Client) Del(key string) error {
 	}
 
 	//response looks like s: [ok 1]
-	if len(resp) > 0 && resp[0] == "ok" {
+	if len(resp) > 0 && resp[0] == OK {
 		return nil
 	}
 	return makeError(resp, key)
@@ -138,7 +138,7 @@ func (c *Client) Ttl(key string) (ttl int64, err error) {
 	}
 
 	//response looks like s: [ok 1]
-	if len(resp) > 0 && resp[0] == "ok" {
+	if len(resp) > 0 && resp[0] == OK {
 		return Value(resp[1]).Int64(), nil
 	}
 	return -1, makeError(resp, key)
@@ -157,7 +157,7 @@ func (c *Client) Incr(key string, num int64) (val int64, err error) {
 	if err != nil {
 		return -1, goerr.NewError(err, "Incr %s error", key)
 	}
-	if len(resp) == 2 && resp[0] == "ok" {
+	if len(resp) == 2 && resp[0] == OK {
 		return Value(resp[1]).Int64(), nil
 	}
 	return -1, makeError(resp, key)
@@ -181,7 +181,7 @@ func (c *Client) MultiSet(kvs map[string]interface{}) (err error) {
 		return goerr.NewError(err, "MultiSet %s error", kvs)
 	}
 
-	if len(resp) > 0 && resp[0] == "ok" {
+	if len(resp) > 0 && resp[0] == OK {
 		return nil
 	}
 	return makeError(resp, kvs)
@@ -207,7 +207,7 @@ func (c *Client) MultiGet(key ...string) (val map[string]Value, err error) {
 	}
 
 	size := len(resp)
-	if size > 0 && resp[0] == "ok" {
+	if size > 0 && resp[0] == OK {
 		val = make(map[string]Value)
 		for i := 1; i < size && i+1 < size; i += 2 {
 			val[resp[i]] = Value(resp[i+1])
@@ -226,18 +226,20 @@ func (c *Client) MultiGetSlice(key ...string) (keys []string, values []Value, er
 	if len(key) == 0 {
 		return []string{}, []Value{}, nil
 	}
-	data := []interface{}{"multi_get"}
-	for _, k := range key {
-		data = append(data, k)
+	args := []interface{}{"multi_get"}
+
+	for _, v := range key {
+		args = append(args, v)
 	}
-	resp, err := c.Do(data...)
+
+	resp, err := c.Do(args...)
 
 	if err != nil {
 		return nil, nil, goerr.NewError(err, "MultiGet %s error", key)
 	}
 
 	size := len(resp)
-	if size > 0 && resp[0] == "ok" {
+	if size > 0 && resp[0] == OK {
 
 		keys := make([]string, 0, (size-1)/2)
 		values := make([]Value, 0, (size-1)/2)
@@ -277,16 +279,16 @@ func (c *Client) MultiDel(key ...string) (err error) {
 	if len(key) == 0 {
 		return nil
 	}
-	data := []interface{}{"multi_del"}
-	for _, k := range key {
-		data = append(data, k)
+	args := []interface{}{"multi_del"}
+	for _, v := range key {
+		args = append(args, v)
 	}
-	resp, err := c.Do(data...)
+	resp, err := c.Do(args...)
 	if err != nil {
 		return goerr.NewError(err, "MultiDel %s error", key)
 	}
 
-	if len(resp) > 0 && resp[0] == "ok" {
+	if len(resp) > 0 && resp[0] == OK {
 		return nil
 	}
 	return makeError(resp, key)
@@ -306,7 +308,7 @@ func (c *Client) MultiDel(key ...string) (err error) {
 //	if err != nil {
 //		return 255, goerr.NewError(err, "Setbit %s error", key)
 //	}
-//	if len(resp) == 2 && resp[0] == "ok" {
+//	if len(resp) == 2 && resp[0] == OK {
 //		return Value(resp[1]).Byte(), nil
 //	}
 //	return 255, makeError(resp, key)
@@ -325,7 +327,7 @@ func (c *Client) MultiDel(key ...string) (err error) {
 //	if err != nil {
 //		return 255, goerr.NewError(err, "Getbit %s error", key)
 //	}
-//	if len(resp) == 2 && resp[0] == "ok" {
+//	if len(resp) == 2 && resp[0] == OK {
 //		return Value(resp[1]).Byte(), nil
 //	}
 //	return 255, makeError(resp, key)
@@ -348,7 +350,7 @@ func (c *Client) Substr(key string, start int64, size ...int64) (val string, err
 	if err != nil {
 		return "", goerr.NewError(err, "Substr %s error", key)
 	}
-	if len(resp) > 1 && resp[0] == "ok" {
+	if len(resp) > 1 && resp[0] == OK {
 		return resp[1], nil
 	}
 	return "", makeError(resp, key)
@@ -366,7 +368,7 @@ func (c *Client) Strlen(key string) (int64, error) {
 	if err != nil {
 		return -1, goerr.NewError(err, "Strlen %s error", key)
 	}
-	if len(resp) > 1 && resp[0] == "ok" {
+	if len(resp) > 1 && resp[0] == OK {
 		return Value(resp[1]).Int64(), nil
 	}
 	return -1, makeError(resp, key)
@@ -386,7 +388,7 @@ func (c *Client) Keys(keyStart, keyEnd string, limit int64) ([]string, error) {
 	if err != nil {
 		return nil, goerr.NewError(err, "Keys %s error", keyStart, keyEnd, limit)
 	}
-	if len(resp) > 0 && resp[0] == "ok" {
+	if len(resp) > 0 && resp[0] == OK {
 		return resp[1:], nil
 	}
 	return nil, makeError(resp, keyStart, keyEnd, limit)
@@ -406,7 +408,7 @@ func (c *Client) Rkeys(keyStart, keyEnd string, limit int64) ([]string, error) {
 	if err != nil {
 		return nil, goerr.NewError(err, "Rkeys %s error", keyStart, keyEnd, limit)
 	}
-	if len(resp) > 0 && resp[0] == "ok" {
+	if len(resp) > 0 && resp[0] == OK {
 		return resp[1:], nil
 	}
 	return nil, makeError(resp, keyStart, keyEnd, limit)
@@ -426,7 +428,7 @@ func (c *Client) Scan(keyStart, keyEnd string, limit int64) (map[string]Value, e
 	if err != nil {
 		return nil, goerr.NewError(err, "Scan %s error", keyStart, keyEnd, limit)
 	}
-	if len(resp) > 0 && resp[0] == "ok" {
+	if len(resp) > 0 && resp[0] == OK {
 		re := make(map[string]Value)
 		size := len(resp)
 		for i := 1; i < size-1; i += 2 {
@@ -451,7 +453,7 @@ func (c *Client) Rscan(keyStart, keyEnd string, limit int64) (map[string]Value, 
 	if err != nil {
 		return nil, goerr.NewError(err, "Rscan %s error", keyStart, keyEnd, limit)
 	}
-	if len(resp) > 0 && resp[0] == "ok" {
+	if len(resp) > 0 && resp[0] == OK {
 		re := make(map[string]Value)
 		size := len(resp)
 		for i := 1; i < size-1; i += 2 {
