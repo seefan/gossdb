@@ -8,6 +8,8 @@ type Config struct {
 	Port int
 	//获取连接超时时间，单位为秒。默认值: 5
 	GetClientTimeout int
+	//连接读写超时时间，单位为秒。默认值: 60
+	ReadWriteTimeout int
 	//最大连接池个数。默认值: 20
 	MaxPoolSize int
 	//最小连接池数。默认值: 5

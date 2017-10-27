@@ -8,6 +8,7 @@ import (
 	"strconv"
 
 	"github.com/seefan/goerr"
+	"time"
 )
 
 type SSDBClient struct {
@@ -25,6 +26,10 @@ type SSDBClient struct {
 	ReadBufferSize int
 	//是否重试
 	RetryEnabled bool
+	//读写超时
+	ReadWriteTimeout int
+	//0时间
+	timeZero time.Time
 }
 
 //打开连接
@@ -41,6 +46,7 @@ func (s *SSDBClient) Start() error {
 	sock.SetWriteBuffer(s.WriteBufferSize * 1024)
 	s.readBuf = make([]byte, s.ReadBufferSize*1024)
 	s.sock = sock
+	s.timeZero = time.Time{}
 	s.isOpen = true
 	return nil
 }
@@ -219,12 +225,18 @@ func (s *SSDBClient) send(args []interface{}) error {
 		packetBuf.WriteByte('\n')
 	}
 	packetBuf.WriteByte('\n')
-
+	if err := s.sock.SetWriteDeadline(time.Now().Add(time.Second * time.Duration(s.ReadWriteTimeout))); err != nil {
+		return err
+	}
 	for _, err := packetBuf.WriteTo(s.sock); packetBuf.Len() > 0; {
 		if err != nil {
 			packetBuf.Reset()
 			return goerr.NewError(err, "client socket write error")
 		}
+	}
+	//设置不超时
+	if err := s.sock.SetWriteDeadline(s.timeZero); err != nil {
+		return err
 	}
 	packetBuf.Reset()
 	return nil
@@ -234,6 +246,10 @@ func (s *SSDBClient) send(args []interface{}) error {
 func (s *SSDBClient) Recv() (resp []string, err error) {
 	bufSize := 0
 	packetBuf := []byte{}
+	//设置读取数据超时，
+	if err = s.sock.SetReadDeadline(time.Now().Add(time.Second * time.Duration(s.ReadWriteTimeout))); err != nil {
+		return nil, err
+	}
 	//数据包分解，发现长度，找到结尾，循环发现，发现空行，结束
 	for {
 		bufSize, err = s.sock.Read(s.readBuf)
@@ -258,6 +274,10 @@ func (s *SSDBClient) Recv() (resp []string, err error) {
 		}
 	}
 	packetBuf = nil
+	//设置不超时
+	if err = s.sock.SetReadDeadline(s.timeZero); err != nil {
+		return nil, err
+	}
 	return resp, nil
 }
 
