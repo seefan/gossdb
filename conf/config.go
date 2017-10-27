@@ -30,4 +30,6 @@ type Config struct {
 	ReadBufferSize int
 	//是否启用重试，设置为true时，如果请求失败会再重试一次。
 	RetryEnabled bool
+	//创建连接的超时时间，单位为秒。默认值: 5
+	ConnectTimeout int
 }

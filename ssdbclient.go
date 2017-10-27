@@ -35,18 +35,17 @@ type SSDBClient struct {
 	ReadWriteTimeout int
 	//0时间
 	timeZero time.Time
+	//创建连接的超时时间，单位为秒。默认值: 5
+	ConnectTimeout int
 }
 
 //打开连接
 func (s *SSDBClient) Start() error {
-	addr, err := net.ResolveTCPAddr("tcp", fmt.Sprintf("%s:%d", s.Host, s.Port))
+	conn, err := net.DialTimeout("tcp", fmt.Sprintf("%s:%d", s.Host, s.Port), time.Second)
 	if err != nil {
 		return err
 	}
-	sock, err := net.DialTCP("tcp", nil, addr)
-	if err != nil {
-		return err
-	}
+	sock := conn.(*net.TCPConn)
 	sock.SetReadBuffer(s.ReadBufferSize * 1024)
 	sock.SetWriteBuffer(s.WriteBufferSize * 1024)
 	s.readBuf = make([]byte, s.ReadBufferSize*1024)

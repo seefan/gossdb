@@ -26,7 +26,7 @@ func main() {
 		AcquireIncrement: 5,
 	})
 	if err != nil {
-		log.Critical(err)
+		log.Critical("create pool error", err)
 	}
 	defer pool.Close()
 	for i := 0; i < 10000; i++ {

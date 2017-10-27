@@ -26,6 +26,9 @@ func (c *Connectors) Init(cfg *conf.Config) {
 	if cfg.ReadWriteTimeout < 1 {
 		cfg.ReadWriteTimeout = 60
 	}
+	if cfg.ConnectTimeout < 1 {
+		cfg.ConnectTimeout = 5
+	}
 	c.pool.NewClient = func() gopool.IClient {
 		return &SSDBClient{
 			Host:             cfg.Host,
@@ -34,6 +37,7 @@ func (c *Connectors) Init(cfg *conf.Config) {
 			ReadBufferSize:   cfg.ReadBufferSize,
 			WriteBufferSize:  cfg.WriteBufferSize,
 			ReadWriteTimeout: cfg.ReadWriteTimeout,
+			ConnectTimeout:   cfg.ConnectTimeout,
 			client: &Client{
 				pool: c,
 			},
