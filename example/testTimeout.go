@@ -20,16 +20,16 @@ func main() {
 	pool, err := gossdb.NewPool(&conf.Config{
 		Host:             "127.0.0.1",
 		Port:             8888,
-		MinPoolSize:      10,
-		MaxPoolSize:      200,
-		MaxWaitSize:      10000,
+		MinPoolSize:      5,
+		MaxPoolSize:      50,
+		MaxWaitSize:      0,
 		AcquireIncrement: 5,
 	})
 	if err != nil {
 		log.Critical("create pool error", err)
 	}
 	defer pool.Close()
-	for i := 0; i < 10000; i++ {
+	for i := 0; i < 2; i++ {
 		go func(idx int) {
 			for {
 				Test_hset1(pool, idx)
@@ -42,19 +42,20 @@ func Test_hset1(pool *gossdb.Connectors, i int) {
 
 	c, err := pool.NewClient()
 	if err != nil {
-		log.Info("create", i, err, pool.Info())
+		log.Error("create", i, err, pool.Info())
 		return
 	}
 	defer c.Close()
+
 	err = c.Hset("hset", "test", "hello world.")
 	if err != nil {
-		log.Info(i, err)
+		log.Error(i, err)
 	} else {
 		log.Info("is set", i)
 	}
-	re, err := c.Get("test")
+	re, err := c.Hget("hset", "test")
 	if err != nil {
-		log.Info(i, err)
+		log.Error(i, err)
 	} else {
 		log.Info(re, "is get", i)
 	}
@@ -64,15 +65,16 @@ func Test_hset1(pool *gossdb.Connectors, i int) {
 	md["ab"] = "abc"
 	err = c.MultiHset("hset", md)
 	if err != nil {
-		log.Info(i, err)
+		log.Error(i, err)
 	} else {
 		log.Info("is mhset", i)
 	}
 	m, err := c.MultiHget("hset", "ab", "test1")
 	if err != nil {
-		log.Info(i, err)
+		log.Error(i, err)
 	} else {
 		log.Info(m, "is mhget", i)
 	}
+	time.Sleep(time.Millisecond)
 	//c.Close()
 }

@@ -48,6 +48,7 @@ func (s *SSDBClient) Start() error {
 	sock := conn.(*net.TCPConn)
 	sock.SetReadBuffer(s.ReadBufferSize * 1024)
 	sock.SetWriteBuffer(s.WriteBufferSize * 1024)
+
 	s.readBuf = make([]byte, s.ReadBufferSize*1024)
 	s.sock = sock
 	s.timeZero = time.Time{}

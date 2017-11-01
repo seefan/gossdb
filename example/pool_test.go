@@ -8,6 +8,10 @@ import (
 )
 
 func BenchmarkGetSet(b *testing.B) {
+	if logger, err := log.LoggerFromConfigAsFile("./log.xml"); err == nil {
+		log.ReplaceLogger(logger)
+	}
+	defer log.Flush()
 	pool, err := gossdb.NewPool(&conf.Config{
 		Host:             "127.0.0.1",
 		Port:             8888,
@@ -20,10 +24,6 @@ func BenchmarkGetSet(b *testing.B) {
 		log.Critical(err)
 	}
 	defer pool.Close()
-	if err := pool.Start(); err != nil {
-		b.Fatal(err)
-	}
-
 	for i := 0; i < b.N; i++ {
 		if c, e := pool.NewClient(); e == nil {
 			c.Close()
@@ -47,9 +47,6 @@ func BenchmarkP(b *testing.B) {
 		log.Critical(err)
 	}
 	defer pool.Close()
-	if err := pool.Start(); err != nil {
-		b.Fatal(err)
-	}
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
 			if c, e := pool.NewClient(); e == nil {
