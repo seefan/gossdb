@@ -25,6 +25,7 @@ func getConfig(c *goconfig.ConfigFile, name string) *conf.Config {
 		MinPoolSize:      c.MustInt(name, "min_pool_size", conf.MinPoolSize),
 		MaxPoolSize:      c.MustInt(name, "max_pool_size", conf.MaxPoolSize),
 		GetClientTimeout: c.MustInt(name, "get_client_timeout", conf.GetClientTimeout),
+		IdleTime:         c.MustInt(name, "idle_time", conf.IdleTime),
 	}
 	return cfg
 }
@@ -35,7 +36,7 @@ func getConfig(c *goconfig.ConfigFile, name string) *conf.Config {
 //  返回 error，正常启动返回nil
 func Start(config ...string) error {
 	log.Info("SSDB连接池启动")
-	configName := "config.ini"
+	configName := conf.ConfigName
 	if len(config) > 0 {
 		configName = config[0]
 	}

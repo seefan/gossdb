@@ -50,6 +50,7 @@ func (c *Connectors) Init(cfg *conf.Config) {
 	c.pool.AcquireIncrement = cfg.AcquireIncrement
 	c.pool.MaxWaitSize = cfg.MaxWaitSize
 	c.pool.HealthSecond = cfg.HealthSecond
+	c.pool.IdleTime = cfg.IdleTime
 }
 
 //启动连接池

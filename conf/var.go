@@ -21,4 +21,6 @@ var (
 	ConfigName = "config.ini"
 	//权重
 	Weight = 1
+	//连接空闲时间，超过这个时间可能会被回收，单位为秒。默认值:60
+	IdleTime = 60
 )

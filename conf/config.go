@@ -20,6 +20,8 @@ type Config struct {
 	MaxWaitSize int
 	//连接池内缓存的连接状态检查时间隔，单位为秒。默认值: 5
 	HealthSecond int
+	//连接空闲时间，超过这个时间可能会被回收，单位为秒。默认值:60
+	IdleTime int
 	//连接的密钥
 	Password string
 	//权重，只在负载均衡模式下启用
