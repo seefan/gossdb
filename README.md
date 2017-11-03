@@ -1,5 +1,21 @@
 # gossdb
 
+### 性能测试
+
+    goos: darwin
+    goarch: amd64
+    pkg: github.com/seefan/gossdb/example
+    5000000	       318 ns/op
+    5000000	       307 ns/op
+    5000000	       309 ns/op
+    5000000	       316 ns/op
+    5000000	       321 ns/op
+    3000000	       409 ns/op
+    3000000	       417 ns/op
+    3000000	       431 ns/op
+    5000000	       394 ns/op
+    3000000	       402 ns/op
+    PASS
 
 ### 功能列表
 
