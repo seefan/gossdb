@@ -2,6 +2,10 @@
 
 ### 性能测试
 
+    测试环境
+    MacBook Pro (13-inch, Mid 2012) 
+    cpu 2.5 GHz Intel Core i5
+    内存 8 GB 1600 MHz DDR3
     goos: darwin
     goarch: amd64
     pkg: github.com/seefan/gossdb/example
