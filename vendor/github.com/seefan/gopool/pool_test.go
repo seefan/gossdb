@@ -32,7 +32,7 @@ func BenchmarkGetSet(b *testing.B) {
 	}
 
 	pool.MinPoolSize = 10
-	pool.MaxPoolSize = 0
+	pool.MaxPoolSize = 200
 	pool.MaxWaitSize = 100000
 	pool.GetClientTimeout = 5
 	pool.HealthSecond = 10
@@ -68,7 +68,7 @@ func BenchmarkP(b *testing.B) {
 				//time.Sleep(time.Millisecond)
 				pool.Set(c)
 			} else {
-				//b.Error(e)
+				b.Error(e)
 			}
 		}
 	})

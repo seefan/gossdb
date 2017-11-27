@@ -46,10 +46,13 @@ func (s *Slice) checkPool(hs int64) {
 func (s *Slice) checkMinPoolClient(hs int64) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
-
+	if s.length == 0 { //如果连接池初始化失败，会导致s.length为0
+		return
+	}
 	if checkIndex < 0 || checkIndex < s.current {
 		checkIndex = s.length - 1
 	}
+
 	//同一个连接检查要间隔HealthSecond秒
 	if s.pooled[checkIndex] != nil && !s.pooled[checkIndex].isUsed && s.pooled[checkIndex].lastTime+hs < now {
 		s.pooled[checkIndex].lastTime = now
