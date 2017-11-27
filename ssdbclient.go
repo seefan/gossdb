@@ -7,8 +7,9 @@ import (
 	"net"
 	"strconv"
 
-	"github.com/seefan/goerr"
 	"time"
+
+	"github.com/seefan/goerr"
 )
 
 const (
