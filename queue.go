@@ -127,9 +127,9 @@ func (c *Client) Qpop_back(name string) (v Value, err error) {
 //  返回 v，返回一个元素，并在队列中删除 v；队列为空时返回空值
 //  返回 err，执行的错误，操作成功返回 nil
 func (c *Client) Qpop(name string, reverse ...bool) (v Value, err error) {
-	index := 1
+	index := 0
 	if len(reverse) > 0 && !reverse[0] {
-		index = 0
+		index = 1
 	}
 	resp, err := c.Do(qpop_cmd[index], name)
 	if err != nil {
