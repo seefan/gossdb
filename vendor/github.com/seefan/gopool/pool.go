@@ -2,9 +2,10 @@ package gopool
 
 import (
 	"fmt"
-	"time"
-	"github.com/seefan/goerr"
 	"sync"
+	"time"
+
+	"github.com/seefan/goerr"
 )
 
 const (
@@ -88,7 +89,10 @@ func (p *Pool) Start() error {
 	p.poolWait = make(chan *PooledClient, p.MaxWaitSize)
 	p.waitCount = 0
 	p.pooled.Init(p.AcquireIncrement, p.MinPoolSize, p.MaxPoolSize, p)
-	p.pooled.Append(p.MinPoolSize)
+	err := p.pooled.Append(p.MinPoolSize)
+	if err != nil {
+		return err
+	}
 	p.Status = PoolStart
 
 	p.watcher = time.NewTicker(time.Second * time.Duration(p.HealthSecond))
