@@ -13,12 +13,13 @@ func (p *Pool) watch() {
 		now = t.Unix()
 		if p.waitCount == 0 && p.Status == PoolStart {
 			if p.pooled.length <= p.MinPoolSize {
-				p.pooled.checkMinPoolClient(timeOut)
 				if p.pooled.length == 0 {
 					p.Status = PoolReStart
 					if err := p.Start(); err == nil {
 						p.Status = PoolStart
 					}
+				} else {
+					p.pooled.checkMinPoolClient(timeOut)
 				}
 			} else {
 				p.pooled.checkPool(timeOut)
@@ -46,9 +47,6 @@ func (s *Slice) checkPool(hs int64) {
 func (s *Slice) checkMinPoolClient(hs int64) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
-	if s.length == 0 { //如果连接池初始化失败，会导致s.length为0
-		return
-	}
 	if checkIndex < 0 || checkIndex < s.current {
 		checkIndex = s.length - 1
 	}

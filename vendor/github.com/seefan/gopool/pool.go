@@ -85,18 +85,18 @@ func defaultValue(param, defaultValue int) int {
 //
 //  返回 err，可能的错误，操作成功返回 nil
 func (p *Pool) Start() error {
-	p.defaultConfig()
-	p.poolWait = make(chan *PooledClient, p.MaxWaitSize)
-	p.waitCount = 0
-	p.pooled.Init(p.AcquireIncrement, p.MinPoolSize, p.MaxPoolSize, p)
-	err := p.pooled.Append(p.MinPoolSize)
-	if err != nil {
+	if p.Status == PoolInit {
+		p.defaultConfig()
+		p.poolWait = make(chan *PooledClient, p.MaxWaitSize)
+		p.waitCount = 0
+		p.pooled.Init(p.AcquireIncrement, p.MinPoolSize, p.MaxPoolSize, p)
+		p.watcher = time.NewTicker(time.Second * time.Duration(p.HealthSecond))
+		go p.watch()
+	}
+	if err := p.pooled.Append(p.MinPoolSize); err != nil {
 		return err
 	}
 	p.Status = PoolStart
-
-	p.watcher = time.NewTicker(time.Second * time.Duration(p.HealthSecond))
-	go p.watch()
 	return nil
 }
 
