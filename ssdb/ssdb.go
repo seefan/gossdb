@@ -84,10 +84,10 @@ func Client() (*gossdb.Client, error) {
 //
 //    示例：
 //
-//    ssdb.Simple(func(c *gossdb.Client) error {
-//    	c.Set("test", "hello world")
-//    	c.Get("test")
-//    	return nil
+//    ssdb.Simple(func(c *gossdb.Client) (err error) {
+//    	err=c.Set("test", "hello world")
+//    	err=c.Get("test")
+//    	return
 //    })
 func Simple(fn func(c *gossdb.Client) error) error {
 	if client, err := Client(); err == nil {
