@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"net"
 	"strconv"
-
 	"time"
 
 	"github.com/seefan/goerr"
@@ -109,12 +108,12 @@ func (s *SSDBClient) Do(args ...interface{}) ([]string, error) {
 	}
 	resp, err := s.do(args...)
 	if err != nil {
-		s.Close()
+		err = s.Close()
 		if s.RetryEnabled { //如果允许重试，就重新打开一次连接
 			if err = s.Start(); err == nil {
 				resp, err = s.do(args...)
 				if err != nil {
-					s.Close()
+					err = s.Close()
 				}
 			}
 		}
