@@ -21,7 +21,8 @@ func BenchmarkGetSet(b *testing.B) {
 		AcquireIncrement: 5,
 	})
 	if err != nil {
-		log.Critical(err)
+		log.Errorf("create pool error", err)
+		return
 	}
 	defer pool.Close()
 	for i := 0; i < b.N; i++ {

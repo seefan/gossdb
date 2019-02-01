@@ -20,16 +20,16 @@ func main() {
 	pool, err := gossdb.NewPool(&conf.Config{
 		Host:             "127.0.0.1",
 		Port:             8888,
-		MinPoolSize:      5,
-		MaxPoolSize:      50,
-		MaxWaitSize:      0,
+		MinPoolSize:      1,
+		MaxPoolSize:      10,
+		MaxWaitSize:      100,
 		AcquireIncrement: 5,
 	})
 	if err != nil {
 		log.Critical("create pool error", err)
 	}
 	defer pool.Close()
-	for i := 0; i < 2; i++ {
+	for i := 0; i < 20; i++ {
 		go func(idx int) {
 			for {
 				Test_hset1(pool, idx)

@@ -46,9 +46,14 @@ func (s *SSDBClient) Start() error {
 		return err
 	}
 	sock := conn.(*net.TCPConn)
-	sock.SetReadBuffer(s.ReadBufferSize * 1024)
-	sock.SetWriteBuffer(s.WriteBufferSize * 1024)
-
+	err = sock.SetReadBuffer(s.ReadBufferSize * 1024)
+	if err != nil {
+		return err
+	}
+	err = sock.SetWriteBuffer(s.WriteBufferSize * 1024)
+	if err != nil {
+		return err
+	}
 	s.readBuf = make([]byte, s.ReadBufferSize*1024)
 	s.sock = sock
 	s.timeZero = time.Time{}
@@ -95,8 +100,9 @@ func (s *SSDBClient) Do(args ...interface{}) ([]string, error) {
 	if s.Password != "" {
 		resp, err := s.do("auth", []string{s.Password})
 		if err != nil {
-			s.sock.Close()
-			s.isOpen = false
+			if e := s.Close(); e != nil {
+				err = goerr.NewError(e, "client close failed")
+			}
 			return nil, goerr.NewError(err, "authentication failed")
 		}
 		if len(resp) > 0 && resp[0] == OK {
@@ -108,12 +114,16 @@ func (s *SSDBClient) Do(args ...interface{}) ([]string, error) {
 	}
 	resp, err := s.do(args...)
 	if err != nil {
-		err = s.Close()
+		if e := s.Close(); e != nil {
+			err = goerr.NewError(e, "client close failed")
+		}
 		if s.RetryEnabled { //如果允许重试，就重新打开一次连接
 			if err = s.Start(); err == nil {
 				resp, err = s.do(args...)
 				if err != nil {
-					err = s.Close()
+					if e := s.Close(); e != nil {
+						err = goerr.NewError(e, "client close failed")
+					}
 				}
 			}
 		}
@@ -123,7 +133,13 @@ func (s *SSDBClient) Do(args ...interface{}) ([]string, error) {
 
 //发送数据
 func (s *SSDBClient) Send(args ...interface{}) error {
-	return s.send(args)
+	if err := s.send(args); err != nil {
+		if e := s.Close(); e != nil {
+			err = goerr.NewError(e, "client close failed")
+		}
+		return err
+	}
+	return nil
 }
 
 //发送数据

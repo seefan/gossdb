@@ -57,21 +57,32 @@ func (c *Connectors) Init(cfg *conf.Config) {
 //
 //  返回 err，可能的错误，操作成功返回 nil
 func (c *Connectors) Start() error {
+	if c.pool == nil {
+		return goerr.New("Please call the init function first")
+	}
 	return c.pool.Start()
 }
 
 //关闭连接池
 func (c *Connectors) Close() {
-	c.pool.Close()
+	if c.pool != nil {
+		c.pool.Close()
+	}
 }
 
 //状态信息
 //
 //  返回 string，一个详细连接池基本情况的字符串
 func (c *Connectors) Info() string {
+	if c.pool == nil {
+		return "Please call the init function first"
+	}
 	return c.pool.Info()
 }
 func (c *Connectors) NewClient() (*Client, error) {
+	if c.pool == nil {
+		return nil, goerr.New("Please call the init function first")
+	}
 	pc, err := c.pool.Get()
 	if err != nil {
 		return nil, err
