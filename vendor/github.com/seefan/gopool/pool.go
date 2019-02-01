@@ -168,7 +168,13 @@ func (p *Pool) Get() (client *PooledClient, err error) {
 	timeout := time.After(time.Duration(p.GetClientTimeout) * time.Second)
 	select {
 	case <-timeout:
-		err = goerr.New("pool is busy,can not get new client in %d seconds", p.GetClientTimeout)
+		//检查是否可以扩展
+		if err = p.pooled.Append(p.AcquireIncrement); err == nil {
+			client, err = p.pooled.Get()
+			if err != nil {
+				err = goerr.New("pool is busy,can not get new client in %d seconds", p.GetClientTimeout)
+			}
+		}
 	case cc := <-p.poolWait:
 		if cc == nil {
 			err = goerr.New("pool is Closed, can not get new client.")
@@ -194,14 +200,15 @@ func (p *Pool) Set(element *PooledClient) {
 		element.lastTime = now //设置最好的回收时间
 		p.lock.RLock()
 		defer p.lock.RUnlock()
+
 		if p.waitCount > 0 && element.Client.IsOpen() && element.index%5 == 0 {
 			p.poolWait <- element
 		} else {
-			p.pooled.setPoolClient(element)
+			p.pooled.Set(element)
 		}
 	} else {
 		if element.Client.IsOpen() {
-			element.Client.Close()
+			_ = element.Client.Close()
 		}
 	}
 }
