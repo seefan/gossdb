@@ -122,3 +122,9 @@
 	defer client.Close()
 	client.Set("a", 1)
 	client.Get("a")
+	//another simple run
+    ssdb.Simple(func(c *gossdb.Client) (err error) {
+    	err=c.Set("test", "hello world")
+    	err=c.Get("test")
+    	return
+    })
