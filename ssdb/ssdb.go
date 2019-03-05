@@ -1,9 +1,9 @@
 package ssdb
 
 import (
-	"fmt"
+	"errors"
+
 	"github.com/Unknwon/goconfig"
-	log "github.com/cihub/seelog"
 	"github.com/seefan/gossdb"
 	"github.com/seefan/gossdb/conf"
 )
@@ -35,7 +35,6 @@ func getConfig(c *goconfig.ConfigFile, name string) *conf.Config {
 //  config 配置文件名，默认为config.ini
 //  返回 error，正常启动返回nil
 func Start(config ...string) error {
-	log.Info("SSDB连接池启动")
 	configName := conf.ConfigName
 	if len(config) > 0 {
 		configName = config[0]
@@ -43,7 +42,6 @@ func Start(config ...string) error {
 
 	cf, err := goconfig.LoadConfigFile(configName)
 	if err != nil {
-		log.Warnf("未找到SSDB的配置文件%s，将使用默认值启动", configName)
 		cf = new(goconfig.ConfigFile)
 	}
 	cfg := getConfig(cf, "ssdb")
@@ -63,7 +61,6 @@ func Close() {
 		pool.Close()
 	}
 	pool = nil
-	log.Info("SSDB连接池已经结束")
 }
 
 //获取一个连接
@@ -72,7 +69,7 @@ func Close() {
 //  返回 error，如果获取到连接就返回nil
 func Client() (*gossdb.Client, error) {
 	if pool == nil {
-		return nil, fmt.Errorf("SSDB连接池还未初始化")
+		return nil, errors.New("SSDB连接池还未初始化")
 	}
 	return pool.NewClient()
 }

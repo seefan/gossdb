@@ -1,17 +1,13 @@
 package main
 
 import (
-	log "github.com/cihub/seelog"
 	"github.com/seefan/gossdb"
 	"github.com/seefan/gossdb/conf"
 	"testing"
 )
 
 func BenchmarkGetSet(b *testing.B) {
-	if logger, err := log.LoggerFromConfigAsFile("./log.xml"); err == nil {
-		log.ReplaceLogger(logger)
-	}
-	defer log.Flush()
+
 	pool, err := gossdb.NewPool(&conf.Config{
 		Host:             "127.0.0.1",
 		Port:             8888,
@@ -21,8 +17,7 @@ func BenchmarkGetSet(b *testing.B) {
 		AcquireIncrement: 5,
 	})
 	if err != nil {
-		log.Errorf("create pool error", err)
-		return
+		b.Fatal("create pool error", err)
 	}
 	defer pool.Close()
 	for i := 0; i < b.N; i++ {
@@ -45,7 +40,7 @@ func BenchmarkP(b *testing.B) {
 		AcquireIncrement: 5,
 	})
 	if err != nil {
-		log.Critical(err)
+		b.Fatal(err)
 	}
 	defer pool.Close()
 	b.RunParallel(func(pb *testing.PB) {

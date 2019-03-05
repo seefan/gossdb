@@ -1,19 +1,16 @@
 package main
 
 import (
-	"github.com/seefan/gossdb"
-	"github.com/seefan/gossdb/conf"
-	"time"
-
-	log "github.com/cihub/seelog"
 	//"net/http"
 	_ "net/http/pprof"
+	"time"
+
+	"github.com/seefan/gossdb"
+	"github.com/seefan/gossdb/conf"
 )
 
 func main() {
-	if logger, err := log.LoggerFromConfigAsFile("./log.xml"); err == nil {
-		log.ReplaceLogger(logger)
-	}
+
 	//go func() {
 	//	http.ListenAndServe("0.0.0.0:6060", nil) // 启动默认的 http 服务，可以使用自带的路由
 	//}()
@@ -26,7 +23,7 @@ func main() {
 		AcquireIncrement: 5,
 	})
 	if err != nil {
-		log.Critical("create pool error", err)
+		panic(err.Error())
 	}
 	defer pool.Close()
 	for i := 0; i < 20; i++ {
@@ -42,38 +39,38 @@ func Test_hset1(pool *gossdb.Connectors, i int) {
 
 	c, err := pool.NewClient()
 	if err != nil {
-		log.Error("create", i, err, pool.Info())
+		println("create", i, err, pool.Info())
 		return
 	}
 	defer c.Close()
 
 	err = c.Hset("hset", "test", "hello world.")
 	if err != nil {
-		log.Error(i, err)
+		println(i, err)
 	} else {
-		log.Info("is set", i)
+		println("is set", i)
 	}
 	re, err := c.Hget("hset", "test")
 	if err != nil {
-		log.Error(i, err)
+		println(i, err)
 	} else {
-		log.Info(re, "is get", i)
+		println(re, "is get", i)
 	}
-	log.Info(pool.Info())
+	println(pool.Info())
 	md := make(map[string]interface{})
 	md["abc"] = "abc1"
 	md["ab"] = "abc"
 	err = c.MultiHset("hset", md)
 	if err != nil {
-		log.Error(i, err)
+		println(i, err)
 	} else {
-		log.Info("is mhset", i)
+		println("is mhset", i)
 	}
 	m, err := c.MultiHget("hset", "ab", "test1")
 	if err != nil {
-		log.Error(i, err)
+		println(i, err)
 	} else {
-		log.Info(m, "is mhget", i)
+		println(m, "is mhget", i)
 	}
 	time.Sleep(time.Millisecond)
 	//c.Close()
