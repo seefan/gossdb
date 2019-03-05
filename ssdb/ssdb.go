@@ -3,7 +3,7 @@ package ssdb
 import (
 	"errors"
 
-	"github.com/Unknwon/goconfig"
+	"github.com/seefan/goerr"
 	"github.com/seefan/gossdb"
 	"github.com/seefan/gossdb/conf"
 )
@@ -13,38 +13,11 @@ var (
 	pool *gossdb.Connectors
 )
 
-func getConfig(c *goconfig.ConfigFile, name string) *conf.Config {
-	cfg := &conf.Config{
-		Port:             c.MustInt(name, "port", conf.Port),
-		Host:             c.MustValue(name, "host", conf.Host),
-		HealthSecond:     c.MustInt(name, "health_second", conf.HealthSecond),
-		Weight:           c.MustInt(name, "weight", conf.Weight),
-		Password:         c.MustValue(name, "password", ""),
-		MaxWaitSize:      c.MustInt(name, "max_wait_size", conf.MaxWaitSize),
-		AcquireIncrement: c.MustInt(name, "acquire_increment", conf.AcquireIncrement),
-		MinPoolSize:      c.MustInt(name, "min_pool_size", conf.MinPoolSize),
-		MaxPoolSize:      c.MustInt(name, "max_pool_size", conf.MaxPoolSize),
-		GetClientTimeout: c.MustInt(name, "get_client_timeout", conf.GetClientTimeout),
-		IdleTime:         c.MustInt(name, "idle_time", conf.IdleTime),
-	}
-	return cfg
-}
-
 //启动服务
 //
 //  config 配置文件名，默认为config.ini
 //  返回 error，正常启动返回nil
-func Start(config ...string) error {
-	configName := conf.ConfigName
-	if len(config) > 0 {
-		configName = config[0]
-	}
-
-	cf, err := goconfig.LoadConfigFile(configName)
-	if err != nil {
-		cf = new(goconfig.ConfigFile)
-	}
-	cfg := getConfig(cf, "ssdb")
+func Start(cfg *conf.Config) error {
 	conn, err := gossdb.NewPool(cfg)
 	if err != nil {
 		return err
@@ -69,7 +42,7 @@ func Close() {
 //  返回 error，如果获取到连接就返回nil
 func Client() (*gossdb.Client, error) {
 	if pool == nil {
-		return nil, errors.New("SSDB连接池还未初始化")
+		return nil, errors.New("SSDB not initialized")
 	}
 	return pool.NewClient()
 }
@@ -88,11 +61,13 @@ func Client() (*gossdb.Client, error) {
 //    })
 func Simple(fn func(c *gossdb.Client) error) error {
 	if client, err := Client(); err == nil {
-		defer client.Close()
 		if err = fn(client); err != nil {
+			if e := client.Close(); e != nil {
+				return goerr.NewError(err, "simple client close error", e.Error())
+			}
 			return err
 		}
-		return nil
+		return client.Close()
 	} else {
 		return err
 	}

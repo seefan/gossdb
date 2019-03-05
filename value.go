@@ -2,7 +2,7 @@ package gossdb
 
 import (
 	"encoding/json"
-	"github.com/seefan/to"
+	"strconv"
 	"time"
 )
 
@@ -16,7 +16,10 @@ func (v Value) String() string {
 
 //返回 int64 的值
 func (v Value) Int64() int64 {
-	return to.Int64(v)
+	if f, e := strconv.ParseInt(string(v), 10, 64); e == nil {
+		return f
+	}
+	return 0
 }
 
 //返回 int32 的值
@@ -41,7 +44,10 @@ func (v Value) Int() int {
 
 //返回 uint64 的值
 func (v Value) UInt64() uint64 {
-	return to.Uint64(v)
+	if f, e := strconv.ParseUint(string(v), 10, 64); e == nil {
+		return f
+	}
+	return 0
 }
 
 //返回 uint32 类型的值
@@ -71,7 +77,10 @@ func (v Value) UInt() uint {
 
 //返回 float64 类型的值
 func (v Value) Float64() float64 {
-	return to.Float64(v)
+	if f, e := strconv.ParseFloat(string(v), 64); e == nil {
+		return f
+	}
+	return 0
 }
 
 //返回 float32 类型的值
@@ -81,17 +90,17 @@ func (v Value) Float32() float32 {
 
 //返回 bool 类型的值
 func (v Value) Bool() bool {
-	return to.Bool(v)
+	return v == "1"
 }
 
 //返回 time.Time 类型的值
 func (v Value) Time() time.Time {
-	return to.Time(v)
+	return time.Unix(v.Int64(), 0)
 }
 
 //返回 time.Duration 类型的值
 func (v Value) Duration() time.Duration {
-	return to.Duration(v)
+	return time.Duration(v.Int64())
 }
 
 //返回 []byte 类型的值

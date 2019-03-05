@@ -226,6 +226,16 @@ func (s *SSDBClient) send(args []interface{}) error {
 			} else {
 				packetBuf.WriteByte(0)
 			}
+		case time.Time:
+			bs := strconv.AppendInt(nil, arg.Unix(), 10)
+			packetBuf.Write(strconv.AppendInt(nil, int64(len(bs)), 10))
+			packetBuf.WriteByte(ENDN)
+			packetBuf.Write(bs)
+		case time.Duration:
+			bs := strconv.AppendInt(nil, arg.Nanoseconds(), 10)
+			packetBuf.Write(strconv.AppendInt(nil, int64(len(bs)), 10))
+			packetBuf.WriteByte(ENDN)
+			packetBuf.Write(bs)
 		case nil:
 			packetBuf.WriteByte(0)
 			packetBuf.WriteByte(ENDN)

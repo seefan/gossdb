@@ -2,7 +2,6 @@ package gossdb
 
 import (
 	"github.com/seefan/goerr"
-	"github.com/seefan/to"
 )
 
 //设置 zset 中指定 key 对应的权重值.
@@ -327,7 +326,7 @@ func (c *Client) Zincr(setName string, key string, num int64) (int64, error) {
 	}
 
 	if len(resp) > 1 && resp[0] == OK {
-		return to.Int64(resp[1]), nil
+		return Value(resp[1]).Int64(), nil
 	}
 	return 0, makeError(resp, setName, key)
 }
@@ -369,7 +368,7 @@ func (c *Client) Zsize(name string) (val int64, err error) {
 	}
 
 	if len(resp) > 0 && resp[0] == OK {
-		val = to.Int64(resp[1])
+		val = Value(resp[1]).Int64()
 		return val, nil
 	}
 	return 0, makeError(resp, name)
@@ -417,7 +416,7 @@ func (c *Client) Zsum(setName string, scoreStart, scoreEnd interface{}) (val int
 		return 0, goerr.NewError(err, "Zsum %s %v %v  error", setName, scoreStart, scoreEnd)
 	}
 	if len(resp) > 0 && resp[0] == OK {
-		val = to.Int64(resp[1])
+		val = Value(resp[1]).Int64()
 		return val, nil
 	}
 	return 0, makeError(resp, setName, scoreStart, scoreEnd)
@@ -437,7 +436,7 @@ func (c *Client) Zavg(setName string, scoreStart, scoreEnd interface{}) (val int
 		return 0, goerr.NewError(err, "Zavg %s %v %v  error", setName, scoreStart, scoreEnd)
 	}
 	if len(resp) > 0 && resp[0] == OK {
-		val = to.Int64(resp[1])
+		val = Value(resp[1]).Int64()
 		return val, nil
 	}
 	return 0, makeError(resp, setName, scoreStart, scoreEnd)
@@ -456,7 +455,7 @@ func (c *Client) Zrank(setName, key string) (val int64, err error) {
 		return 0, goerr.NewError(err, "Zrank %s %s  error", setName, key)
 	}
 	if len(resp) > 0 && resp[0] == OK {
-		val = to.Int64(resp[1])
+		val = Value(resp[1]).Int64()
 		return val, nil
 	}
 	return 0, makeError(resp, setName, key)
@@ -475,7 +474,7 @@ func (c *Client) Zrrank(setName, key string) (val int64, err error) {
 		return 0, goerr.NewError(err, "Zrrank %s %s  error", setName, key)
 	}
 	if len(resp) > 0 && resp[0] == OK {
-		val = to.Int64(resp[1])
+		val = Value(resp[1]).Int64()
 		return val, nil
 	}
 	return 0, makeError(resp, setName, key)
