@@ -79,6 +79,11 @@ func (c *Connectors) Info() string {
 	}
 	return c.pool.Info()
 }
+
+//创建一个新连接
+//
+//    返回 *Client 可用的连接
+//    返回 error 可能的错误
 func (c *Connectors) NewClient() (*Client, error) {
 	if c.pool == nil {
 		return nil, goerr.New("Please call the init function first")
@@ -93,8 +98,10 @@ func (c *Connectors) NewClient() (*Client, error) {
 	if !cc.isOpen {
 		return nil, goerr.New("get client error")
 	}
+	cc.client.isActive = true
 	return cc.client, nil
 }
 func (c *Connectors) closeClient(cc *Client) {
+	cc.isActive = false
 	c.pool.Set(cc.cached)
 }

@@ -1,9 +1,10 @@
 package gossdb
 
 import (
+	"strconv"
+
 	"github.com/seefan/goerr"
 	"github.com/seefan/gopool"
-	"strconv"
 )
 
 const (
@@ -14,14 +15,17 @@ const (
 //可回收的连接，支持连接池。
 //非协程安全，多协程请使用多个连接。
 type Client struct {
-	db     *SSDBClient
-	cached *gopool.PooledClient
-	pool   *Connectors
+	db       *SSDBClient
+	cached   *gopool.PooledClient
+	pool     *Connectors
+	isActive bool
 }
 
 //关闭连接，连接关闭后只是放回到连接池，不会物理关闭。
 func (c *Client) Close() error {
-	c.pool.closeClient(c)
+	if c.isActive {
+		c.pool.closeClient(c)
+	}
 	return nil
 }
 

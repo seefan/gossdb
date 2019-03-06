@@ -1,12 +1,13 @@
 package main
 
 import (
+	"github.com/seefan/gossdb/conf"
 	"github.com/seefan/gossdb/ssdb"
 	"testing"
 )
 
 func Test_qpush(t *testing.T) {
-	err := ssdb.Start("./config.ini")
+	err := ssdb.Start(&conf.Config{Host: "127.0.0.1", Port: 8888})
 	if err != nil {
 		t.Fatal(t)
 	}
@@ -32,7 +33,7 @@ func Test_qpush(t *testing.T) {
 }
 
 func Test_qpush_array(t *testing.T) {
-	err := ssdb.Start("./config.ini")
+	err := ssdb.Start(&conf.Config{Host: "127.0.0.1", Port: 8888})
 	if err != nil {
 		t.Fatal(t)
 	}
@@ -52,7 +53,7 @@ func Test_qpush_array(t *testing.T) {
 }
 
 func Test_Qfront(t *testing.T) {
-	err := ssdb.Start("./config.ini")
+	err := ssdb.Start(&conf.Config{Host: "127.0.0.1", Port: 8888})
 	if err != nil {
 		t.Fatal(t)
 	}
