@@ -17,7 +17,16 @@ var (
 //
 //  config 配置文件名，默认为config.ini
 //  返回 error，正常启动返回nil
-func Start(cfg *conf.Config) error {
+func Start(cfgs ...*conf.Config) error {
+	var cfg *conf.Config
+	if len(cfgs) == 0 {
+		cfg = &conf.Config{
+			Host: conf.Host,
+			Port: conf.Port,
+		}
+	} else {
+		cfg = cfgs[0]
+	}
 	conn, err := gossdb.NewPool(cfg)
 	if err != nil {
 		return err

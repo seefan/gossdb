@@ -1,13 +1,13 @@
 package main
 
 import (
-	"github.com/seefan/gossdb/conf"
-	"github.com/seefan/gossdb/ssdb"
 	"testing"
+
+	"github.com/seefan/gossdb/ssdb"
 )
 
 func Test_getset(t *testing.T) {
-	err := ssdb.Start(&conf.Config{Host: "127.0.0.1", Port: 8888})
+	err := ssdb.Start()
 	if err != nil {
 		t.Fatal(t)
 	}
