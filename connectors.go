@@ -1,7 +1,7 @@
 package gossdb
 
 import (
-	"github.com/seefan/goerr"
+	"errors"
 	"github.com/seefan/gopool"
 	"github.com/seefan/gossdb/conf"
 )
@@ -58,7 +58,7 @@ func (c *Connectors) Init(cfg *conf.Config) {
 //  返回 err，可能的错误，操作成功返回 nil
 func (c *Connectors) Start() error {
 	if c.pool == nil {
-		return goerr.New("Please call the init function first")
+		return errors.New("Please call the init function first")
 	}
 	return c.pool.Start()
 }
@@ -86,7 +86,7 @@ func (c *Connectors) Info() string {
 //    返回 error 可能的错误
 func (c *Connectors) NewClient() (*Client, error) {
 	if c.pool == nil {
-		return nil, goerr.New("Please call the init function first")
+		return nil, errors.New("Please call the init function first")
 	}
 	pc, err := c.pool.Get()
 	if err != nil {
@@ -96,7 +96,7 @@ func (c *Connectors) NewClient() (*Client, error) {
 	cc.client.cached = pc
 	cc.client.db = cc
 	if !cc.isOpen {
-		return nil, goerr.New("get client error")
+		return nil, errors.New("get client error")
 	}
 	cc.client.isActive = true
 	return cc.client, nil

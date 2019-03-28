@@ -1,6 +1,8 @@
 package gossdb
 
-import "github.com/seefan/goerr"
+import (
+	"fmt"
+)
 
 //设置 hashmap 中指定 key 对应的值内容.
 //
@@ -11,7 +13,7 @@ import "github.com/seefan/goerr"
 func (c *Client) Hset(setName, key string, value interface{}) (err error) {
 	resp, err := c.Do("hset", setName, key, value)
 	if err != nil {
-		return goerr.NewError(err, "Hset %s/%s error", setName, key)
+		return fmt.Errorf("Hset %s/%s error,cause is ", setName, key, err)
 	}
 
 	if len(resp) > 0 && resp[0] == OK {
@@ -29,7 +31,7 @@ func (c *Client) Hset(setName, key string, value interface{}) (err error) {
 func (c *Client) Hget(setName, key string) (value Value, err error) {
 	resp, err := c.Do("hget", setName, key)
 	if err != nil {
-		return "", goerr.NewError(err, "Hget %s/%s error", setName, key)
+		return "", fmt.Errorf("Hget %s/%s error,cause is ", setName, key, err)
 	}
 	if len(resp) == 2 && resp[0] == OK {
 		return Value(resp[1]), nil
@@ -45,7 +47,7 @@ func (c *Client) Hget(setName, key string) (value Value, err error) {
 func (c *Client) Hdel(setName, key string) (err error) {
 	resp, err := c.Do("hdel", setName, key)
 	if err != nil {
-		return goerr.NewError(err, "Hdel %s/%s error", setName, key)
+		return fmt.Errorf("Hdel %s/%s error,cause is ", setName, key, err)
 	}
 	if len(resp) > 0 && resp[0] == OK {
 		return nil
@@ -62,7 +64,7 @@ func (c *Client) Hdel(setName, key string) (err error) {
 func (c *Client) Hexists(setName, key string) (re bool, err error) {
 	resp, err := c.Do("hexists", setName, key)
 	if err != nil {
-		return false, goerr.NewError(err, "Hexists %s/%s error", setName, key)
+		return false, fmt.Errorf("Hexists %s/%s error", setName, key, err)
 	}
 
 	if len(resp) == 2 && resp[0] == OK {
@@ -78,7 +80,7 @@ func (c *Client) Hexists(setName, key string) (re bool, err error) {
 func (c *Client) Hclear(setName string) (err error) {
 	resp, err := c.Do("hclear", setName)
 	if err != nil {
-		return goerr.NewError(err, "Hclear %s error", setName)
+		return fmt.Errorf("Hclear %s error", setName, err)
 	}
 
 	if len(resp) > 0 && resp[0] == OK {
@@ -104,7 +106,7 @@ func (c *Client) Hscan(setName string, keyStart, keyEnd string, limit int64, rev
 	resp, err := c.Do(cmd, setName, keyStart, keyEnd, limit)
 
 	if err != nil {
-		return nil, goerr.NewError(err, "%s %s %s %s %v error", cmd, setName, keyStart, keyEnd, limit)
+		return nil, fmt.Errorf("%s %s %s %s %v error", cmd, setName, keyStart, keyEnd, limit, err)
 	}
 
 	if len(resp) > 0 && resp[0] == OK {
@@ -134,7 +136,7 @@ func (c *Client) HscanArray(setName string, keyStart, keyEnd string, limit int64
 	resp, err := c.Do(cmd, setName, keyStart, keyEnd, limit)
 
 	if err != nil {
-		return nil, nil, goerr.NewError(err, "%s %s %s %s %v error", cmd, setName, keyStart, keyEnd, limit)
+		return nil, nil, fmt.Errorf("%s %s %s %s %v error", cmd, setName, keyStart, keyEnd, limit, err)
 	}
 
 	if len(resp) > 0 && resp[0] == OK {
@@ -189,7 +191,7 @@ func (c *Client) MultiHset(setName string, kvs map[string]interface{}) (err erro
 	resp, err := c.Do(args...)
 
 	if err != nil {
-		return goerr.NewError(err, "MultiHset %s %s error", setName, kvs)
+		return fmt.Errorf("MultiHset %s %s error", setName, kvs, err)
 	}
 
 	if len(resp) > 0 && resp[0] == OK {
@@ -217,7 +219,7 @@ func (c *Client) MultiHget(setName string, key ...string) (val map[string]Value,
 
 	resp, err := c.Do(args...)
 	if err != nil {
-		return nil, goerr.NewError(err, "MultiHget %s %s error", setName, key)
+		return nil, fmt.Errorf("MultiHget %s %s error", setName, key, err)
 	}
 	size := len(resp)
 	if size > 0 && resp[0] == OK {
@@ -247,7 +249,7 @@ func (c *Client) MultiHgetSlice(setName string, key ...string) (keys []string, v
 	resp, err := c.Do(args...)
 
 	if err != nil {
-		return nil, nil, goerr.NewError(err, "MultiHgetSlice %s %s error", setName, key)
+		return nil, nil, fmt.Errorf("MultiHgetSlice %s %s error", setName, key, err)
 	}
 	if len(resp) > 0 && resp[0] == OK {
 		size := len(resp)
@@ -294,7 +296,7 @@ func (c *Client) MultiHgetAll(setName string) (val map[string]Value, err error) 
 	resp, err := c.Do("hgetall", setName)
 
 	if err != nil {
-		return nil, goerr.NewError(err, "MultiHgetAll %s error", setName)
+		return nil, fmt.Errorf("MultiHgetAll %s error", setName, err)
 	}
 	size := len(resp)
 	if size > 0 && resp[0] == OK {
@@ -317,7 +319,7 @@ func (c *Client) MultiHgetAllSlice(setName string) (keys []string, values []Valu
 	resp, err := c.Do("hgetall", setName)
 
 	if err != nil {
-		return nil, nil, goerr.NewError(err, "MultiHgetAllSlice %s error", setName)
+		return nil, nil, fmt.Errorf("MultiHgetAllSlice %s error", setName, err)
 	}
 	if len(resp) > 0 && resp[0] == OK {
 		size := len(resp)
@@ -348,7 +350,7 @@ func (c *Client) MultiHdel(setName string, key ...string) (err error) {
 	}
 	resp, err := c.Do(args...)
 	if err != nil {
-		return goerr.NewError(err, "MultiHdel %s %s error", setName, key)
+		return fmt.Errorf("MultiHdel %s %s error", setName, key, err)
 	}
 
 	if len(resp) > 0 && resp[0] == OK {
@@ -376,7 +378,7 @@ func (c *Client) MultiHdelArray(setName string, key []string) (err error) {
 func (c *Client) Hlist(nameStart, nameEnd string, limit int64) ([]string, error) {
 	resp, err := c.Do("hlist", nameStart, nameEnd, limit)
 	if err != nil {
-		return nil, goerr.NewError(err, "Hlist %s %s %v error", nameStart, nameEnd, limit)
+		return nil, fmt.Errorf("Hlist %s %s %v error", nameStart, nameEnd, limit, err)
 	}
 
 	if len(resp) > 0 && resp[0] == OK {
@@ -403,7 +405,7 @@ func (c *Client) Hincr(setName, key string, num int64) (val int64, err error) {
 	resp, err := c.Do("hincr", setName, key, num)
 
 	if err != nil {
-		return -1, goerr.NewError(err, "Hincr %s error", key)
+		return -1, fmt.Errorf("Hincr %s error", key, err)
 	}
 	if len(resp) == 2 && resp[0] == OK {
 		return Value(resp[1]).Int64(), nil
@@ -421,7 +423,7 @@ func (c *Client) Hsize(setName string) (val int64, err error) {
 	resp, err := c.Do("hsize", setName)
 
 	if err != nil {
-		return -1, goerr.NewError(err, "Hsize %s error", setName)
+		return -1, fmt.Errorf("Hsize %s error", setName, err)
 	}
 	if len(resp) == 2 && resp[0] == OK {
 		return Value(resp[1]).Int64(), nil
@@ -440,7 +442,7 @@ func (c *Client) Hsize(setName string) (val int64, err error) {
 func (c *Client) Hkeys(setName, keyStart, keyEnd string, limit int64) ([]string, error) {
 	resp, err := c.Do("hkeys", setName, keyStart, keyEnd, limit)
 	if err != nil {
-		return nil, goerr.NewError(err, "Hkeys %s %s %s %v error", setName, keyStart, keyEnd, limit)
+		return nil, fmt.Errorf("Hkeys %s %s %s %v error", setName, keyStart, keyEnd, limit, err)
 	}
 
 	if len(resp) > 0 && resp[0] == OK {

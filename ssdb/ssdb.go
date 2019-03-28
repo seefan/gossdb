@@ -2,8 +2,8 @@ package ssdb
 
 import (
 	"errors"
+	"fmt"
 
-	"github.com/seefan/goerr"
 	"github.com/seefan/gossdb"
 	"github.com/seefan/gossdb/conf"
 )
@@ -72,7 +72,7 @@ func Simple(fn func(c *gossdb.Client) error) error {
 	if client, err := Client(); err == nil {
 		if err = fn(client); err != nil {
 			if e := client.Close(); e != nil {
-				return goerr.NewError(err, "simple client close error", e.Error())
+				return fmt.Errorf("simple client close error,cause is %s", e.Error())
 			}
 			return err
 		}

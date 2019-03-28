@@ -1,9 +1,10 @@
 package gossdb
 
 import (
+	"errors"
+	"fmt"
 	"strconv"
 
-	"github.com/seefan/goerr"
 	"github.com/seefan/gopool"
 )
 
@@ -73,15 +74,15 @@ func (c *Client) Info() (re []string, err error) {
 //生成通过的错误信息，已经确定是有错误
 func makeError(resp []string, errKey ...interface{}) error {
 	if len(resp) < 1 {
-		return goerr.New("ssdb respone error")
+		return errors.New("ssdb respone error")
 	}
 	//正常返回的不存在不报错，如果要捕捉这个问题请使用exists
 	if resp[0] == NotFound {
 		return nil
 	}
 	if len(errKey) > 0 {
-		return goerr.New("access ssdb error, code is %v, parameter is %v", resp, errKey)
+		return fmt.Errorf("access ssdb error, code is %v, parameter is %v", resp, errKey)
 	} else {
-		return goerr.New("access ssdb error, code is %v", resp)
+		return fmt.Errorf("access ssdb error, code is %v", resp)
 	}
 }

@@ -3,12 +3,11 @@ package gossdb
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net"
 	"strconv"
 	"time"
-
-	"github.com/seefan/goerr"
 )
 
 const (
@@ -82,14 +81,14 @@ func (s *SSDBClient) Ping() bool {
 //执行ssdb命令
 func (s *SSDBClient) do(args ...interface{}) ([]string, error) {
 	if !s.isOpen {
-		return nil, goerr.New("gossdb client is closed.")
+		return nil, errors.New("gossdb client is closed.")
 	}
 	err := s.send(args)
 	if err != nil {
-		return nil, goerr.NewError(err, "client send error")
+		return nil, fmt.Errorf("client send error", err.Error())
 	}
 	if resp, err := s.Recv(); err != nil {
-		return nil, goerr.NewError(err, "client recv error")
+		return nil, fmt.Errorf("client recv error", err.Error())
 	} else {
 		return resp, nil
 	}
@@ -101,28 +100,28 @@ func (s *SSDBClient) Do(args ...interface{}) ([]string, error) {
 		resp, err := s.do("auth", []string{s.Password})
 		if err != nil {
 			if e := s.Close(); e != nil {
-				err = goerr.NewError(e, "client close failed")
+				err = fmt.Errorf("client close failed", err.Error())
 			}
-			return nil, goerr.NewError(err, "authentication failed")
+			return nil, fmt.Errorf("authentication failed", err.Error())
 		}
 		if len(resp) > 0 && resp[0] == OK {
 			//验证成功
 			s.Password = ""
 		} else {
-			return nil, goerr.New("Authentication failed,password is wrong")
+			return nil, errors.New("Authentication failed,password is wrong")
 		}
 	}
 	resp, err := s.do(args...)
 	if err != nil {
 		if e := s.Close(); e != nil {
-			err = goerr.NewError(e, "client close failed")
+			err = fmt.Errorf("client close failed", err.Error())
 		}
 		if s.RetryEnabled { //如果允许重试，就重新打开一次连接
 			if err = s.Start(); err == nil {
 				resp, err = s.do(args...)
 				if err != nil {
 					if e := s.Close(); e != nil {
-						err = goerr.NewError(e, "client close failed")
+						err = fmt.Errorf("client close failed", e.Error())
 					}
 				}
 			}
@@ -135,7 +134,7 @@ func (s *SSDBClient) Do(args ...interface{}) ([]string, error) {
 func (s *SSDBClient) Send(args ...interface{}) error {
 	if err := s.send(args); err != nil {
 		if e := s.Close(); e != nil {
-			err = goerr.NewError(e, "client close failed")
+			err = fmt.Errorf("client close failed", e.Error())
 		}
 		return err
 	}
@@ -247,10 +246,10 @@ func (s *SSDBClient) send(args []interface{}) error {
 					packetBuf.WriteByte(ENDN)
 					packetBuf.Write(bs)
 				} else {
-					return fmt.Errorf("bad arguments type,can not json marshal")
+					return fmt.Errorf("bad arguments type,can not json marshal", err.Error())
 				}
 			} else {
-				return fmt.Errorf("bad arguments type")
+				return errors.New("bad arguments type")
 			}
 		}
 		packetBuf.WriteByte(ENDN)
@@ -262,7 +261,7 @@ func (s *SSDBClient) send(args []interface{}) error {
 	for _, err := packetBuf.WriteTo(s.sock); packetBuf.Len() > 0; {
 		if err != nil {
 			packetBuf.Reset()
-			return goerr.NewError(err, "client socket write error")
+			return fmt.Errorf("client socket write error", err.Error())
 		}
 	}
 	//设置不超时
@@ -285,7 +284,7 @@ func (s *SSDBClient) Recv() (resp []string, err error) {
 	for {
 		bufSize, err = s.sock.Read(s.readBuf)
 		if err != nil {
-			return nil, goerr.NewError(err, "client socket read error")
+			return nil, fmt.Errorf("client socket read error", err.Error())
 		}
 		if bufSize < 1 {
 			continue
