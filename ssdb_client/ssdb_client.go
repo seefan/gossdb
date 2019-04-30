@@ -318,13 +318,19 @@ func (s *SSDBClient) Recv() (resp []string, err error) {
 
 		for {
 			rs, e, re := s.parse()
-			if e != nil {
+			//end
+			if re {
+				end = true
+				break
+			}
+			//err
+			if e != nil && re {
 				err = goerr.Errorf(e, "client socket read error")
 				end = true
 				break
 			}
-			if re {
-				end = true
+			//no data
+			if err != nil && !re {
 				break
 			}
 			resp = append(resp, rs)
@@ -344,7 +350,7 @@ func (s *SSDBClient) parse() (resp string, err error, end bool) {
 		return "", nil, true
 	}
 	if err != nil {
-		return "", err, false
+		return "", err, true
 	}
 	size := len(ns)
 	if size == 1 && ns[0] == ENDN || size == 2 && ns[0] == ENDR { //空行，说明一个数据包结束
@@ -357,7 +363,7 @@ func (s *SSDBClient) parse() (resp string, err error, end bool) {
 		size = 1
 	}
 	if s.packetBuf.Len() < blockSize+size {
-		return "", nil, false
+		return "", io.EOF, false
 	}
 
 	ns = s.packetBuf.Next(blockSize)

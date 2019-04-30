@@ -55,6 +55,17 @@ func Client() (*gossdb.Client, error) {
 	}
 	return pool.NewClient()
 }
+func AutoClient() *AutoCloseClient {
+	if pool != nil {
+		if c, e := pool.NewClient(); e == nil {
+			return &AutoCloseClient{
+				Client: *c,
+				Init:   true,
+			}
+		}
+	}
+	return &AutoCloseClient{}
+}
 
 //连接的简单使用方法
 //
