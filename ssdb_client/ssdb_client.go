@@ -2,7 +2,7 @@ package ssdb_client
 
 import (
 	"bytes"
-	"encoding/json"
+	//"encoding/json"
 	"fmt"
 	"io"
 	"net"
@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/seefan/goerr"
-	"github.com/seefan/gossdb"
+	//"github.com/seefan/gossdb"
 )
 
 const (
@@ -259,17 +259,17 @@ func (s *SSDBClient) send(args []interface{}) error {
 			s.packetBuf.WriteByte(ENDN)
 			s.packetBuf.WriteString("")
 		default:
-			if gossdb.Encoding {
-				if bs, err := json.Marshal(arg); err == nil {
-					s.packetBuf.Write(strconv.AppendInt(nil, int64(len(bs)), 10))
-					s.packetBuf.WriteByte(ENDN)
-					s.packetBuf.Write(bs)
-				} else {
-					return goerr.Errorf(err, "bad arguments type,can not json marshal")
-				}
-			} else {
-				return goerr.String("bad arguments type")
-			}
+			//if gossdb.Encoding {
+			//	if bs, err := json.Marshal(arg); err == nil {
+			//		s.packetBuf.Write(strconv.AppendInt(nil, int64(len(bs)), 10))
+			//		s.packetBuf.WriteByte(ENDN)
+			//		s.packetBuf.Write(bs)
+			//	} else {
+			//		return goerr.Errorf(err, "bad arguments type,can not json marshal")
+			//	}
+			//} else {
+			//	return goerr.String("bad arguments type")
+			//}
 		}
 		s.packetBuf.WriteByte(ENDN)
 	}
