@@ -35,3 +35,35 @@ type Config struct {
 	//创建连接的超时时间，单位为秒。默认值: 5
 	ConnectTimeout int
 }
+
+// 设置默认配置
+func (c *Config) Default() {
+	//默认值处理
+	c.MaxPoolSize = defaultValue(c.MaxPoolSize, 20)
+	c.MinPoolSize = defaultValue(c.MinPoolSize, 5)
+	c.GetClientTimeout = defaultValue(c.GetClientTimeout, 5)
+	c.AcquireIncrement = defaultValue(c.AcquireIncrement, 5)
+	c.MaxWaitSize = defaultValue(c.MaxWaitSize, 1000)
+	c.HealthSecond = defaultValue(c.HealthSecond, 5)
+	c.IdleTime = defaultValue(c.IdleTime, 60)
+	if c.MinPoolSize > c.MaxPoolSize {
+		c.MinPoolSize = c.MaxPoolSize
+	}
+	c.WriteBufferSize = defaultValue(c.WriteBufferSize, 8)
+	c.ReadBufferSize = defaultValue(c.ReadBufferSize, 8)
+	c.ReadWriteTimeout = defaultValue(c.ReadWriteTimeout, 60)
+	c.ConnectTimeout = defaultValue(c.ConnectTimeout, 5)
+}
+
+// 获取默认值
+//
+//  param，int，参数值
+//  defaultValue，int，默认返回
+//  返回，int。如果参数值小于1就返回默认值，否则返回参数值。
+func defaultValue(param, defaultValue int) int {
+	if param < 1 {
+		return defaultValue
+	} else {
+		return param
+	}
+}

@@ -4,7 +4,9 @@
 @File : queue
 @Software: gossdb
 */
-package pool
+package gossdb
+
+import "sync"
 
 type Queue struct {
 	pop   int
@@ -12,6 +14,8 @@ type Queue struct {
 	ava   int
 	value []int
 	size  int
+	//lock
+	lock sync.Mutex
 }
 
 func newQueue(size int) *Queue {
@@ -21,6 +25,8 @@ func newQueue(size int) *Queue {
 	}
 }
 func (q *Queue) Pop() (re int) {
+	q.lock.Lock()
+	defer q.lock.Unlock()
 	if q.ava == 0 {
 		return -1
 	}
@@ -33,6 +39,8 @@ func (q *Queue) Pop() (re int) {
 	return
 }
 func (q *Queue) Put(i int) {
+	q.lock.Lock()
+	defer q.lock.Unlock()
 	q.ava++
 	if q.put >= q.size {
 		q.put = 0
