@@ -10,12 +10,14 @@ type Config struct {
 	GetClientTimeout int
 	//连接读写超时时间，单位为秒。默认值: 60
 	ReadWriteTimeout int
-	//最大连接池个数。默认值: 20
-	MaxPoolSize int
-	//最小连接池数。默认值: 5
-	MinPoolSize int
-	//当连接池中的连接耗尽的时候一次同时获取的连接数。默认值: 5
-	AcquireIncrement int
+	//连接写超时时间，单位为秒，如果不设置与ReadWriteTimeout会保持一致。默认值: 0
+	WriteTimeout int
+	//连接读超时时间，单位为秒，如果不设置与ReadWriteTimeout会保持一致。默认值: 0
+	ReadTimeout int
+	//最大连接池个数。默认值: 1，连接数等于
+	PoolNumber int
+	//连接池内连接数。默认值: 20
+	PoolSize int
 	//最大等待数目，当连接池满后，新建连接将等待池中连接释放后才可以继续，本值限制最大等待的数量，超过本值后将抛出异常。默认值: 1000
 	MaxWaitSize int
 	//连接池内缓存的连接状态检查时间隔，单位为秒。默认值: 5
@@ -24,8 +26,6 @@ type Config struct {
 	IdleTime int
 	//连接的密钥
 	Password string
-	//权重，只在负载均衡模式下启用
-	Weight int
 	//连接写缓冲，默认为8k，单位为kb
 	WriteBufferSize int
 	//连接读缓冲，默认为8k，单位为kb
@@ -37,22 +37,19 @@ type Config struct {
 }
 
 // 设置默认配置
-func (c *Config) Default() {
+func (c *Config) Default() *Config {
 	//默认值处理
-	c.MaxPoolSize = defaultValue(c.MaxPoolSize, 20)
-	c.MinPoolSize = defaultValue(c.MinPoolSize, 5)
+	c.PoolNumber = defaultValue(c.PoolNumber, 1)
+	c.PoolSize = defaultValue(c.PoolSize, 20)
 	c.GetClientTimeout = defaultValue(c.GetClientTimeout, 5)
-	c.AcquireIncrement = defaultValue(c.AcquireIncrement, 5)
 	c.MaxWaitSize = defaultValue(c.MaxWaitSize, 1000)
 	c.HealthSecond = defaultValue(c.HealthSecond, 5)
 	c.IdleTime = defaultValue(c.IdleTime, 60)
-	if c.MinPoolSize > c.MaxPoolSize {
-		c.MinPoolSize = c.MaxPoolSize
-	}
 	c.WriteBufferSize = defaultValue(c.WriteBufferSize, 8)
 	c.ReadBufferSize = defaultValue(c.ReadBufferSize, 8)
 	c.ReadWriteTimeout = defaultValue(c.ReadWriteTimeout, 60)
 	c.ConnectTimeout = defaultValue(c.ConnectTimeout, 5)
+	return c
 }
 
 // 获取默认值

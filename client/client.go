@@ -1,4 +1,4 @@
-package gossdb
+package client
 
 import (
 	"errors"
@@ -16,19 +16,17 @@ const (
 //可回收的连接，支持连接池。
 //非协程安全，多协程请使用多个连接。
 type Client struct {
-	index    int
-	block    *Block
-	db       *ssdb_client.SSDBClient
-	pool     *Connectors
-	isActive bool
+	isOpen bool
+	ssdb_client.SSDBClient
 }
 
-//关闭连接，连接关闭后只是放回到连接池，不会物理关闭。
-func (c *Client) Close() error {
-	if c.isActive {
-		c.pool.closeClient(c)
+func NewClient(c *ssdb_client.SSDBClient) *Client {
+	return &Client{
+		SSDBClient: *c,
 	}
-	return nil
+}
+func (c *Client) IsOpen() bool {
+	return c.isOpen
 }
 
 //检查连接情况
@@ -44,7 +42,7 @@ func (c *Client) Ping() bool {
 //  返回 re，返回数据库的估计大小, 以字节为单位. 如果服务器开启了压缩, 返回压缩后的大小.
 //  返回 err，执行的错误
 func (c *Client) DbSize() (re int, err error) {
-	resp, err := c.db.Do("dbsize")
+	resp, err := c.Do("dbsize")
 	if err != nil {
 		return -1, err
 	}
@@ -53,16 +51,13 @@ func (c *Client) DbSize() (re int, err error) {
 	}
 	return -1, makeError(resp)
 }
-func (c *Client) Do(args ...interface{}) ([]string, error) {
-	return c.db.Do(args...)
-}
 
 //返回服务器的信息.
 //
 //  返回 re，返回数据库的估计大小, 以字节为单位. 如果服务器开启了压缩, 返回压缩后的大小.
 //  返回 err，执行的错误
 func (c *Client) Info() (re []string, err error) {
-	resp, err := c.db.Do("info")
+	resp, err := c.Do("info")
 	if err != nil {
 		return nil, err
 	}

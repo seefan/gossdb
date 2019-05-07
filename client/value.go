@@ -1,4 +1,4 @@
-package gossdb
+package client
 
 import (
 	"encoding/json"
