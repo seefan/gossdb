@@ -17,8 +17,9 @@ const (
 //非协程安全，多协程请使用多个连接。
 type Client struct {
 	ssdbclient.SSDBClient
+	AutoClose bool
 	//callback
-	Callback func()
+	CloseMethod func()
 }
 
 func NewClient(c *ssdbclient.SSDBClient) *Client {
@@ -31,8 +32,8 @@ func (c *Client) Do(args ...interface{}) (rsp []string, err error) {
 		return nil, errors.New("failed to obtain connection")
 	}
 	rsp, err = c.SSDBClient.Do(args...)
-	if c.Callback != nil {
-		c.Callback()
+	if c.CloseMethod != nil {
+		c.CloseMethod()
 	}
 	return
 }

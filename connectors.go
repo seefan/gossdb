@@ -127,11 +127,13 @@ func (c *Connectors) getPool() *Pool {
 				over:   c,
 				pool:   p,
 			}
-			if c.cfg.AutoClose {
-				cn.Callback = func() {
+
+			cn.CloseMethod = func() {
+				if cn.AutoClose {
 					cn.Close()
 				}
 			}
+
 			return cn, nil
 		}
 		return

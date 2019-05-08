@@ -56,12 +56,14 @@ func Client() (*gossdb.Client, error) {
 	return pc.NewClient()
 }
 
-//C 获取的没有错误的连接，如果获取有错误将在调用时返回
+//ClientAuto 获取的一个自动关闭的连接，不会返回错误，如果获取连接时有错误将在调用时连接的函数时返回
 //
 //  返回 *gossdb.Client
-func C() *gossdb.Client {
+func ClientAutoClose() *gossdb.Client {
 	if pc != nil {
-		return pc.GetClient()
+		c := pc.GetClient()
+		c.AutoClose = true
+		return c
 	} else {
 		return &gossdb.Client{Client: client.Client{}}
 	}
