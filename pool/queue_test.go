@@ -137,7 +137,7 @@ func TestQueue_All(t *testing.T) {
 }
 
 func BenchmarkQueue10(b *testing.B) {
-	b.SetParallelism(10)
+	b.SetParallelism(100)
 	var lock sync.Mutex
 	q := newQueue(100)
 	for i := 0; i < 10; i++ {

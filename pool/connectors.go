@@ -2,8 +2,7 @@ package pool
 
 import (
 	"fmt"
-	//	"fmt"
-	"sync"
+	"math"
 	"sync/atomic"
 	"time"
 
@@ -12,16 +11,8 @@ import (
 	"github.com/golangteam/function/errors"
 	"github.com/seefan/gossdb/client"
 	"github.com/seefan/gossdb/conf"
-	"github.com/seefan/gossdb/ssdb_client"
-)
-
-const (
-	//连接池状态：创建
-	PoolInit = 0
-	//连接池状态：运行
-	PoolStart = 1
-	//连接池状态：关闭
-	PoolStop = -1
+	"github.com/seefan/gossdb/consts"
+	"github.com/seefan/gossdb/ssdbclient"
 )
 
 //连接池
@@ -31,21 +22,26 @@ type Connectors struct {
 	//等待池
 	poolWait chan *Client //连接池
 	//最后的动作时间
-	lastTime int64
+	//
+	watchTicker *time.Ticker
 	//连接池个数
-	size int
+	size int32
+	//连接池最大个数
+	maxSize int
+	//连接池最小个数
+	minSize int
 	//状态 0：创建 1：正常 -1：关闭
 	status int
 	//pool
 	pool []*Pool
 	//pos
 	pos int32
-	//lock
-	lock sync.Mutex
 	//处理等待状态的连接数
 	waitCount int32
 	//最大等待数量
 	maxWaitSize int32
+	//active
+	activeCount int32
 }
 
 //用配置文件进行初始化
@@ -54,27 +50,71 @@ type Connectors struct {
 func NewConnectors(cfg *conf.Config) *Connectors {
 	this := new(Connectors)
 	this.cfg = cfg.Default()
+	this.maxSize = int(math.Floor(float64(cfg.MaxPoolSize) / float64(cfg.PoolSize)))
+	this.minSize = int(math.Floor(float64(cfg.MinPoolSize) / float64(cfg.PoolSize)))
 	this.maxWaitSize = int32(cfg.MaxWaitSize)
 	this.poolWait = make(chan *Client, cfg.MaxWaitSize)
+	this.watchTicker = time.NewTicker(time.Second)
+	this.pool = make([]*Pool, cfg.MaxPoolSize)
+	go this.watchHealth()
+	this.status = consts.PoolStop
 	return this
+}
+func (c *Connectors) watchHealth() {
+	for v := range c.watchTicker.C {
+		size := int(atomic.LoadInt32(&c.size))
+		if v.Second()%c.cfg.HealthSecond == 0 {
+			activeCount := int(atomic.LoadInt32(&c.activeCount))
+			if activeCount < (size-1)*c.cfg.PoolSize && size-1 >= c.minSize {
+				c.changeCount(&c.size, -1)
+			}
+			for i := size; i < c.cfg.MaxPoolSize; i++ {
+				if c.pool[i] != nil {
+					if c.pool[i].available.pos == c.pool[i].available.size && c.pool[i].Status != consts.PoolStop {
+						c.pool[i].Status = consts.PoolStop
+					}
+					if c.pool[i].Status == consts.PoolStop {
+						c.pool[i].Close()
+					}
+				}
+			}
+
+		}
+		waitCount := atomic.LoadInt32(&c.waitCount)
+		if waitCount > 0 && size < c.maxSize {
+			if err := c.appendPool(); err != nil {
+				time.Sleep(time.Millisecond * 10)
+				_ = c.appendPool() //retry
+			}
+			//println("pool append")
+		}
+		println(c.Info(), len(c.pool))
+	}
 }
 
 //初始化连接池
 func (c *Connectors) appendPool() (err error) {
-	p := c.getPool()
-	if err = p.Start(); err == nil {
-		p.index = int32(len(c.pool))
-		c.pool = append(c.pool, p)
-		c.size = int(p.index + 1)
-		return nil
-	} else {
-		return err
+	size := atomic.LoadInt32(&c.size)
+	if int(size) < c.cfg.MaxPoolSize {
+		p := c.pool[size]
+		if p == nil {
+			p = c.getPool()
+			c.pool[size] = p
+		}
+		if p.Status == consts.PoolStop {
+			if err = p.Start(); err != nil {
+				return err
+			}
+		}
+		p.index = size
+		atomic.StoreInt32(&c.size, size+1)
 	}
+	return nil
 }
 func (c *Connectors) getPool() *Pool {
 	p := newPool(c.cfg.PoolSize)
 	p.New = func() (cc *Client, e error) {
-		sc := ssdb_client.SSDBClient{
+		sc := ssdbclient.SSDBClient{
 			Host:             c.cfg.Host,
 			Port:             c.cfg.Port,
 			Password:         c.cfg.Password,
@@ -87,12 +127,12 @@ func (c *Connectors) getPool() *Pool {
 			ConnectTimeout:   c.cfg.ConnectTimeout,
 		}
 		if e = sc.Start(); e == nil {
-			cc := &Client{
+			cn := &Client{
 				Client: client.Client{SSDBClient: sc},
 				over:   c,
 				pool:   p,
 			}
-			return cc, nil
+			return cn, nil
 		}
 		return
 	}
@@ -105,8 +145,8 @@ func (c *Connectors) getPool() *Pool {
 func (c *Connectors) Start() (err error) {
 	c.size = 0
 	c.pos = 0
-	c.status = PoolStart
-	for i := 0; i < c.cfg.PoolNumber; i++ {
+	c.status = consts.PoolStart
+	for i := 0; i < c.minSize && err == nil; i++ {
 		err = c.appendPool()
 	}
 	return
@@ -114,18 +154,31 @@ func (c *Connectors) Start() (err error) {
 
 //关闭Client
 func (c *Connectors) closeClient(client *Client) {
-	atomic.StoreInt64(&c.lastTime, time.Now().Unix())
-	if c.status == PoolStart {
-		atomic.StoreInt32(&c.pos, int32(client.pool.index))
-		waitCount := atomic.LoadInt32(&c.waitCount)
-		if waitCount > 0 && client.index%3 == 0 {
-			c.poolWait <- client
-		} else {
-			client.pool.Set(client)
+	c.changeCount(&c.activeCount, -1)
+	if c.status == consts.PoolStop {
+		if client.IsOpen() {
+			_ = client.SSDBClient.Close()
 		}
 	} else {
 		if client.IsOpen() {
-			_ = client.SSDBClient.Close()
+			waitCount := atomic.LoadInt32(&c.waitCount)
+			if waitCount > 0 && client.index%3 == 0 {
+				c.poolWait <- client
+			} else {
+				client.pool.Set(client)
+				atomic.StoreInt32(&c.pos, int32(client.pool.index))
+			}
+		} else {
+			client.pool.Set(client)
+			client.pool.Status = consts.PoolCheck
+		}
+	}
+}
+func (c *Connectors) changeCount(i32 *int32, d int32) {
+	for {
+		v := atomic.LoadInt32(i32)
+		if atomic.CompareAndSwapInt32(i32, v, v+d) {
+			break
 		}
 	}
 }
@@ -135,18 +188,29 @@ func (c *Connectors) closeClient(client *Client) {
 //  返回 client，一个新的连接
 //  返回 err，可能的错误，操作成功返回 nil
 func (c *Connectors) NewClient() (cc *Client, err error) {
-	if c.status != PoolStart {
+	if c.status != consts.PoolStart {
 		return nil, errors.New("connectors not start")
 	}
-	//首先按位置，直接取连接，给3次机会
+	//首先按位置，直接取连接，给2次机会
 	for i := 0; i < 2; i++ {
 		pos := atomic.LoadInt32(&c.pos)
 		if pos >= int32(c.size) {
 			pos = 0
 		}
-		cc, err = c.pool[pos].Get()
-		if err == nil {
-			return
+		p := c.pool[pos]
+		if p.Status != consts.PoolStop {
+			cc, ec := p.Get()
+			if ec == consts.None {
+				if p.Status == consts.PoolCheck {
+					if !cc.Ping() {
+						err = cc.SSDBClient.Start()
+					}
+				}
+				if err == nil {
+					c.changeCount(&c.activeCount, 1)
+					return cc, nil
+				}
+			}
 		}
 		atomic.CompareAndSwapInt32(&c.pos, pos, pos+1)
 	}
@@ -155,12 +219,7 @@ func (c *Connectors) NewClient() (cc *Client, err error) {
 	if waitCount >= c.maxWaitSize {
 		return nil, fmt.Errorf("pool is busy,Wait for connection creation has reached %d", waitCount)
 	}
-	for {
-		v := atomic.LoadInt32(&c.waitCount)
-		if atomic.CompareAndSwapInt32(&c.waitCount, v, v+1) {
-			break
-		}
-	}
+	c.changeCount(&c.waitCount, 1)
 	timeout := time.After(time.Duration(c.cfg.GetClientTimeout) * time.Second)
 	select {
 	case <-timeout:
@@ -170,28 +229,26 @@ func (c *Connectors) NewClient() (cc *Client, err error) {
 			err = errors.New("pool is Closed, can not get new client")
 		} else {
 			cc = cw
+			c.changeCount(&c.activeCount, 1)
 			err = nil
 		}
 	}
-	for {
-		v := atomic.LoadInt32(&c.waitCount)
-		if atomic.CompareAndSwapInt32(&c.waitCount, v, v-1) {
-			break
-		}
-	}
+	c.changeCount(&c.waitCount, -1)
 	return
 }
 
 //***关闭连接池, 只修改连接池状态，让连接自行关闭，以免连接运行过程中被关闭
 //关闭连接池
 func (c *Connectors) Close() {
-	c.status = PoolStop
+	c.status = consts.PoolStop
 	for _, cc := range c.pool {
-		cc.Close()
+		if cc != nil {
+			cc.Close()
+		}
 	}
 	c.pool = c.pool[:0]
 }
 
-//func (c *Connectors) Info() string {
-//	return fmt.Sprintf("available is %d,size is %d,status is %d", this.activeCount, this.size, this.status)
-//}
+func (c *Connectors) Info() string {
+	return fmt.Sprintf("available is %d,wait is %d,connection count is %d,status is %d", c.activeCount, c.waitCount, int(c.size)*c.cfg.PoolSize, c.status)
+}

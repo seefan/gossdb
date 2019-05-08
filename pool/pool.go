@@ -9,6 +9,8 @@ package pool
 import (
 	"errors"
 	"sync"
+
+	"github.com/seefan/gossdb/consts"
 )
 
 // 连接池结构
@@ -33,6 +35,7 @@ func newPool(size int) *Pool {
 		pooled:    make([]*Client, size),
 		size:      size,
 		available: newQueue(size),
+		Status:    consts.PoolStop,
 	}
 }
 
@@ -40,8 +43,8 @@ func newPool(size int) *Pool {
 //
 //  返回 err，可能的错误，操作成功返回 nil
 func (p *Pool) Start() error {
-	if p.Status != PoolInit {
-		return errors.New("pool status not init")
+	if p.Status != consts.PoolStop {
+		return errors.New("pool already start")
 	}
 	p.lock.Lock()
 	defer p.lock.Unlock()
@@ -54,13 +57,13 @@ func (p *Pool) Start() error {
 			return err
 		}
 	}
-	p.Status = PoolStart
+	p.Status = consts.PoolStart
 	return nil
 }
 
 //关闭连接池
 func (p *Pool) Close() {
-	p.Status = PoolStop
+	p.Status = consts.PoolStop
 	for _, c := range p.pooled {
 		if c != nil {
 			_ = c.SSDBClient.Close()
@@ -72,18 +75,18 @@ func (p *Pool) Close() {
 //
 //  返回 client，一个新的连接
 //  返回 err，可能的错误，操作成功返回 nil
-func (p *Pool) Get() (client *Client, err error) {
-	if p.Status != PoolStart {
-		return nil, errors.New("pool is not start")
+func (p *Pool) Get() (client *Client, err int) {
+	if p.Status == consts.PoolNotStart {
+		return nil, consts.PoolNotStart
 	}
 	//检查是否有缓存的连接
 	p.lock.Lock()
-	defer p.lock.Unlock()
 	pos := p.available.Pop()
+	p.lock.Unlock()
 	if pos == -1 {
-		return nil, errors.New("pool is empty")
+		return nil, consts.PoolEmpty
 	}
-	return p.pooled[pos], nil
+	return p.pooled[pos], 0
 }
 
 //归还连接到连接池
@@ -93,14 +96,13 @@ func (p *Pool) Set(element *Client) {
 	if element == nil {
 		return
 	}
-	if p.Status == PoolStart {
-		p.lock.Lock()
-		pos := p.available.Put(element.index)
-		p.lock.Unlock()
-		if pos < 0 { //put failed
+	if p.Status == consts.PoolStop {
+		if element.IsOpen() {
 			_ = element.SSDBClient.Close()
 		}
 	} else {
-		_ = element.SSDBClient.Close()
+		p.lock.Lock()
+		p.available.Put(element.index)
+		p.lock.Unlock()
 	}
 }

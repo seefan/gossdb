@@ -1,4 +1,4 @@
-package ssdb_client
+package ssdbclient
 
 import (
 	"bytes"
@@ -298,6 +298,7 @@ func (s *SSDBClient) Recv() (resp []string, err error) {
 	s.packetBuf.Reset()
 	//设置读取数据超时，
 	if err = s.sock.SetReadDeadline(time.Now().Add(time.Second * time.Duration(s.ReadWriteTimeout))); err != nil {
+		s.isOpen = false
 		return nil, err
 	}
 	//数据包分解，发现长度，找到结尾，循环发现，发现空行，结束
@@ -317,7 +318,7 @@ func (s *SSDBClient) Recv() (resp []string, err error) {
 		}
 
 		for {
-			rs, e, re := s.parse()
+			rs, re, e := s.parse()
 			//end
 			if re {
 				end = true
@@ -344,17 +345,17 @@ func (s *SSDBClient) Recv() (resp []string, err error) {
 }
 
 //解析数据为string的slice
-func (s *SSDBClient) parse() (resp string, err error, end bool) {
+func (s *SSDBClient) parse() (resp string, end bool, err error) {
 	ns, err := s.packetBuf.ReadBytes(ENDN)
 	if err == io.EOF {
-		return "", nil, true
+		return "", true, nil
 	}
 	if err != nil {
-		return "", err, true
+		return "", true, err
 	}
 	size := len(ns)
 	if size == 1 && ns[0] == ENDN || size == 2 && ns[0] == ENDR { //空行，说明一个数据包结束
-		return "", nil, true
+		return "", true, nil
 	}
 	blockSize := ToNum(ns)
 	if ns[size-1] == ENDR {
@@ -363,10 +364,10 @@ func (s *SSDBClient) parse() (resp string, err error, end bool) {
 		size = 1
 	}
 	if s.packetBuf.Len() < blockSize+size {
-		return "", io.EOF, false
+		return "", false, io.EOF
 	}
 
 	ns = s.packetBuf.Next(blockSize)
 	s.packetBuf.Next(size)
-	return string(ns), nil, false
+	return string(ns), false, nil
 }

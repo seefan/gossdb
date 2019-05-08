@@ -1,4 +1,4 @@
-package ssdb_client
+package ssdbclient
 
 import (
 	"net"

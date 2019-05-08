@@ -3,9 +3,8 @@ package client
 import (
 	"errors"
 	"fmt"
+	"github.com/seefan/gossdb/ssdbclient"
 	"strconv"
-
-	"github.com/seefan/gossdb/ssdb_client"
 )
 
 const (
@@ -16,17 +15,13 @@ const (
 //可回收的连接，支持连接池。
 //非协程安全，多协程请使用多个连接。
 type Client struct {
-	isOpen bool
-	ssdb_client.SSDBClient
+	ssdbclient.SSDBClient
 }
 
-func NewClient(c *ssdb_client.SSDBClient) *Client {
+func NewClient(c *ssdbclient.SSDBClient) *Client {
 	return &Client{
 		SSDBClient: *c,
 	}
-}
-func (c *Client) IsOpen() bool {
-	return c.isOpen
 }
 
 //检查连接情况
