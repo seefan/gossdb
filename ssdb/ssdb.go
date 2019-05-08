@@ -4,6 +4,7 @@ import (
 	"errors"
 
 	"github.com/seefan/gossdb"
+	"github.com/seefan/gossdb/client"
 	"github.com/seefan/gossdb/conf"
 )
 
@@ -16,15 +17,15 @@ var (
 //
 //  config 配置文件名，默认为config.ini
 //  返回 error，正常启动返回nil
-func Start(cfgs ...*conf.Config) error {
+func Start(cfgList ...*conf.Config) error {
 	var cfg *conf.Config
-	if len(cfgs) == 0 {
+	if len(cfgList) == 0 {
 		cfg = &conf.Config{
 			Host: conf.Host,
 			Port: conf.Port,
 		}
 	} else {
-		cfg = cfgs[0]
+		cfg = cfgList[0]
 	}
 	conn, err := gossdb.NewPool(cfg)
 	if err != nil {
@@ -44,7 +45,7 @@ func Close() {
 	pc = nil
 }
 
-//获取一个连接
+//Client 获取一个连接
 //
 //  返回 *gossdb.Client
 //  返回 error，如果获取到连接就返回nil
@@ -53,6 +54,17 @@ func Client() (*gossdb.Client, error) {
 		return nil, errors.New("SSDB not initialized")
 	}
 	return pc.NewClient()
+}
+
+//C 获取的没有错误的连接，如果获取有错误将在调用时返回
+//
+//  返回 *gossdb.Client
+func C() *gossdb.Client {
+	if pc != nil {
+		return pc.GetClient()
+	} else {
+		return &gossdb.Client{Client: client.Client{}}
+	}
 }
 
 //连接的简单使用方法
@@ -71,13 +83,13 @@ func Simple(fn func(c *gossdb.Client) error) error {
 	if pc == nil {
 		return errors.New("SSDB not initialized")
 	}
-	client, err := Client()
+	cli, err := Client()
 	if err != nil {
 		return err
 	}
-	defer client.Close()
+	defer cli.Close()
 
-	if err = fn(client); err != nil {
+	if err = fn(cli); err != nil {
 		return err
 	}
 	return nil

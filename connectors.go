@@ -217,6 +217,7 @@ func (c *Connectors) NewClient() (cli *Client, err error) {
 				}
 				if err == nil {
 					c.changeCount(&c.activeCount, 1)
+					cli.isActive = true
 					return cli, nil
 				}
 			}
@@ -238,6 +239,7 @@ func (c *Connectors) NewClient() (cli *Client, err error) {
 			err = errors.New("pool is Closed, can not get new client")
 		} else {
 			c.changeCount(&c.activeCount, 1)
+			cli.isActive = true
 			err = nil
 		}
 	}
