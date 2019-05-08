@@ -156,6 +156,9 @@ func (c *Connectors) Start() (err error) {
 
 //关闭Client
 func (c *Connectors) closeClient(client *Client) {
+	if !client.IsActive {
+		return
+	}
 	c.changeCount(&c.activeCount, -1)
 	if c.status == consts.PoolStop {
 		if client.IsOpen() {
@@ -219,7 +222,7 @@ func (c *Connectors) NewClient() (cli *Client, err error) {
 				}
 				if err == nil {
 					c.changeCount(&c.activeCount, 1)
-					cli.isActive = true
+					cli.IsActive = true
 					return cli, nil
 				}
 			}
@@ -241,7 +244,7 @@ func (c *Connectors) NewClient() (cli *Client, err error) {
 			err = errors.New("pool is Closed, can not get new client")
 		} else {
 			c.changeCount(&c.activeCount, 1)
-			cli.isActive = true
+			cli.IsActive = true
 			err = nil
 		}
 	}

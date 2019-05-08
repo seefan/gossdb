@@ -20,6 +20,8 @@ type Client struct {
 	AutoClose bool
 	//callback
 	CloseMethod func()
+	//active
+	IsActive bool
 }
 
 func NewClient(c *ssdbclient.SSDBClient) *Client {
@@ -30,6 +32,9 @@ func NewClient(c *ssdbclient.SSDBClient) *Client {
 func (c *Client) Do(args ...interface{}) (rsp []string, err error) {
 	if !c.IsOpen() {
 		return nil, errors.New("failed to obtain connection")
+	}
+	if !c.IsActive {
+		return nil, errors.New("use the closed connection")
 	}
 	rsp, err = c.SSDBClient.Do(args...)
 	if c.CloseMethod != nil {

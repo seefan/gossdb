@@ -12,15 +12,11 @@ import (
 
 type Client struct {
 	client.Client
-	index    int //连接池中的位置
-	pool     *Pool
-	over     *Connectors
-	isActive bool
+	index int //连接池中的位置
+	pool  *Pool
+	over  *Connectors
 }
 
 func (c *Client) Close() {
-	if c.isActive {
-		c.isActive = false
-		c.over.closeClient(c)
-	}
+	c.over.closeClient(c)
 }
