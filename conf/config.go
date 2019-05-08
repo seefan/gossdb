@@ -36,6 +36,8 @@ type Config struct {
 	RetryEnabled bool
 	//创建连接的超时时间，单位为秒。默认值: 5
 	ConnectTimeout int
+	//auto close
+	AutoClose bool
 }
 
 // 设置默认配置

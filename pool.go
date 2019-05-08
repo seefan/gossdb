@@ -4,7 +4,7 @@
 @File : pool
 @Software: gossdb
 */
-package pool
+package gossdb
 
 import (
 	"errors"
@@ -75,18 +75,18 @@ func (p *Pool) Close() {
 //
 //  返回 client，一个新的连接
 //  返回 err，可能的错误，操作成功返回 nil
-func (p *Pool) Get() (client *Client, err int) {
+func (p *Pool) Get() (client *Client) {
 	if p.Status == consts.PoolNotStart {
-		return nil, consts.PoolNotStart
+		return nil
 	}
 	//检查是否有缓存的连接
 	p.lock.Lock()
 	pos := p.available.Pop()
 	p.lock.Unlock()
 	if pos == -1 {
-		return nil, consts.PoolEmpty
+		return nil
 	}
-	return p.pooled[pos], 0
+	return p.pooled[pos]
 }
 
 //归还连接到连接池

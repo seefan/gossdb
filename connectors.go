@@ -1,14 +1,12 @@
-package pool
+package gossdb
 
 import (
+	"errors"
 	"fmt"
 	"math"
 	"sync/atomic"
 	"time"
 
-	//"github.com/seefan/goerr"
-
-	"github.com/golangteam/function/errors"
 	"github.com/seefan/gossdb/client"
 	"github.com/seefan/gossdb/conf"
 	"github.com/seefan/gossdb/consts"
@@ -78,7 +76,6 @@ func (c *Connectors) watchHealth() {
 					}
 				}
 			}
-
 		}
 		waitCount := atomic.LoadInt32(&c.waitCount)
 		if waitCount > 0 && size < c.maxSize {
@@ -86,9 +83,7 @@ func (c *Connectors) watchHealth() {
 				time.Sleep(time.Millisecond * 10)
 				_ = c.appendPool() //retry
 			}
-			//println("pool append")
 		}
-		println(c.Info(), len(c.pool))
 	}
 }
 
@@ -131,6 +126,11 @@ func (c *Connectors) getPool() *Pool {
 				Client: client.Client{SSDBClient: sc},
 				over:   c,
 				pool:   p,
+			}
+			if c.cfg.AutoClose {
+				cn.Callback = func() {
+					cn.Close()
+				}
 			}
 			return cn, nil
 		}
@@ -182,12 +182,21 @@ func (c *Connectors) changeCount(i32 *int32, d int32) {
 		}
 	}
 }
+func (c *Connectors) GetClient() *Client {
+	if cc, err := c.NewClient(); err == nil {
+		return cc
+	} else {
+		return &Client{Client: client.Client{},
+			over: c,
+		}
+	}
+}
 
 //在连接池取一个新连接
 //
 //  返回 client，一个新的连接
 //  返回 err，可能的错误，操作成功返回 nil
-func (c *Connectors) NewClient() (cc *Client, err error) {
+func (c *Connectors) NewClient() (cli *Client, err error) {
 	if c.status != consts.PoolStart {
 		return nil, errors.New("connectors not start")
 	}
@@ -199,16 +208,16 @@ func (c *Connectors) NewClient() (cc *Client, err error) {
 		}
 		p := c.pool[pos]
 		if p.Status != consts.PoolStop {
-			cc, ec := p.Get()
-			if ec == consts.None {
+			cli = p.Get()
+			if cli != nil {
 				if p.Status == consts.PoolCheck {
-					if !cc.Ping() {
-						err = cc.SSDBClient.Start()
+					if !cli.Ping() {
+						err = cli.SSDBClient.Start()
 					}
 				}
 				if err == nil {
 					c.changeCount(&c.activeCount, 1)
-					return cc, nil
+					return cli, nil
 				}
 			}
 		}
@@ -224,11 +233,10 @@ func (c *Connectors) NewClient() (cc *Client, err error) {
 	select {
 	case <-timeout:
 		err = fmt.Errorf("pool is busy,can not get new client in %d seconds,wait count is %d", c.cfg.GetClientTimeout, c.waitCount)
-	case cw := <-c.poolWait:
-		if cw == nil {
+	case cli = <-c.poolWait:
+		if cli == nil {
 			err = errors.New("pool is Closed, can not get new client")
 		} else {
-			cc = cw
 			c.changeCount(&c.activeCount, 1)
 			err = nil
 		}

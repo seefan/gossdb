@@ -2,7 +2,6 @@ package ssdb
 
 import (
 	"errors"
-	"fmt"
 
 	"github.com/seefan/gossdb"
 	"github.com/seefan/gossdb/conf"
@@ -10,7 +9,7 @@ import (
 
 var (
 	//连接池实例
-	pool *gossdb.Connectors
+	pc *gossdb.Connectors
 )
 
 //启动服务
@@ -31,7 +30,7 @@ func Start(cfgs ...*conf.Config) error {
 	if err != nil {
 		return err
 	}
-	pool = conn
+	pc = conn
 	return nil
 }
 
@@ -39,10 +38,10 @@ func Start(cfgs ...*conf.Config) error {
 //
 //  返回 error，正常启动返回nil
 func Close() {
-	if pool != nil {
-		pool.Close()
+	if pc != nil {
+		pc.Close()
 	}
-	pool = nil
+	pc = nil
 }
 
 //获取一个连接
@@ -50,21 +49,10 @@ func Close() {
 //  返回 *gossdb.Client
 //  返回 error，如果获取到连接就返回nil
 func Client() (*gossdb.Client, error) {
-	if pool == nil {
+	if pc == nil {
 		return nil, errors.New("SSDB not initialized")
 	}
-	return pool.NewClient()
-}
-func AutoClient() *AutoCloseClient {
-	if pool != nil {
-		if c, e := pool.NewClient(); e == nil {
-			return &AutoCloseClient{
-				Client: *c,
-				Init:   true,
-			}
-		}
-	}
-	return &AutoCloseClient{}
+	return pc.NewClient()
 }
 
 //连接的简单使用方法
@@ -80,15 +68,17 @@ func AutoClient() *AutoCloseClient {
 //    	return
 //    })
 func Simple(fn func(c *gossdb.Client) error) error {
-	if client, err := Client(); err == nil {
-		if err = fn(client); err != nil {
-			if e := client.Close(); e != nil {
-				return fmt.Errorf("simple client close error,cause is %s", e.Error())
-			}
-			return err
-		}
-		return client.Close()
-	} else {
+	if pc == nil {
+		return errors.New("SSDB not initialized")
+	}
+	client, err := Client()
+	if err != nil {
 		return err
 	}
+	defer client.Close()
+
+	if err = fn(client); err != nil {
+		return err
+	}
+	return nil
 }

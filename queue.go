@@ -4,7 +4,7 @@
 @File : queue
 @Software: gossdb
 */
-package pool
+package gossdb
 
 type Queue struct {
 	pos    int

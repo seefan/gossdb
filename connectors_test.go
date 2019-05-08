@@ -4,7 +4,7 @@
 @File : connectors_test.go
 @Software: gossdb
 */
-package pool
+package gossdb
 
 import (
 	"log"
@@ -209,4 +209,46 @@ func TestCheck(t *testing.T) {
 		}
 	}
 
+}
+func TestAutoClose1(t *testing.T) {
+	pool := NewConnectors(&conf.Config{
+		Host:         "127.0.0.1",
+		Port:         8888,
+		MaxWaitSize:  10000,
+		PoolSize:     10,
+		MinPoolSize:  10,
+		MaxPoolSize:  10,
+		HealthSecond: 2,
+		AutoClose:    true,
+	})
+	//
+	v, err := pool.GetClient().Get("a")
+	t.Log(v, err)
+}
+func TestAutoClose2(t *testing.T) {
+	pool := NewConnectors(&conf.Config{
+		Host:         "127.0.0.1",
+		Port:         8888,
+		MaxWaitSize:  10000,
+		PoolSize:     10,
+		MinPoolSize:  10,
+		MaxPoolSize:  10,
+		HealthSecond: 2,
+		AutoClose:    true,
+	})
+	//
+
+	err := pool.Start()
+	if err != nil {
+		panic(err)
+	}
+	defer pool.Close()
+	for i := 0; i < 100; i++ {
+		c, err := pool.NewClient()
+		if err != nil {
+			panic(err)
+		}
+		v, err := c.Get("a")
+		t.Log(v, err)
+	}
 }

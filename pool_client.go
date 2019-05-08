@@ -4,7 +4,7 @@
 @File : pool_client
 @Software: gossdb
 */
-package pool
+package gossdb
 
 import (
 	"github.com/seefan/gossdb/client"
@@ -12,10 +12,9 @@ import (
 
 type Client struct {
 	client.Client
-	index     int //连接池中的位置
-	pool      *Pool
-	over      *Connectors
-	autoClose bool
+	index int //连接池中的位置
+	pool  *Pool
+	over  *Connectors
 }
 
 func (c *Client) Close() {
