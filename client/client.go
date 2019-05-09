@@ -31,10 +31,10 @@ func NewClient(c *ssdbclient.SSDBClient) *Client {
 }
 func (c *Client) Do(args ...interface{}) (rsp []string, err error) {
 	if !c.IsOpen() {
-		return nil, errors.New("failed to obtain connection")
+		return nil, errors.New("use the closed connection")
 	}
 	if !c.IsActive {
-		return nil, errors.New("use the closed connection")
+		return nil, errors.New("failed to obtain connection")
 	}
 	rsp, err = c.SSDBClient.Do(args...)
 	if c.CloseMethod != nil {

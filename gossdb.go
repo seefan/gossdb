@@ -25,7 +25,7 @@ var (
 //  MaxWaitSize int 最大等待数目，当连接池满后，新建连接将排除等待池中连接释放，本值限制最大等待的数量。默认值: 1000
 func NewPool(conf *conf.Config) (*Connectors, error) {
 	//默认值处理
-	c := NewConnectors(conf)
+	c := newConnectors(conf)
 	if err := c.Start(); err != nil {
 		return nil, err
 	}

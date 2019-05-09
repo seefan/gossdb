@@ -45,7 +45,7 @@ type Connectors struct {
 //用配置文件进行初始化
 //
 //  cfg 配置文件
-func NewConnectors(cfg *conf.Config) *Connectors {
+func newConnectors(cfg *conf.Config) *Connectors {
 	this := new(Connectors)
 	this.cfg = cfg.Default()
 	this.maxSize = int(math.Floor(float64(cfg.MaxPoolSize) / float64(cfg.PoolSize)))
@@ -123,7 +123,7 @@ func (c *Connectors) getPool() *Pool {
 		}
 		if e = sc.Start(); e == nil {
 			cn := &Client{
-				Client: client.Client{SSDBClient: sc},
+				Client: client.Client{SSDBClient: sc, AutoClose: c.cfg.AutoClose},
 				over:   c,
 				pool:   p,
 			}
@@ -219,6 +219,9 @@ func (c *Connectors) NewClient() (cli *Client, err error) {
 					if !cli.Ping() {
 						err = cli.SSDBClient.Start()
 					}
+				}
+				if !cli.IsOpen() {
+					err = cli.Start()
 				}
 				if err == nil {
 					c.changeCount(&c.activeCount, 1)
