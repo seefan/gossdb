@@ -168,7 +168,7 @@ func (c *Connectors) Start() (err error) {
 //关闭Client
 func (c *Connectors) closeClient(client *Client) {
 	client.used = false
-	c.changeCount(&c.activeCount, -1)
+	atomic.AddInt32(&c.activeCount, -1)
 	if c.status == consts.PoolStop {
 		if client.SSDBClient.IsOpen() {
 			_ = client.SSDBClient.Close()
@@ -188,14 +188,7 @@ func (c *Connectors) closeClient(client *Client) {
 		}
 	}
 }
-func (c *Connectors) changeCount(i32 *int32, d int32) {
-	for {
-		v := atomic.LoadInt32(i32)
-		if atomic.CompareAndSwapInt32(i32, v, v+d) {
-			break
-		}
-	}
-}
+
 func (c *Connectors) GetClient() *Client {
 	if cc, err := c.NewClient(); err == nil {
 		return cc
@@ -230,7 +223,7 @@ func (c *Connectors) NewClient() (cli *Client, err error) {
 					err = cli.SSDBClient.Start()
 				}
 				if err == nil {
-					c.changeCount(&c.activeCount, 1)
+					atomic.AddInt32(&c.activeCount, 1)
 					cli.used = true
 					return cli, nil
 				}
@@ -244,7 +237,7 @@ func (c *Connectors) NewClient() (cli *Client, err error) {
 	if waitCount >= c.maxWaitSize {
 		return nil, fmt.Errorf("pool is busy,Wait for connection creation has reached %d", waitCount)
 	}
-	c.changeCount(&c.waitCount, 1)
+	atomic.AddInt32(&c.waitCount, 1)
 	timeout := time.After(time.Duration(c.cfg.GetClientTimeout) * time.Second)
 	select {
 	case <-timeout:
@@ -254,11 +247,11 @@ func (c *Connectors) NewClient() (cli *Client, err error) {
 			err = errors.New("pool is Closed, can not get new client")
 		} else {
 			cli.used = true
-			c.changeCount(&c.activeCount, 1)
+			atomic.AddInt32(&c.activeCount, 1)
 			err = nil
 		}
 	}
-	c.changeCount(&c.waitCount, -1)
+	atomic.AddInt32(&c.waitCount, -1)
 	return
 }
 

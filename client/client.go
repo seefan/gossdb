@@ -13,18 +13,32 @@ const (
 	NotFound string = "not_found"
 )
 
+//Client client
+//
 //可回收的连接，支持连接池。
 //非协程安全，多协程请使用多个连接。
 type Client struct {
+	//socket client
 	ssdbclient.SSDBClient
-	//auto close client
+	//auto close
+	//标识该连接是否可以自动关闭
 	AutoClose bool
-	//callback
+	//callback method
+	//函数执行一次回检查是否需要自动关闭连接
 	closeMethod func()
 	//tmp error
+	//临时的错误信息，系统用
 	Error error
 }
 
+//NewClient create new client
+//
+//  param c *ssdbclient.SSDBClient
+//  param autoClose Whether to automatically close the identity
+//  param closeMethod A callback executed by a function to perform automatic closing of a connection
+//  return *Client
+//
+//  使用ssdb client创建一个可缓存的连接
 func NewClient(c *ssdbclient.SSDBClient, autoClose bool, closeMethod func()) *Client {
 	return &Client{
 		SSDBClient:  *c,
@@ -32,6 +46,14 @@ func NewClient(c *ssdbclient.SSDBClient, autoClose bool, closeMethod func()) *Cl
 		closeMethod: closeMethod,
 	}
 }
+
+//Do The base function, which is used by all SSDB manipulation functions to interact with SSDB
+//
+//  param args The input parameters
+//  return rsp The output value
+//  return err The output error
+//
+//  基础函数，所有的ssdb操作函数都使用这个与ssdb进行交互
 func (c *Client) Do(args ...interface{}) (rsp []string, err error) {
 	if c.Error != nil {
 		return nil, c.Error
