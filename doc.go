@@ -8,7 +8,7 @@
 //示例：
 //
 //	pool, err := gossdb.NewPool(&gossdb.Config{
-//		Host:             "127.0.0.1",
+//		host:             "127.0.0.1",
 //		Port:             6380,
 //		MinPoolSize:      5,
 //		MaxPoolSize:      50,

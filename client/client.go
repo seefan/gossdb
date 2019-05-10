@@ -17,29 +17,37 @@ const (
 //非协程安全，多协程请使用多个连接。
 type Client struct {
 	ssdbclient.SSDBClient
+	//auto close client
 	AutoClose bool
 	//callback
-	CloseMethod func()
-	//active
-	IsActive bool
+	closeMethod func()
+	//tmp error
+	Error error
 }
 
-func NewClient(c *ssdbclient.SSDBClient) *Client {
+func NewClient(c *ssdbclient.SSDBClient, autoClose bool, closeMethod func()) *Client {
 	return &Client{
-		SSDBClient: *c,
+		SSDBClient:  *c,
+		AutoClose:   autoClose,
+		closeMethod: closeMethod,
 	}
 }
 func (c *Client) Do(args ...interface{}) (rsp []string, err error) {
-	if !c.IsOpen() {
+	if c.Error != nil {
+		return nil, c.Error
+	}
+	//取出的连接要执行关闭回调
+	defer func() {
+		if c.closeMethod != nil {
+			c.closeMethod()
+		}
+	}()
+	if !c.SSDBClient.IsOpen() {
 		return nil, errors.New("use the closed connection")
 	}
-	if !c.IsActive {
-		return nil, errors.New("failed to obtain connection")
-	}
+
 	rsp, err = c.SSDBClient.Do(args...)
-	if c.CloseMethod != nil {
-		c.CloseMethod()
-	}
+
 	return
 }
 

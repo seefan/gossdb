@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/seefan/goerr"
+	"github.com/seefan/gossdb/conf"
 	//"github.com/seefan/gossdb"
 )
 
@@ -19,59 +20,65 @@ const (
 	OK   = "ok"
 )
 
+func NewSSDBClient(cfg *conf.Config) *SSDBClient {
+	return &SSDBClient{
+		host:            cfg.Host,
+		port:            cfg.Port,
+		password:        cfg.Password,
+		readTimeout:     cfg.ReadTimeout,
+		writeTimeout:    cfg.WriteTimeout,
+		readBufferSize:  cfg.ReadBufferSize,
+		writeBufferSize: cfg.WriteBufferSize,
+		retryEnabled:    cfg.RetryEnabled,
+		connectTimeout:  cfg.ConnectTimeout,
+	}
+}
+
 type SSDBClient struct {
 	isOpen   bool
-	Password string
-	Host     string
-	Port     int
+	password string
+	host     string
+	port     int
 
 	sock      *net.TCPConn
 	readBuf   []byte
 	packetBuf bytes.Buffer
 	//packetBuf bytes.Buffer
 	//连接写缓冲，默认为8k，单位为kb
-	WriteBufferSize int
+	writeBufferSize int
 	//连接读缓冲，默认为8k，单位为kb
-	ReadBufferSize int
+	readBufferSize int
 	//是否重试
-	RetryEnabled bool
-	//读写超时
-	ReadWriteTimeout int
+	retryEnabled bool
 	//写超时
-	WriteTimeout int
+	writeTimeout int
 	//读超时
-	ReadTimeout int
+	readTimeout int
 	//0时间
 	timeZero time.Time
 	//创建连接的超时时间，单位为秒。默认值: 5
-	ConnectTimeout int
+	connectTimeout int
 }
 
 //打开连接
 func (s *SSDBClient) Start() error {
-	conn, err := net.DialTimeout("tcp", fmt.Sprintf("%s:%d", s.Host, s.Port), time.Second)
+	conn, err := net.DialTimeout("tcp", fmt.Sprintf("%s:%d", s.host, s.port), time.Second)
 	if err != nil {
 		return err
 	}
 	sock := conn.(*net.TCPConn)
-	err = sock.SetReadBuffer(s.ReadBufferSize * 1024)
+	err = sock.SetReadBuffer(s.readBufferSize * 1024)
 	if err != nil {
 		return err
 	}
-	err = sock.SetWriteBuffer(s.WriteBufferSize * 1024)
+	err = sock.SetWriteBuffer(s.writeBufferSize * 1024)
 	if err != nil {
 		return err
 	}
-	s.readBuf = make([]byte, s.ReadBufferSize*1024)
+	s.readBuf = make([]byte, s.readBufferSize*1024)
 	s.sock = sock
 	s.timeZero = time.Time{}
 	s.isOpen = true
-	if s.ReadTimeout == 0 {
-		s.ReadTimeout = s.ReadWriteTimeout
-	}
-	if s.WriteTimeout == 0 {
-		s.WriteTimeout = s.ReadWriteTimeout
-	}
 	return nil
 }
 
@@ -98,25 +105,32 @@ func (s *SSDBClient) Ping() bool {
 }
 
 //执行ssdb命令
-func (s *SSDBClient) do(args ...interface{}) ([]string, error) {
+func (s *SSDBClient) do(args ...interface{}) (resp []string, err error) {
 	if !s.isOpen {
 		return nil, goerr.String("gossdb client is closed.")
 	}
-	err := s.send(args)
-	if err != nil {
+	defer func() {
+		if e := recover(); e != nil {
+			s.isOpen = false
+			err = fmt.Errorf("%v", e)
+		}
+	}()
+	if err = s.send(args); err != nil {
+		s.isOpen = false
 		return nil, goerr.Errorf(err, "client send error")
 	}
-	if resp, err := s.Recv(); err != nil {
+	if resp, err = s.recv(); err != nil {
+		s.isOpen = false
 		return nil, goerr.Errorf(err, "client recv error")
 	} else {
-		return resp, nil
+		return
 	}
 }
 
 //通用调用方法，如果有需要在所有方法前执行的，可以在这里执行
 func (s *SSDBClient) Do(args ...interface{}) ([]string, error) {
-	if s.Password != "" {
-		resp, err := s.do("auth", []string{s.Password})
+	if s.password != "" {
+		resp, err := s.do("auth", []string{s.password})
 		if err != nil {
 			if e := s.Close(); e != nil {
 				err = goerr.Errorf(err, "client close failed")
@@ -125,7 +139,7 @@ func (s *SSDBClient) Do(args ...interface{}) ([]string, error) {
 		}
 		if len(resp) > 0 && resp[0] == OK {
 			//验证成功
-			s.Password = ""
+			s.password = ""
 		} else {
 			return nil, goerr.String("authentication failed,password is wrong")
 		}
@@ -135,7 +149,7 @@ func (s *SSDBClient) Do(args ...interface{}) ([]string, error) {
 		if e := s.Close(); e != nil {
 			err = goerr.Errorf(err, "client close failed")
 		}
-		if s.RetryEnabled { //如果允许重试，就重新打开一次连接
+		if s.retryEnabled { //如果允许重试，就重新打开一次连接
 			if err = s.Start(); err == nil {
 				resp, err = s.do(args...)
 				if err != nil {
@@ -147,17 +161,6 @@ func (s *SSDBClient) Do(args ...interface{}) ([]string, error) {
 		}
 	}
 	return resp, err
-}
-
-//发送数据
-func (s *SSDBClient) Send(args ...interface{}) error {
-	if err := s.send(args); err != nil {
-		if e := s.Close(); e != nil {
-			err = goerr.Errorf(err, "client close failed")
-		}
-		return err
-	}
-	return nil
 }
 
 //发送数据
@@ -274,13 +277,12 @@ func (s *SSDBClient) send(args []interface{}) error {
 		s.packetBuf.WriteByte(ENDN)
 	}
 	s.packetBuf.WriteByte(ENDN)
-	if err := s.sock.SetWriteDeadline(time.Now().Add(time.Second * time.Duration(s.WriteTimeout))); err != nil {
+	if err := s.sock.SetWriteDeadline(time.Now().Add(time.Second * time.Duration(s.writeTimeout))); err != nil {
 		return err
 	}
 	for _, err := s.packetBuf.WriteTo(s.sock); s.packetBuf.Len() > 0; {
 		if err != nil {
 			s.packetBuf.Reset()
-			s.isOpen = false
 			return goerr.Errorf(err, "client socket write error")
 		}
 	}
@@ -293,12 +295,11 @@ func (s *SSDBClient) send(args []interface{}) error {
 }
 
 //接收数据
-func (s *SSDBClient) Recv() (resp []string, err error) {
+func (s *SSDBClient) recv() (resp []string, err error) {
 	bufSize := -1
 	s.packetBuf.Reset()
 	//设置读取数据超时，
-	if err = s.sock.SetReadDeadline(time.Now().Add(time.Second * time.Duration(s.ReadWriteTimeout))); err != nil {
-		s.isOpen = false
+	if err = s.sock.SetReadDeadline(time.Now().Add(time.Second * time.Duration(s.readTimeout))); err != nil {
 		return nil, err
 	}
 	//数据包分解，发现长度，找到结尾，循环发现，发现空行，结束

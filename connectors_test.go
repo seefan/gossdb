@@ -47,7 +47,7 @@ func Test1(t *testing.T) {
 		Host:         "127.0.0.1",
 		Port:         8888,
 		MaxWaitSize:  10000,
-		PoolSize:     10,
+		PoolSize:     20,
 		MinPoolSize:  10,
 		MaxPoolSize:  10,
 		HealthSecond: 2,

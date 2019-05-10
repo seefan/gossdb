@@ -33,7 +33,7 @@ func TestSSDBClient_Start(t *testing.T) {
 			s := &SSDBClient{
 				isOpen:           tt.fields.isOpen,
 				Password:         tt.fields.Password,
-				Host:             tt.fields.Host,
+				host:             tt.fields.Host,
 				Port:             tt.fields.Port,
 				sock:             tt.fields.sock,
 				readBuf:          tt.fields.readBuf,
@@ -81,7 +81,7 @@ func TestSSDBClient_Ping(t *testing.T) {
 			s := &SSDBClient{
 				isOpen:           tt.fields.isOpen,
 				Password:         tt.fields.Password,
-				Host:             tt.fields.Host,
+				host:             tt.fields.Host,
 				Port:             tt.fields.Port,
 				sock:             tt.fields.sock,
 				readBuf:          tt.fields.readBuf,

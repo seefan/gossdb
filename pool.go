@@ -8,14 +8,13 @@ package gossdb
 
 import (
 	"errors"
-	"sync"
 
 	"github.com/seefan/gossdb/consts"
 )
 
 // 连接池结构
 type Pool struct {
-	index int32 //pos
+	index byte //pos
 	//连接数
 	size int
 	//element list
@@ -23,9 +22,7 @@ type Pool struct {
 	//available index
 	available *Queue
 	//状态
-	Status int
-	//lock
-	lock sync.Mutex
+	status int
 	//new client
 	New func() (*Client, error)
 }
@@ -35,7 +32,7 @@ func newPool(size int) *Pool {
 		pooled:    make([]*Client, size),
 		size:      size,
 		available: newQueue(size),
-		Status:    consts.PoolStop,
+		status:    consts.PoolStop,
 	}
 }
 
@@ -43,27 +40,25 @@ func newPool(size int) *Pool {
 //
 //  返回 err，可能的错误，操作成功返回 nil
 func (p *Pool) Start() error {
-	if p.Status != consts.PoolStop {
+	if p.status != consts.PoolStop {
 		return errors.New("pool already start")
 	}
-	p.lock.Lock()
-	defer p.lock.Unlock()
+
 	for i := 0; i < p.size; i++ {
 		if c, err := p.New(); err == nil {
 			c.index = i
 			p.pooled[i] = c
-			p.available.Add(i)
 		} else {
 			return err
 		}
 	}
-	p.Status = consts.PoolStart
+	p.status = consts.PoolStart
 	return nil
 }
 
 //关闭连接池
 func (p *Pool) Close() {
-	p.Status = consts.PoolStop
+	p.status = consts.PoolStop
 	for _, c := range p.pooled {
 		if c != nil {
 			_ = c.SSDBClient.Close()
@@ -76,13 +71,11 @@ func (p *Pool) Close() {
 //  返回 client，一个新的连接
 //  返回 err，可能的错误，操作成功返回 nil
 func (p *Pool) Get() (client *Client) {
-	if p.Status == consts.PoolNotStart {
+	if p.status == consts.PoolNotStart {
 		return nil
 	}
 	//检查是否有缓存的连接
-	p.lock.Lock()
 	pos := p.available.Pop()
-	p.lock.Unlock()
 	if pos == -1 {
 		return nil
 	}
@@ -92,17 +85,15 @@ func (p *Pool) Get() (client *Client) {
 //归还连接到连接池
 //
 //  element 连接
-func (p *Pool) Set(element *Client) {
-	if element == nil {
+func (p *Pool) Set(client *Client) {
+	if client == nil {
 		return
 	}
-	if p.Status == consts.PoolStop {
-		if element.IsOpen() {
-			_ = element.SSDBClient.Close()
+	if p.status == consts.PoolStop {
+		if client.IsOpen() {
+			_ = client.SSDBClient.Close()
 		}
 	} else {
-		p.lock.Lock()
-		p.available.Put(element.index)
-		p.lock.Unlock()
+		p.available.Put(client.index)
 	}
 }

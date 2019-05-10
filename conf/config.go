@@ -24,8 +24,6 @@ type Config struct {
 	MaxWaitSize int
 	//连接池内缓存的连接状态检查时间隔，单位为秒。默认值: 5
 	HealthSecond int
-	//连接空闲时间，超过这个时间可能会被回收，单位为秒。默认值:60
-	IdleTime int
 	//连接的密钥
 	Password string
 	//连接写缓冲，默认为8k，单位为kb
@@ -48,7 +46,6 @@ func (c *Config) Default() *Config {
 	c.GetClientTimeout = defaultValue(c.GetClientTimeout, 5)
 	c.MaxWaitSize = defaultValue(c.MaxWaitSize, 1000)
 	c.HealthSecond = defaultValue(c.HealthSecond, 5)
-	c.IdleTime = defaultValue(c.IdleTime, 60)
 	c.WriteBufferSize = defaultValue(c.WriteBufferSize, 8)
 	c.ReadBufferSize = defaultValue(c.ReadBufferSize, 8)
 	c.ReadWriteTimeout = defaultValue(c.ReadWriteTimeout, 60)
@@ -58,6 +55,15 @@ func (c *Config) Default() *Config {
 	}
 	if c.MaxPoolSize < c.PoolSize {
 		c.MaxPoolSize = c.PoolSize
+	}
+	if c.MaxPoolSize == c.MinPoolSize {
+		c.MaxPoolSize = c.MinPoolSize
+	}
+	if c.ReadTimeout == 0 {
+		c.ReadTimeout = c.ReadWriteTimeout
+	}
+	if c.WriteTimeout == 0 {
+		c.WriteTimeout = c.ReadWriteTimeout
 	}
 	return c
 }
