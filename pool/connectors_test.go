@@ -1,10 +1,4 @@
-/*
-@Time : 2019-05-07 15:09
-@Author : seefan
-@File : connectors_test.go
-@Software: gossdb
-*/
-package gossdb
+package pool
 
 import (
 	"log"
@@ -16,7 +10,7 @@ import (
 )
 
 func BenchmarkConnectors_NewClient(b *testing.B) {
-	pool := newConnectors(&conf.Config{
+	pool := NewConnectors(&conf.Config{
 		Host:        "127.0.0.1",
 		Port:        8888,
 		MaxWaitSize: 10000,
@@ -43,7 +37,7 @@ func BenchmarkConnectors_NewClient(b *testing.B) {
 	pool.Close()
 }
 func Test1(t *testing.T) {
-	pool := newConnectors(&conf.Config{
+	pool := NewConnectors(&conf.Config{
 		Host:         "127.0.0.1",
 		Port:         8888,
 		MaxWaitSize:  10000,
@@ -68,7 +62,7 @@ func Test1(t *testing.T) {
 	pool.Close()
 }
 func Test1000(t *testing.T) {
-	pool := newConnectors(&conf.Config{
+	pool := NewConnectors(&conf.Config{
 		Host:         "127.0.0.1",
 		Port:         8888,
 		MaxWaitSize:  10000,
@@ -103,7 +97,7 @@ func Test1000(t *testing.T) {
 }
 
 func BenchmarkConnectors_NewClient100(b *testing.B) {
-	pool := newConnectors(&conf.Config{
+	pool := NewConnectors(&conf.Config{
 		Host:        "127.0.0.1",
 		Port:        8888,
 		MaxWaitSize: 10000,
@@ -130,7 +124,7 @@ func BenchmarkConnectors_NewClient100(b *testing.B) {
 	pool.Close()
 }
 func BenchmarkConnectors_NewClient1000(b *testing.B) {
-	pool := newConnectors(&conf.Config{
+	pool := NewConnectors(&conf.Config{
 		Host:        "127.0.0.1",
 		Port:        8888,
 		MaxWaitSize: 10000,
@@ -157,7 +151,7 @@ func BenchmarkConnectors_NewClient1000(b *testing.B) {
 	pool.Close()
 }
 func BenchmarkConnectors_NewClient5000(b *testing.B) {
-	pool := newConnectors(&conf.Config{
+	pool := NewConnectors(&conf.Config{
 		Host:        "127.0.0.1",
 		Port:        8888,
 		MaxWaitSize: 10000,
@@ -184,7 +178,7 @@ func BenchmarkConnectors_NewClient5000(b *testing.B) {
 	pool.Close()
 }
 func TestCheck(t *testing.T) {
-	pool := newConnectors(&conf.Config{
+	pool := NewConnectors(&conf.Config{
 		Host:         "127.0.0.1",
 		Port:         8888,
 		MaxWaitSize:  10000,
@@ -211,7 +205,7 @@ func TestCheck(t *testing.T) {
 
 }
 func TestAutoClose1(t *testing.T) {
-	pool := newConnectors(&conf.Config{
+	pool := NewConnectors(&conf.Config{
 		Host:         "127.0.0.1",
 		Port:         8888,
 		MaxWaitSize:  10000,
@@ -226,7 +220,7 @@ func TestAutoClose1(t *testing.T) {
 	t.Log(v, err)
 }
 func TestAutoClose2(t *testing.T) {
-	pool := newConnectors(&conf.Config{
+	pool := NewConnectors(&conf.Config{
 		Host:         "127.0.0.1",
 		Port:         8888,
 		MaxWaitSize:  10000,

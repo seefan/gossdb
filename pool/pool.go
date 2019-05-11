@@ -1,10 +1,4 @@
-/*
-@Time : 2019-05-06 19:32
-@Author : seefan
-@File : pool
-@Software: gossdb
-*/
-package gossdb
+package pool
 
 import (
 	"errors"

@@ -1,10 +1,4 @@
-/*
-@Time : 2019-04-30 20:42
-@Author : seefan
-@File : queue
-@Software: gossdb
-*/
-package gossdb
+package pool
 
 import (
 	"reflect"

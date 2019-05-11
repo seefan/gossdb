@@ -1,4 +1,4 @@
-package gossdb
+package pool
 
 import (
 	"errors"
@@ -45,7 +45,7 @@ type Connectors struct {
 //用配置文件进行初始化
 //
 //  cfg 配置文件
-func newConnectors(cfg *conf.Config) *Connectors {
+func NewConnectors(cfg *conf.Config) *Connectors {
 	this := new(Connectors)
 	this.cfg = cfg.Default()
 	maxSize := int(math.Floor(float64(cfg.MaxPoolSize) / float64(cfg.PoolSize)))
@@ -238,9 +238,9 @@ func (c *Connectors) NewClient() (cli *Client, err error) {
 		return nil, fmt.Errorf("pool is busy,Wait for connection creation has reached %d", waitCount)
 	}
 	atomic.AddInt32(&c.waitCount, 1)
-	timeout := time.After(time.Duration(c.cfg.GetClientTimeout) * time.Second)
+	timeout := time.NewTimer(time.Duration(c.cfg.GetClientTimeout) * time.Second)
 	select {
-	case <-timeout:
+	case <-timeout.C:
 		err = fmt.Errorf("pool is busy,can not get new client in %d seconds,wait count is %d", c.cfg.GetClientTimeout, c.waitCount)
 	case cli = <-c.poolWait:
 		if cli == nil {
@@ -252,6 +252,7 @@ func (c *Connectors) NewClient() (cli *Client, err error) {
 		}
 	}
 	atomic.AddInt32(&c.waitCount, -1)
+	timeout.Stop()
 	return
 }
 

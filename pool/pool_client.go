@@ -1,10 +1,4 @@
-/*
-@Time : 2019-05-06 20:33
-@Author : seefan
-@File : pool_client
-@Software: gossdb
-*/
-package gossdb
+package pool
 
 import (
 	"github.com/seefan/gossdb/client"
