@@ -7,17 +7,14 @@
 package main
 
 import (
-	"net/http"
 	"os"
+	"time"
 
 	"github.com/seefan/gossdb"
 	"github.com/seefan/gossdb/conf"
-	"github.com/seefan/gossdb/ssdb"
 )
 
 func main() {
-	test()
-	return
 	p, err := gossdb.NewPool(&conf.Config{
 		Host:        "127.0.0.1",
 		Port:        8888,
@@ -51,7 +48,7 @@ func main() {
 					//}
 				}
 				println(failed, p.Info())
-				//time.Sleep(time.Minute)
+				time.Sleep(time.Minute)
 
 			}
 		}()
@@ -59,15 +56,4 @@ func main() {
 	bs := make([]byte, 1)
 	os.Stdin.Read(bs)
 	p.Close()
-}
-func test() {
-	if err := ssdb.Start(); err != nil {
-		panic(err)
-	}
-	http.HandleFunc("/", func(writer http.ResponseWriter, request *http.Request) {
-		if v, err := ssdb.ClientAutoClose().Get("a"); err == nil {
-			writer.Write(v.Bytes())
-		}
-	})
-	http.ListenAndServe(":8899", nil)
 }

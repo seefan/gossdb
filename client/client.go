@@ -9,8 +9,8 @@ import (
 )
 
 const (
-	OK       string = "ok"
-	NotFound string = "not_found"
+	oK       string = "ok"
+	notFound string = "not_found"
 )
 
 //Client client
@@ -90,7 +90,7 @@ func (c *Client) DbSize() (re int, err error) {
 	if err != nil {
 		return -1, err
 	}
-	if len(resp) == 2 && resp[0] == OK {
+	if len(resp) == 2 && resp[0] == oK {
 		return strconv.Atoi(resp[1])
 	}
 	return -1, makeError(resp)
@@ -105,7 +105,7 @@ func (c *Client) Info() (re []string, err error) {
 	if err != nil {
 		return nil, err
 	}
-	if len(resp) > 1 && resp[0] == OK {
+	if len(resp) > 1 && resp[0] == oK {
 		return resp[1:], nil
 	}
 	return nil, makeError(resp)
@@ -117,7 +117,7 @@ func makeError(resp []string, errKey ...interface{}) error {
 		return errors.New("ssdb respone error")
 	}
 	//正常返回的不存在不报错，如果要捕捉这个问题请使用exists
-	if resp[0] == NotFound {
+	if resp[0] == notFound {
 		return nil
 	}
 	if len(errKey) > 0 {

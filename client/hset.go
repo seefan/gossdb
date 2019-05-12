@@ -16,7 +16,7 @@ func (c *Client) Hset(setName, key string, value interface{}) (err error) {
 		return goerr.Errorf(err, "Hset %s/%s error,cause is ", setName, key)
 	}
 
-	if len(resp) > 0 && resp[0] == OK {
+	if len(resp) > 0 && resp[0] == oK {
 		return nil
 	}
 	return makeError(resp, setName, key)
@@ -33,7 +33,7 @@ func (c *Client) Hget(setName, key string) (value Value, err error) {
 	if err != nil {
 		return "", goerr.Errorf(err, "Hget %s/%s error,cause is ", setName, key)
 	}
-	if len(resp) == 2 && resp[0] == OK {
+	if len(resp) == 2 && resp[0] == oK {
 		return Value(resp[1]), nil
 	}
 	return "", makeError(resp, setName, key)
@@ -49,7 +49,7 @@ func (c *Client) Hdel(setName, key string) (err error) {
 	if err != nil {
 		return goerr.Errorf(err, "Hdel %s/%s error,cause is ", setName, key)
 	}
-	if len(resp) > 0 && resp[0] == OK {
+	if len(resp) > 0 && resp[0] == oK {
 		return nil
 	}
 	return makeError(resp, setName, key)
@@ -67,7 +67,7 @@ func (c *Client) Hexists(setName, key string) (re bool, err error) {
 		return false, goerr.Errorf(err, "Hexists %s/%s error", setName, key)
 	}
 
-	if len(resp) == 2 && resp[0] == OK {
+	if len(resp) == 2 && resp[0] == oK {
 		return resp[1] == "1", nil
 	}
 	return false, makeError(resp, setName, key)
@@ -83,7 +83,7 @@ func (c *Client) Hclear(setName string) (err error) {
 		return goerr.Errorf(err, "Hclear %s error", setName)
 	}
 
-	if len(resp) > 0 && resp[0] == OK {
+	if len(resp) > 0 && resp[0] == oK {
 		return nil
 	}
 	return makeError(resp, setName)
@@ -109,7 +109,7 @@ func (c *Client) Hscan(setName string, keyStart, keyEnd string, limit int64, rev
 		return nil, goerr.Errorf(err, "%s %s %s %s %v error", cmd, setName, keyStart, keyEnd, limit)
 	}
 
-	if len(resp) > 0 && resp[0] == OK {
+	if len(resp) > 0 && resp[0] == oK {
 		re := make(map[string]Value)
 		size := len(resp)
 		for i := 1; i < size-1; i += 2 {
@@ -139,7 +139,7 @@ func (c *Client) HscanArray(setName string, keyStart, keyEnd string, limit int64
 		return nil, nil, goerr.Errorf(err, "%s %s %s %s %v error", cmd, setName, keyStart, keyEnd, limit)
 	}
 
-	if len(resp) > 0 && resp[0] == OK {
+	if len(resp) > 0 && resp[0] == oK {
 		keys := []string{}
 		values := []Value{}
 		size := len(resp)
@@ -194,7 +194,7 @@ func (c *Client) MultiHset(setName string, kvs map[string]interface{}) (err erro
 		return goerr.Errorf(err, "MultiHset %s %s error", setName, kvs)
 	}
 
-	if len(resp) > 0 && resp[0] == OK {
+	if len(resp) > 0 && resp[0] == oK {
 		return nil
 	}
 	return makeError(resp, setName, kvs)
@@ -222,7 +222,7 @@ func (c *Client) MultiHget(setName string, key ...string) (val map[string]Value,
 		return nil, goerr.Errorf(err, "MultiHget %s %s error", setName, key)
 	}
 	size := len(resp)
-	if size > 0 && resp[0] == OK {
+	if size > 0 && resp[0] == oK {
 		val = make(map[string]Value)
 		for i := 1; i < size && i+1 < size; i += 2 {
 			val[resp[i]] = Value(resp[i+1])
@@ -251,7 +251,7 @@ func (c *Client) MultiHgetSlice(setName string, key ...string) (keys []string, v
 	if err != nil {
 		return nil, nil, goerr.Errorf(err, "MultiHgetSlice %s %s error", setName, key)
 	}
-	if len(resp) > 0 && resp[0] == OK {
+	if len(resp) > 0 && resp[0] == oK {
 		size := len(resp)
 		keys := make([]string, 0, (size-1)/2)
 		values := make([]Value, 0, (size-1)/2)
@@ -299,7 +299,7 @@ func (c *Client) MultiHgetAll(setName string) (val map[string]Value, err error) 
 		return nil, goerr.Errorf(err, "MultiHgetAll %s error", setName)
 	}
 	size := len(resp)
-	if size > 0 && resp[0] == OK {
+	if size > 0 && resp[0] == oK {
 		val = make(map[string]Value)
 		for i := 1; i < size && i+1 < size; i += 2 {
 			val[resp[i]] = Value(resp[i+1])
@@ -321,7 +321,7 @@ func (c *Client) MultiHgetAllSlice(setName string) (keys []string, values []Valu
 	if err != nil {
 		return nil, nil, goerr.Errorf(err, "MultiHgetAllSlice %s error", setName)
 	}
-	if len(resp) > 0 && resp[0] == OK {
+	if len(resp) > 0 && resp[0] == oK {
 		size := len(resp)
 		keys := make([]string, 0, (size-1)/2)
 		values := make([]Value, 0, (size-1)/2)
@@ -353,7 +353,7 @@ func (c *Client) MultiHdel(setName string, key ...string) (err error) {
 		return goerr.Errorf(err, "MultiHdel %s %s error", setName, key)
 	}
 
-	if len(resp) > 0 && resp[0] == OK {
+	if len(resp) > 0 && resp[0] == oK {
 		return nil
 	}
 	return makeError(resp, key)
@@ -381,7 +381,7 @@ func (c *Client) Hlist(nameStart, nameEnd string, limit int64) ([]string, error)
 		return nil, goerr.Errorf(err, "Hlist %s %s %v error", nameStart, nameEnd, limit)
 	}
 
-	if len(resp) > 0 && resp[0] == OK {
+	if len(resp) > 0 && resp[0] == oK {
 		size := len(resp)
 		keyList := make([]string, 0, size-1)
 
@@ -407,7 +407,7 @@ func (c *Client) Hincr(setName, key string, num int64) (val int64, err error) {
 	if err != nil {
 		return -1, goerr.Errorf(err, "Hincr %s error", key)
 	}
-	if len(resp) == 2 && resp[0] == OK {
+	if len(resp) == 2 && resp[0] == oK {
 		return Value(resp[1]).Int64(), nil
 	}
 	return -1, makeError(resp, key)
@@ -425,7 +425,7 @@ func (c *Client) Hsize(setName string) (val int64, err error) {
 	if err != nil {
 		return -1, goerr.Errorf(err, "Hsize %s error", setName)
 	}
-	if len(resp) == 2 && resp[0] == OK {
+	if len(resp) == 2 && resp[0] == oK {
 		return Value(resp[1]).Int64(), nil
 	}
 	return -1, makeError(resp, setName)
@@ -445,7 +445,7 @@ func (c *Client) Hkeys(setName, keyStart, keyEnd string, limit int64) ([]string,
 		return nil, goerr.Errorf(err, "Hkeys %s %s %s %v error", setName, keyStart, keyEnd, limit)
 	}
 
-	if len(resp) > 0 && resp[0] == OK {
+	if len(resp) > 0 && resp[0] == oK {
 		return resp[1:], nil
 	}
 	return nil, makeError(resp, keyStart, keyEnd, limit)

@@ -1,119 +1,197 @@
 package ssdbclient
 
 import (
-	"net"
+	"encoding/json"
 	"testing"
 	"time"
+
+	"github.com/seefan/gossdb/conf"
 )
 
-func TestSSDBClient_Start(t *testing.T) {
-	type fields struct {
-		isOpen           bool
-		Password         string
-		Host             string
-		Port             int
-		sock             *net.TCPConn
-		readBuf          []byte
-		WriteBufferSize  int
-		ReadBufferSize   int
-		RetryEnabled     bool
-		ReadWriteTimeout int
-		timeZero         time.Time
-		ConnectTimeout   int
+func TestSSDBClient_ping(t *testing.T) {
+	cfg := &conf.Config{
+		Host: "127.0.0.1",
+		Port: 8888,
 	}
-	tests := []struct {
-		name    string
-		fields  fields
-		wantErr bool
-	}{
-		{"start", fields{Host: "127.0.0.1", Port: 8888, ReadBufferSize: 1024, WriteBufferSize: 1024}, false},
+	c := NewSSDBClient(cfg.Default())
+	if err := c.Start(); err != nil {
+		t.Fatal(err)
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			s := &SSDBClient{
-				isOpen:           tt.fields.isOpen,
-				Password:         tt.fields.Password,
-				host:             tt.fields.Host,
-				Port:             tt.fields.Port,
-				sock:             tt.fields.sock,
-				readBuf:          tt.fields.readBuf,
-				WriteBufferSize:  tt.fields.WriteBufferSize,
-				ReadBufferSize:   tt.fields.ReadBufferSize,
-				RetryEnabled:     tt.fields.RetryEnabled,
-				ReadWriteTimeout: tt.fields.ReadWriteTimeout,
-				timeZero:         tt.fields.timeZero,
-				ConnectTimeout:   tt.fields.ConnectTimeout,
-			}
-			if err := s.Start(); (err != nil) != tt.wantErr {
-				t.Errorf("SSDBClient.Start() error = %v, wantErr %v", err, tt.wantErr)
-			}
-			if err := s.Close(); (err != nil) != tt.wantErr {
-				t.Errorf("SSDBClient.Start() error = %v, wantErr %v", err, tt.wantErr)
-			}
-		})
+	if v, err := c.Do("dbsize"); err == nil {
+		t.Log(v)
+	} else {
+		t.Error(err)
+	}
+	if err := c.Close(); err != nil {
+		t.Fatal(err)
+	}
+}
+func TestSSDBClient_getset(t *testing.T) {
+	cfg := &conf.Config{
+		Host: "127.0.0.1",
+		Port: 8888,
+	}
+	c := NewSSDBClient(cfg.Default())
+	if err := c.Start(); err != nil {
+		t.Fatal(err)
+	}
+	if v, err := c.Do("set", "a", "123"); err == nil {
+		t.Log(v)
+	} else {
+		t.Error(err)
+	}
+	if v, err := c.Do("get", "a"); err == nil {
+		t.Log(v)
+	} else {
+		t.Error(err)
+	}
+
+	if err := c.Close(); err != nil {
+		t.Fatal(err)
+	}
+}
+func TestSSDBClient_int(t *testing.T) {
+	cfg := &conf.Config{
+		Host: "127.0.0.1",
+		Port: 8888,
+	}
+	c := NewSSDBClient(cfg.Default())
+	if err := c.Start(); err != nil {
+		t.Fatal(err)
+	}
+	if v, err := c.Do("set", "a", 123); err == nil {
+		t.Log(v)
+	} else {
+		t.Error(err)
+	}
+	if v, err := c.Do("get", "a"); err == nil {
+		t.Log(v)
+	} else {
+		t.Error(err)
+	}
+
+	if err := c.Close(); err != nil {
+		t.Fatal(err)
+	}
+}
+func TestSSDBClient_uint(t *testing.T) {
+	cfg := &conf.Config{
+		Host: "127.0.0.1",
+		Port: 8888,
+	}
+	c := NewSSDBClient(cfg.Default())
+	if err := c.Start(); err != nil {
+		t.Fatal(err)
+	}
+	if v, err := c.Do("set", "a", uint32(123)); err == nil {
+		t.Log(v)
+	} else {
+		t.Error(err)
+	}
+	if v, err := c.Do("get", "a"); err == nil {
+		t.Log(v)
+	} else {
+		t.Error(err)
+	}
+
+	if err := c.Close(); err != nil {
+		t.Fatal(err)
+	}
+}
+func TestSSDBClient_stringSlice(t *testing.T) {
+	cfg := &conf.Config{
+		Host:     "127.0.0.1",
+		Port:     8888,
+		Encoding: true,
+	}
+	c := NewSSDBClient(cfg.Default())
+	if err := c.Start(); err != nil {
+		t.Fatal(err)
+	}
+	if v, err := c.Do("multi_set", []string{"a", "abc", "b", "ddd", "c", "eft"}); err == nil {
+		t.Log(v)
+	} else {
+		t.Error(err)
+	}
+	if v, err := c.Do("get", "a"); err == nil {
+		t.Log(v)
+	} else {
+		t.Error(err)
+	}
+	if v, err := c.Do("get", "b"); err == nil {
+		t.Log(v)
+	} else {
+		t.Error(err)
+	}
+	c.EncodingFunc = func(v interface{}) []byte {
+		if bs, err := json.Marshal(v); err == nil {
+			return bs
+		}
+		return nil
+	}
+	if v, err := c.Do("set", "add", []string{"hello", "world"}); err == nil {
+		t.Log(v)
+	} else {
+		t.Error(err)
+	}
+	if v, err := c.Do("get", "add"); err == nil {
+		t.Log(v)
+	} else {
+		t.Error(err)
+	}
+	if err := c.Close(); err != nil {
+		t.Fatal(err)
 	}
 }
 
-func TestSSDBClient_Ping(t *testing.T) {
-	type fields struct {
-		isOpen           bool
-		Password         string
-		Host             string
-		Port             int
-		sock             *net.TCPConn
-		readBuf          []byte
-		WriteBufferSize  int
-		ReadBufferSize   int
-		RetryEnabled     bool
-		ReadWriteTimeout int
-		timeZero         time.Time
-		ConnectTimeout   int
+func TestSSDBClient_time(t *testing.T) {
+	cfg := &conf.Config{
+		Host: "127.0.0.1",
+		Port: 8888,
 	}
-	tests := []struct {
-		name   string
-		fields fields
-		want   bool
-	}{
-		{"start", fields{Host: "127.0.0.1", Port: 8888, ReadBufferSize: 1024, WriteBufferSize: 1024, ReadWriteTimeout: 100}, true},
+	c := NewSSDBClient(cfg.Default())
+	if err := c.Start(); err != nil {
+		t.Fatal(err)
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			s := &SSDBClient{
-				isOpen:           tt.fields.isOpen,
-				Password:         tt.fields.Password,
-				host:             tt.fields.Host,
-				Port:             tt.fields.Port,
-				sock:             tt.fields.sock,
-				readBuf:          tt.fields.readBuf,
-				WriteBufferSize:  tt.fields.WriteBufferSize,
-				ReadBufferSize:   tt.fields.ReadBufferSize,
-				RetryEnabled:     tt.fields.RetryEnabled,
-				ReadWriteTimeout: tt.fields.ReadWriteTimeout,
-				timeZero:         tt.fields.timeZero,
-				ConnectTimeout:   tt.fields.ConnectTimeout,
-			}
-			err := s.Start()
-			if err != nil {
-				t.Fatalf("SSDBClient.Start() error = %v", err)
-				return
-			}
-			if got, err := s.Do("get", "a"); err != nil {
-				t.Errorf("SSDBClient.Ping() = %v, want %v", got, tt.want)
-			}
-			for i := 0; i < 100; i++ {
-				if got, err := s.Do("get", "a"); err != nil {
-					t.Errorf("SSDBClient.get() = %v, want %v", got, tt.want)
-				} else if got[0] != "ok" || got[1] != "1" {
-					t.Errorf("SSDBClient.get() = %v, want %v", got, tt.want)
-				}
-				if got, err := s.Do("set", "a", "1"); err != nil {
-					t.Errorf("SSDBClient.set() = %v, want %v", got, tt.want)
-				}
-			}
-			if err := s.Close(); err != nil {
-				t.Fatalf("SSDBClient.Close() error = %v", err)
-			}
+	now := time.Now()
+	if v, err := c.Do("set", "atime", now); err == nil {
+		t.Log(v, now.Unix())
+	} else {
+		t.Error(err)
+	}
+	if v, err := c.Do("get", "atime"); err == nil {
+		t.Log(v)
+	} else {
+		t.Error(err)
+	}
 
-		})
+	if err := c.Close(); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestSSDBClient_byte(t *testing.T) {
+	cfg := &conf.Config{
+		Host: "127.0.0.1",
+		Port: 8888,
+	}
+	c := NewSSDBClient(cfg.Default())
+	if err := c.Start(); err != nil {
+		t.Fatal(err)
+	}
+	bt := byte(126)
+	if v, err := c.Do("set", "ab", bt); err == nil {
+		t.Log(v)
+	} else {
+		t.Error(err)
+	}
+	if v, err := c.Do("get", "ab"); err == nil {
+		t.Log(v)
+	} else {
+		t.Error(err)
+	}
+
+	if err := c.Close(); err != nil {
+		t.Fatal(err)
 	}
 }

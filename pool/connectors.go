@@ -1,6 +1,7 @@
 package pool
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"math"
@@ -40,6 +41,8 @@ type Connectors struct {
 	maxWaitSize int32
 	//active
 	activeCount int32
+	//encoding func
+	EncodingFunc func(v interface{}) []byte
 }
 
 //用配置文件进行初始化
@@ -64,6 +67,12 @@ func NewConnectors(cfg *conf.Config) *Connectors {
 	this.poolWait = make(chan *Client, cfg.MaxWaitSize)
 	this.watchTicker = time.NewTicker(time.Second)
 	this.pool = make([]*Pool, this.maxSize)
+	this.EncodingFunc = func(v interface{}) []byte {
+		if bs, err := json.Marshal(v); err == nil {
+			return bs
+		}
+		return nil
+	}
 	go this.watchHealth()
 	this.status = consts.PoolStop
 	return this
@@ -138,6 +147,7 @@ func (c *Connectors) getPool() *Pool {
 		if err != nil {
 			return nil, err
 		}
+		sc.EncodingFunc = c.EncodingFunc
 		cc := &Client{
 			over: c,
 			pool: p,
@@ -260,6 +270,7 @@ func (c *Connectors) NewClient() (cli *Client, err error) {
 //关闭连接池
 func (c *Connectors) Close() {
 	c.status = consts.PoolStop
+	c.watchTicker.Stop()
 	for _, cc := range c.pool {
 		if cc != nil {
 			cc.Close()

@@ -1,14 +1,10 @@
-/*
-@Time : 2019-05-06 20:39
-@Author : seefan
-@File : errors
-@Software: gossdb
-*/
 package consts
 
 const (
 	None = iota
+	//pool is busy
 	PoolEmpty
+	//poos is not start
 	PoolNotStart
 	//连接池状态：关闭
 	PoolStop

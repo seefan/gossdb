@@ -36,6 +36,8 @@ type Config struct {
 	ConnectTimeout int
 	//auto close
 	AutoClose bool
+	//Automatic serialization of unknown types
+	Encoding bool
 }
 
 // 设置默认配置

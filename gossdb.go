@@ -16,13 +16,13 @@ var (
 	pooled *pool.Connectors
 )
 
-//NewPool start a gossdb pool with the initial parameters.
+// NewPool start a gossdb pool with the initial parameters.
 //
 //  @param conf initial parameters
 //  @return gossdb pool
 //  @return error that may occur on startup. Return nil if successful startup
 //
-//通常使用NewPool启动连接池，初始化参数由外部传入。如果启动成功返回一个连接池和nil，如果失败返回nil和发生的错误。
+// 通常使用NewPool启动连接池，初始化参数由外部传入。如果启动成功返回一个连接池和nil，如果失败返回nil和发生的错误。
 //
 func NewPool(conf *conf.Config) (*pool.Connectors, error) {
 	//默认值处理
@@ -33,14 +33,14 @@ func NewPool(conf *conf.Config) (*pool.Connectors, error) {
 	return c, nil
 }
 
-//Start start a global connection pool. This function can only be started once in the program's lifetime.
-//The Shutdown() is called to close the connection pool when the program ends.
+// Start start a global connection pool. This function can only be started once in the program's lifetime.
+// The Shutdown() is called to close the connection pool when the program ends.
 //
 //  @param cfg initial parameters,optional. Use with default parameters if not specified
 //  @return error that may occur on startup. Return nil if successful startup
 //
-//启动一个全局的连接池，此函数在程序的生命周期内只能启动一次，程序结束时调用Shutdown函数关闭连接池。
-//参数cfg是可选的，如果没有指定，会使用默认参数连接ssdb，host为127.0.0.1，port为8888,autoclose为true。一般在学习gossdb时用于本地练习。
+// 启动一个全局的连接池，此函数在程序的生命周期内只能启动一次，程序结束时调用Shutdown函数关闭连接池。
+// 参数cfg是可选的，如果没有指定，会使用默认参数连接ssdb，host为127.0.0.1，port为8888,autoclose为true。一般在学习gossdb时用于本地练习。
 //
 func Start(cfg ...*conf.Config) (err error) {
 	var c *conf.Config
