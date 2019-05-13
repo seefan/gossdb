@@ -98,7 +98,7 @@ func TestSSDBClient_uint(t *testing.T) {
 		t.Fatal(err)
 	}
 }
-func TestSSDBClient_stringSlice(t *testing.T) {
+func TestSSDBClient_multi(t *testing.T) {
 	cfg := &conf.Config{
 		Host:     "127.0.0.1",
 		Port:     8888,
@@ -108,7 +108,7 @@ func TestSSDBClient_stringSlice(t *testing.T) {
 	if err := c.Start(); err != nil {
 		t.Fatal(err)
 	}
-	if v, err := c.Do("multi_set", []string{"a", "abc", "b", "ddd", "c", "eft"}); err == nil {
+	if v, err := c.Do("multi_set", "a", "abc", "b", "ddd", "c", "eft"); err == nil {
 		t.Log(v)
 	} else {
 		t.Error(err)

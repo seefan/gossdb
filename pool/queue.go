@@ -2,6 +2,8 @@ package pool
 
 import "sync"
 
+//queue for available index
+//可用连接的队列
 type Queue struct {
 	pos    int //available pos
 	putPos int //exchange pos
@@ -11,6 +13,7 @@ type Queue struct {
 	lock sync.Mutex
 }
 
+//建立一个队列
 func newQueue(size int) *Queue {
 	v := make([]int, size)
 	for i := 0; i < size; i++ {
@@ -22,11 +25,19 @@ func newQueue(size int) *Queue {
 		size:  size,
 	}
 }
+
+//check available index
 func (q *Queue) Exists() bool {
 	q.lock.Lock()
 	defer q.lock.Unlock()
 	return q.pos >= 0
 }
+
+//Pop get a index
+//
+//  @return int index
+//
+//获取一个可以连接的位置
 func (q *Queue) Pop() (re int) {
 	q.lock.Lock()
 	defer q.lock.Unlock()
@@ -40,6 +51,12 @@ func (q *Queue) Pop() (re int) {
 	return
 }
 
+//Put return a index
+//
+//  @param i index
+//  @return int pos
+//
+//归还索引值
 func (q *Queue) Put(i int) int {
 	q.lock.Lock()
 	defer q.lock.Unlock()

@@ -77,7 +77,7 @@ func (c *Client) Hexists(setName, key string) (re bool, err error) {
 //
 //  setName hashmap 的名字
 //  返回 err，执行的错误，操作成功返回 nil
-func (c *Client) Hclear(setName string) (err error) {
+func (c *Client) HClear(setName string) (err error) {
 	resp, err := c.Do("hclear", setName)
 	if err != nil {
 		return goerr.Errorf(err, "Hclear %s error", setName)
@@ -97,7 +97,7 @@ func (c *Client) Hclear(setName string) (err error) {
 //  limit - 最多返回这么多个元素.
 //  返回包含 key-value 的关联字典.
 //  返回 err，执行的错误，操作成功返回 nil
-func (c *Client) Hscan(setName string, keyStart, keyEnd string, limit int64, reverse ...bool) (map[string]Value, error) {
+func (c *Client) HScan(setName string, keyStart, keyEnd string, limit int64, reverse ...bool) (map[string]Value, error) {
 	cmd := "hscan"
 	if len(reverse) > 0 && reverse[0] == true {
 		cmd = "hrscan"
@@ -128,7 +128,7 @@ func (c *Client) Hscan(setName string, keyStart, keyEnd string, limit int64, rev
 //  limit - 最多返回这么多个元素.
 //  返回包含 key-value 的关联字典.
 //  返回 err，执行的错误，操作成功返回 nil
-func (c *Client) HscanArray(setName string, keyStart, keyEnd string, limit int64, reverse ...bool) ([]string, []Value, error) {
+func (c *Client) HScanArray(setName string, keyStart, keyEnd string, limit int64, reverse ...bool) ([]string, []Value, error) {
 	cmd := "hscan"
 	if len(reverse) > 0 && reverse[0] == true {
 		cmd = "hrscan"
@@ -160,8 +160,8 @@ func (c *Client) HscanArray(setName string, keyStart, keyEnd string, limit int64
 //  limit - 最多返回这么多个元素.
 //  返回包含 key-value 的关联字典.
 //  返回 err，执行的错误，操作成功返回 nil
-func (c *Client) HrscanArray(setName string, keyStart, keyEnd string, limit int64, reverse ...bool) ([]string, []Value, error) {
-	return c.HscanArray(setName, keyStart, keyEnd, limit, true)
+func (c *Client) HRScanArray(setName string, keyStart, keyEnd string, limit int64, reverse ...bool) ([]string, []Value, error) {
+	return c.HScanArray(setName, keyStart, keyEnd, limit, true)
 }
 
 //列出 hashmap 中处于区间 (key_start, key_end] 的 key-value 列表. ("", ""] 表示整个区间.
@@ -172,8 +172,8 @@ func (c *Client) HrscanArray(setName string, keyStart, keyEnd string, limit int6
 //  limit - 最多返回这么多个元素.
 //  返回包含 key-value 的关联字典.
 //  返回 err，执行的错误，操作成功返回 nil
-func (c *Client) Hrscan(setName string, keyStart, keyEnd string, limit int64) (map[string]Value, error) {
-	return c.Hscan(setName, keyStart, keyEnd, limit, true)
+func (c *Client) HRScan(setName string, keyStart, keyEnd string, limit int64) (map[string]Value, error) {
+	return c.HScan(setName, keyStart, keyEnd, limit, true)
 }
 
 //批量设置 hashmap 中的 key-value.
@@ -181,7 +181,7 @@ func (c *Client) Hrscan(setName string, keyStart, keyEnd string, limit int64) (m
 //  setName - hashmap 的名字.
 //  kvs - 包含 key-value 的关联数组 .
 //  返回 err，执行的错误，操作成功返回 nil
-func (c *Client) MultiHset(setName string, kvs map[string]interface{}) (err error) {
+func (c *Client) MultiHSet(setName string, kvs map[string]interface{}) (err error) {
 
 	args := []interface{}{"multi_hset", setName}
 	for k, v := range kvs {
@@ -206,7 +206,7 @@ func (c *Client) MultiHset(setName string, kvs map[string]interface{}) (err erro
 //  keys - 包含 key 的数组 .
 //  返回 包含 key-value 的关联数组, 如果某个 key 不存在, 则它不会出现在返回数组中.
 //  返回 err，执行的错误，操作成功返回 nil
-func (c *Client) MultiHget(setName string, key ...string) (val map[string]Value, err error) {
+func (c *Client) MultiHGet(setName string, key ...string) (val map[string]Value, err error) {
 	if len(key) == 0 {
 		return make(map[string]Value), nil
 	}
@@ -238,7 +238,7 @@ func (c *Client) MultiHget(setName string, key ...string) (val map[string]Value,
 //  keys - 包含 key 的数组 .
 //  返回 包含 key和value 的有序数组, 如果某个 key 不存在, 则它不会出现在返回数组中.
 //  返回 err，执行的错误，操作成功返回 nil
-func (c *Client) MultiHgetSlice(setName string, key ...string) (keys []string, values []Value, err error) {
+func (c *Client) MultiHGetSlice(setName string, key ...string) (keys []string, values []Value, err error) {
 	if len(key) == 0 {
 		return []string{}, []Value{}, nil
 	}
@@ -271,8 +271,8 @@ func (c *Client) MultiHgetSlice(setName string, key ...string) (keys []string, v
 //  keys - 包含 key 的数组 .
 //  返回 包含 key-value 的关联数组, 如果某个 key 不存在, 则它不会出现在返回数组中.
 //  返回 err，执行的错误，操作成功返回 nil
-func (c *Client) MultiHgetArray(setName string, key []string) (val map[string]Value, err error) {
-	return c.MultiHget(setName, key...)
+func (c *Client) MultiHGetArray(setName string, key []string) (val map[string]Value, err error) {
+	return c.MultiHGet(setName, key...)
 }
 
 //批量获取 hashmap 中多个 key 对应的权重值.（输入分片）
@@ -281,8 +281,8 @@ func (c *Client) MultiHgetArray(setName string, key []string) (val map[string]Va
 //  keys - 包含 key 的数组 .
 //  返回 包含 key和value 的有序数组, 如果某个 key 不存在, 则它不会出现在返回数组中.
 //  返回 err，执行的错误，操作成功返回 nil
-func (c *Client) MultiHgetSliceArray(setName string, key []string) (keys []string, values []Value, err error) {
-	return c.MultiHgetSlice(setName, key...)
+func (c *Client) MultiHGetSliceArray(setName string, key []string) (keys []string, values []Value, err error) {
+	return c.MultiHGetSlice(setName, key...)
 }
 
 //批量获取 hashmap 中全部 对应的权重值.
@@ -291,7 +291,7 @@ func (c *Client) MultiHgetSliceArray(setName string, key []string) (keys []strin
 //  keys - 包含 key 的数组 .
 //  返回 包含 key-value 的关联数组, 如果某个 key 不存在, 则它不会出现在返回数组中.
 //  返回 err，执行的错误，操作成功返回 nil
-func (c *Client) MultiHgetAll(setName string) (val map[string]Value, err error) {
+func (c *Client) MultiHGetAll(setName string) (val map[string]Value, err error) {
 
 	resp, err := c.Do("hgetall", setName)
 
@@ -314,7 +314,7 @@ func (c *Client) MultiHgetAll(setName string) (val map[string]Value, err error) 
 //  setName - hashmap 的名字.
 //  返回 包含 key和value 的有序数组, 如果某个 key 不存在, 则它不会出现在返回数组中.
 //  返回 err，执行的错误，操作成功返回 nil
-func (c *Client) MultiHgetAllSlice(setName string) (keys []string, values []Value, err error) {
+func (c *Client) MultiHGetAllSlice(setName string) (keys []string, values []Value, err error) {
 
 	resp, err := c.Do("hgetall", setName)
 
@@ -340,7 +340,7 @@ func (c *Client) MultiHgetAllSlice(setName string) (keys []string, values []Valu
 //  setName - hashmap 的名字.
 //  keys - 包含 key 的数组.
 //  返回 err，执行的错误，操作成功返回 nil
-func (c *Client) MultiHdel(setName string, key ...string) (err error) {
+func (c *Client) MultiHDel(setName string, key ...string) (err error) {
 	if len(key) == 0 {
 		return nil
 	}
@@ -364,8 +364,8 @@ func (c *Client) MultiHdel(setName string, key ...string) (err error) {
 //  setName - hashmap 的名字.
 //  keys - 包含 key 的数组.
 //  返回 err，执行的错误，操作成功返回 nil
-func (c *Client) MultiHdelArray(setName string, key []string) (err error) {
-	return c.MultiHdel(setName, key...)
+func (c *Client) MultiHDelArray(setName string, key []string) (err error) {
+	return c.MultiHDel(setName, key...)
 }
 
 //列出名字处于区间 (name_start, name_end] 的 hashmap. ("", ""] 表示整个区间.
@@ -374,8 +374,8 @@ func (c *Client) MultiHdelArray(setName string, key []string) (err error) {
 //  nameEnd - 返回的结束 key(包含), 空字符串表示 +inf.
 //  limit - 最多返回这么多个元素.
 //  返回 包含名字的数组
-//  返回 err，执行的错误，操作成功返回 nil
-func (c *Client) Hlist(nameStart, nameEnd string, limit int64) ([]string, error) {
+//  返回 err，执行的错D，操作成功返回 nil
+func (c *Client) HList(nameStart, nameEnd string, limit int64) ([]string, error) {
 	resp, err := c.Do("hlist", nameStart, nameEnd, limit)
 	if err != nil {
 		return nil, goerr.Errorf(err, "Hlist %s %s %v error", nameStart, nameEnd, limit)
@@ -400,7 +400,7 @@ func (c *Client) Hlist(nameStart, nameEnd string, limit int64) ([]string, error)
 //  num 增加的值
 //  返回 val，整数，增加 num 后的新值
 //  返回 err，可能的错误，操作成功返回 nil
-func (c *Client) Hincr(setName, key string, num int64) (val int64, err error) {
+func (c *Client) HIncr(setName, key string, num int64) (val int64, err error) {
 
 	resp, err := c.Do("hincr", setName, key, num)
 
@@ -418,7 +418,7 @@ func (c *Client) Hincr(setName, key string, num int64) (val int64, err error) {
 //  setName - hashmap 的名字.
 //  返回 val，整数，增加 num 后的新值
 //  返回 err，可能的错误，操作成功返回 nil
-func (c *Client) Hsize(setName string) (val int64, err error) {
+func (c *Client) HSize(setName string) (val int64, err error) {
 
 	resp, err := c.Do("hsize", setName)
 
@@ -439,7 +439,7 @@ func (c *Client) Hsize(setName string) (val int64, err error) {
 //  limit - 最多返回这么多个元素.
 //  返回 包含名字的数组
 //  返回 err，执行的错误，操作成功返回 nil
-func (c *Client) Hkeys(setName, keyStart, keyEnd string, limit int64) ([]string, error) {
+func (c *Client) HKeys(setName, keyStart, keyEnd string, limit int64) ([]string, error) {
 	resp, err := c.Do("hkeys", setName, keyStart, keyEnd, limit)
 	if err != nil {
 		return nil, goerr.Errorf(err, "Hkeys %s %s %s %v error", setName, keyStart, keyEnd, limit)
@@ -456,6 +456,6 @@ func (c *Client) Hkeys(setName, keyStart, keyEnd string, limit int64) ([]string,
 //  setName - hashmap 的名字.
 //  返回 包含 key-value 的关联数组, 如果某个 key 不存在, 则它不会出现在返回数组中.
 //  返回 err，执行的错误，操作成功返回 nil
-func (c *Client) HgetAll(setName string) (val map[string]Value, err error) {
-	return c.MultiHgetAll(setName)
+func (c *Client) HGetAll(setName string) (val map[string]Value, err error) {
+	return c.MultiHGetAll(setName)
 }

@@ -32,7 +32,7 @@ func (c *Client) Set(key string, val interface{}, ttl ...int64) (err error) {
 //  val 存贮的 value 值,val只支持基本的类型，如果要支持复杂的类型，需要开启连接池的 Encoding 选项
 //  返回 err，可能的错误，操作成功返回 nil
 //  返回 val 1: value 已经设置, 0: key 已经存在, 不更新.
-func (c *Client) Setnx(key string, val interface{}) (Value, error) {
+func (c *Client) SetNX(key string, val interface{}) (Value, error) {
 	resp, err := c.Do("setnx", key, val)
 
 	if err != nil {
@@ -66,7 +66,7 @@ func (c *Client) Get(key string) (Value, error) {
 //  val 存贮的 value 值,val只支持基本的类型，如果要支持复杂的类型，需要开启连接池的 Encoding 选项
 //  返回 一个 Value,可以方便的向其它类型转换.如果 key 不存在则返回 "", 否则返回 key 对应的值内容.
 //  返回 一个可能的错误，操作成功返回 nil
-func (c *Client) Getset(key string, val interface{}) (Value, error) {
+func (c *Client) GetSet(key string, val interface{}) (Value, error) {
 	resp, err := c.Do("getset", key, val)
 	if err != nil {
 		return "", goerr.Errorf(err, "Getset %s error", key)
@@ -363,7 +363,7 @@ func (c *Client) Substr(key string, start int64, size ...int64) (val string, err
 //  key 键值
 //  返回 字符串的长度, key 不存在则返回 0.
 //  返回 err，可能的错误，操作成功返回 nil
-func (c *Client) Strlen(key string) (int64, error) {
+func (c *Client) StrLen(key string) (int64, error) {
 
 	resp, err := c.Do("strlen", key)
 
@@ -403,7 +403,7 @@ func (c *Client) Keys(keyStart, keyEnd string, limit int64) ([]string, error) {
 //  limit int 最多返回这么多个元素.
 //  返回 返回包含 key 的数组.
 //  返回 err，可能的错误，操作成功返回 nil
-func (c *Client) Rkeys(keyStart, keyEnd string, limit int64) ([]string, error) {
+func (c *Client) RKeys(keyStart, keyEnd string, limit int64) ([]string, error) {
 
 	resp, err := c.Do("rkeys", keyStart, keyEnd, limit)
 
@@ -448,7 +448,7 @@ func (c *Client) Scan(keyStart, keyEnd string, limit int64) (map[string]Value, e
 //  limit int 最多返回这么多个元素.
 //  返回 返回包含 key 的数组.
 //  返回 err，可能的错误，操作成功返回 nil
-func (c *Client) Rscan(keyStart, keyEnd string, limit int64) (map[string]Value, error) {
+func (c *Client) RScan(keyStart, keyEnd string, limit int64) (map[string]Value, error) {
 
 	resp, err := c.Do("rscan", keyStart, keyEnd, limit)
 

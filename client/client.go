@@ -1,3 +1,5 @@
+//Encapsulates all functions of SSDB
+//封装ssdb的所有函数
 package client
 
 import (
@@ -33,10 +35,10 @@ type Client struct {
 
 //NewClient create new client
 //
-//  param c *ssdbclient.SSDBClient
-//  param autoClose Whether to automatically close the identity
-//  param closeMethod A callback executed by a function to perform automatic closing of a connection
-//  return *Client
+//  @param c *ssdbclient.SSDBClient
+//  @param autoClose Whether to automatically close the identity
+//  @param closeMethod A callback executed by a function to perform automatic closing of a connection
+//  @return *Client
 //
 //  使用ssdb client创建一个可缓存的连接
 func NewClient(c *ssdbclient.SSDBClient, autoClose bool, closeMethod func()) *Client {
@@ -49,9 +51,9 @@ func NewClient(c *ssdbclient.SSDBClient, autoClose bool, closeMethod func()) *Cl
 
 //Do The base function, which is used by all SSDB manipulation functions to interact with SSDB
 //
-//  param args The input parameters
-//  return rsp The output value
-//  return err The output error
+//  @param args The input parameters
+//  @return rsp The output value
+//  @return err The output error
 //
 //  基础函数，所有的ssdb操作函数都使用这个与ssdb进行交互
 func (c *Client) Do(args ...interface{}) (rsp []string, err error) {
@@ -73,18 +75,22 @@ func (c *Client) Do(args ...interface{}) (rsp []string, err error) {
 	return
 }
 
-//检查连接情况
+//Ping check the connection status and return true if the information can be queried normally or false otherwise
 //
-//  返回 bool，如果可以正常查询数据库信息，就返回true，否则返回false
+//  @return bool
+//
+//检查连接状态，如果可以正常查询信息，就返回true，否则返回false
 func (c *Client) Ping() bool {
 	_, err := c.Info()
 	return err == nil
 }
 
-//查询数据库大小
+//DbSize returns the estimated size of the database in bytes. If compression is enabled on the server, returns the compressed size.
 //
-//  返回 re，返回数据库的估计大小, 以字节为单位. 如果服务器开启了压缩, 返回压缩后的大小.
-//  返回 err，执行的错误
+//  @return int the estimated size of the database in bytes
+//  @return error possible error, operation successfully returned nil
+//
+//返回数据库的估计大小, 以字节为单位. 如果服务器开启了压缩, 返回压缩后的大小.
 func (c *Client) DbSize() (re int, err error) {
 	resp, err := c.Do("dbsize")
 	if err != nil {
@@ -96,12 +102,21 @@ func (c *Client) DbSize() (re int, err error) {
 	return -1, makeError(resp)
 }
 
-//返回服务器的信息.
+//Info returns information about the server.
 //
-//  返回 re，返回数据库的估计大小, 以字节为单位. 如果服务器开启了压缩, 返回压缩后的大小.
-//  返回 err，执行的错误
-func (c *Client) Info() (re []string, err error) {
-	resp, err := c.Do("info")
+//  @param opts optional parameters: cmd, leveldb. Default is leveldb
+//  @return []string，Returns an associative array of server information
+//  @return error possible error, operation successfully returned nil
+//
+// 返回服务器信息的关联数组.opts 可选参数, 可以是 cmd, leveldb
+func (c *Client) Info(opts ...string) (resp []string, err error) {
+	var opt string
+	if len(opts) == 0 {
+		opt = "leveldb"
+	} else {
+		opt = opts[0]
+	}
+	resp, err = c.Do("info", opt)
 	if err != nil {
 		return nil, err
 	}
@@ -111,7 +126,7 @@ func (c *Client) Info() (re []string, err error) {
 	return nil, makeError(resp)
 }
 
-//生成通过的错误信息，已经确定是有错误
+//生成错误信息，已经确定是有错误
 func makeError(resp []string, errKey ...interface{}) error {
 	if len(resp) < 1 {
 		return errors.New("ssdb respone error")

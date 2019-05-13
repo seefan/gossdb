@@ -11,7 +11,6 @@ import (
 	"io"
 	"net"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/seefan/goerr"
@@ -216,18 +215,6 @@ func (s *SSDBClient) send(args []interface{}) error {
 		switch arg := arg.(type) {
 		case string:
 			s.write([]byte(arg))
-		case []string:
-			key := args[0].(string)
-			if strings.HasPrefix(key, "multi") {
-				for _, a := range arg {
-					s.write([]byte(a))
-				}
-			} else if s.encoding && s.EncodingFunc != nil {
-				s.write(s.EncodingFunc(arg))
-			} else {
-				s.packetBuf.Reset()
-				return errors.New("bad arguments type")
-			}
 		case []byte:
 			s.write(arg)
 		case int:

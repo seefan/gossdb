@@ -6,6 +6,7 @@ import (
 	"github.com/seefan/gossdb/consts"
 )
 
+//Pool pool block
 // 连接池结构
 type Pool struct {
 	index byte //pos
@@ -21,6 +22,7 @@ type Pool struct {
 	New func() (*Client, error)
 }
 
+//新建一个池
 func newPool(size int) *Pool {
 	return &Pool{
 		pooled:    make([]*Client, size),
@@ -30,9 +32,11 @@ func newPool(size int) *Pool {
 	}
 }
 
-//启动连接池
+//Start start the pool
 //
-//  返回 err，可能的错误，操作成功返回 nil
+//  @return error possible error, operation successfully returned nil
+//
+//启动连接
 func (p *Pool) Start() error {
 	if p.status != consts.PoolStop {
 		return errors.New("pool already start")
@@ -50,6 +54,8 @@ func (p *Pool) Start() error {
 	return nil
 }
 
+//Close close pool
+//
 //关闭连接池
 func (p *Pool) Close() {
 	p.status = consts.PoolStop
@@ -60,10 +66,12 @@ func (p *Pool) Close() {
 	}
 }
 
-//在连接池取一个新连接
+//Get get a pooled connection
 //
-//  返回 client，一个新的连接
-//  返回 err，可能的错误，操作成功返回 nil
+//  @return *Client，client
+//  @return error possible error, operation successfully returned nil
+//
+//获取一个缓存的连接
 func (p *Pool) Get() (client *Client) {
 	if p.status == consts.PoolNotStart {
 		return nil
@@ -76,9 +84,11 @@ func (p *Pool) Get() (client *Client) {
 	return p.pooled[pos]
 }
 
-//归还连接到连接池
+//Set return the connection to the connection pool
 //
-//  element 连接
+//  @param client thd connection
+//
+//返还一个连接到连接池
 func (p *Pool) Set(client *Client) {
 	if client == nil {
 		return
