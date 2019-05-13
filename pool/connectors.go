@@ -14,6 +14,8 @@ import (
 	"github.com/seefan/gossdb/ssdbclient"
 )
 
+//Connectors
+//
 //连接池
 type Connectors struct {
 	cfg *conf.Config
@@ -41,13 +43,16 @@ type Connectors struct {
 	maxWaitSize int32
 	//active
 	activeCount int32
-	//encoding func
+	//This function is called when automatic serialization is performed, and it can be modified to use a custom serialization method
+	//进行自动序列化时将调用这个函数，修改它可以使用自定义的序列化方式
 	EncodingFunc func(v interface{}) []byte
 }
 
-//用配置文件进行初始化
+//NewConnectors initialize the connection pool using the configuration
 //
-//  cfg 配置文件
+//  @param cfg config
+//
+//使用配置初始化连接池
 func NewConnectors(cfg *conf.Config) *Connectors {
 	this := new(Connectors)
 	this.cfg = cfg.Default()
@@ -73,10 +78,11 @@ func NewConnectors(cfg *conf.Config) *Connectors {
 		}
 		return nil
 	}
-	go this.watchHealth()
 	this.status = consts.PoolStop
 	return this
 }
+
+//后台的观察函数，处理连接池大小的扩展和收缩，连接池状态的检查等
 func (c *Connectors) watchHealth() {
 	for v := range c.watchTicker.C {
 		size := int(c.size)
@@ -139,6 +145,8 @@ func (c *Connectors) appendPool() (err error) {
 	}
 	return nil
 }
+
+//获取一个连接池，关键点是设置关闭函数，用于处理自动回收
 func (c *Connectors) getPool() *Pool {
 	p := newPool(c.cfg.PoolSize)
 	p.New = func() (*Client, error) {
@@ -162,9 +170,11 @@ func (c *Connectors) getPool() *Pool {
 	return p
 }
 
-//启动连接池
+//Start start connectors
 //
-//  返回 err，可能的错误，操作成功返回 nil
+//  @return error，possible error, operation successfully returned nil
+//
+//启动连接池
 func (c *Connectors) Start() (err error) {
 	c.size = 0
 	c.pos = 0
@@ -172,10 +182,11 @@ func (c *Connectors) Start() (err error) {
 	for i := 0; i < c.minSize && err == nil; i++ {
 		err = c.appendPool()
 	}
+	go c.watchHealth()
 	return
 }
 
-//关闭Client
+//回收Client
 func (c *Connectors) closeClient(client *Client) {
 	client.used = false
 	atomic.AddInt32(&c.activeCount, -1)
@@ -199,6 +210,11 @@ func (c *Connectors) closeClient(client *Client) {
 	}
 }
 
+//GetClient gets an error-free connection and, if there is an error, returns when the connected function is called
+//
+// @return *Client
+//
+//获取一个无错误的连接，如果有错误，将在调用连接的函数时返回
 func (c *Connectors) GetClient() *Client {
 	if cc, err := c.NewClient(); err == nil {
 		return cc
@@ -207,10 +223,12 @@ func (c *Connectors) GetClient() *Client {
 	}
 }
 
-//在连接池取一个新连接
+//NewClient take a new connection in the connection pool and return an error if there is an error
 //
-//  返回 client，一个新的连接
-//  返回 err，可能的错误，操作成功返回 nil
+//  @return client new client
+//  @return error possible error, operation successfully returned nil
+//
+//在连接池取一个新连接，如果出错将返回一个错误
 func (c *Connectors) NewClient() (cli *Client, err error) {
 	if c.status != consts.PoolStart {
 		return nil, errors.New("connectors not start")
@@ -266,7 +284,8 @@ func (c *Connectors) NewClient() (cli *Client, err error) {
 	return
 }
 
-//***关闭连接池, 只修改连接池状态，让连接自行关闭，以免连接运行过程中被关闭
+//Close close connectors
+//
 //关闭连接池
 func (c *Connectors) Close() {
 	c.status = consts.PoolStop
@@ -279,6 +298,11 @@ func (c *Connectors) Close() {
 	c.pool = c.pool[:0]
 }
 
+//Info returns connection pool status information
+//
+//  @return string
+//
+//返回连接池状态信息
 func (c *Connectors) Info() string {
 	return fmt.Sprintf("available is %d,wait is %d,connection count is %d,status is %d", c.activeCount, c.waitCount, int(c.size)*c.cfg.PoolSize, c.status)
 }

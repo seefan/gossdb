@@ -51,8 +51,10 @@
 * RetryEnabled bool
 * //创建连接的超时时间，单位为秒。默认值: 5
 * ConnectTimeout int
-* //auto close
+* //是否自动回收连接，如果开启后，获取的连接在使用后立即会被回收，所以不要重复使用。
 * AutoClose bool	
+* //是否开启自动序列化
+* Encoding bool
 
 更多说明请见[这里](https://gowalker.org/github.com/seefan/gossdb)
 

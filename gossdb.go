@@ -8,9 +8,6 @@ import (
 )
 
 var (
-	//if encoding is enabled, complex structures such as structs are json encoded when enabled to support more types
-	//是否启动编码，启用后会对struct 等复杂结构 进行 json 编码，以支持更多类型
-	Encoding = false
 	//global instance
 	//连接池实例
 	pooled *pool.Connectors
