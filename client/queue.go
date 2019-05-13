@@ -51,7 +51,7 @@ func (c *Client) QClear(name string) (err error) {
 //  返回 size，添加元素之后, 队列的长度
 //  返回 err，执行的错误，操作成功返回 nil
 func (c *Client) QPushFront(name string, value ...interface{}) (size int64, err error) {
-	return c.qpush(name, false, value...)
+	return c.qPush(name, false, value...)
 }
 
 //往队列的首部添加一个或者多个元素
