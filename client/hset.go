@@ -10,7 +10,7 @@ import (
 //  key hashmap 的 key
 //  value key 的值
 //  返回 err，执行的错误
-func (c *Client) Hset(setName, key string, value interface{}) (err error) {
+func (c *Client) HSet(setName, key string, value interface{}) (err error) {
 	resp, err := c.Do("hset", setName, key, value)
 	if err != nil {
 		return goerr.Errorf(err, "Hset %s/%s error,cause is ", setName, key)
@@ -28,7 +28,7 @@ func (c *Client) Hset(setName, key string, value interface{}) (err error) {
 //  key hashmap 的 key
 //  返回 value key 的值
 //  返回 err，执行的错误
-func (c *Client) Hget(setName, key string) (value Value, err error) {
+func (c *Client) HGet(setName, key string) (value Value, err error) {
 	resp, err := c.Do("hget", setName, key)
 	if err != nil {
 		return "", goerr.Errorf(err, "Hget %s/%s error,cause is ", setName, key)
@@ -44,7 +44,7 @@ func (c *Client) Hget(setName, key string) (value Value, err error) {
 //  setName hashmap 的名字
 //  key hashmap 的 key
 //  返回 err，执行的错误
-func (c *Client) Hdel(setName, key string) (err error) {
+func (c *Client) HDel(setName, key string) (err error) {
 	resp, err := c.Do("hdel", setName, key)
 	if err != nil {
 		return goerr.Errorf(err, "Hdel %s/%s error,cause is ", setName, key)
@@ -61,7 +61,7 @@ func (c *Client) Hdel(setName, key string) (err error) {
 //  key hashmap 的 key
 //  返回 re，如果当前 key 不存在返回 false
 //  返回 err，执行的错误，操作成功返回 nil
-func (c *Client) Hexists(setName, key string) (re bool, err error) {
+func (c *Client) HExists(setName, key string) (re bool, err error) {
 	resp, err := c.Do("hexists", setName, key)
 	if err != nil {
 		return false, goerr.Errorf(err, "Hexists %s/%s error", setName, key)

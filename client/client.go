@@ -129,7 +129,7 @@ func (c *Client) Info(opts ...string) (resp []string, err error) {
 //生成错误信息，已经确定是有错误
 func makeError(resp []string, errKey ...interface{}) error {
 	if len(resp) < 1 {
-		return errors.New("ssdb respone error")
+		return errors.New("ssdb response error")
 	}
 	//正常返回的不存在不报错，如果要捕捉这个问题请使用exists
 	if resp[0] == notFound {

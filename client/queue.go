@@ -5,10 +5,10 @@ import (
 )
 
 var (
-	qtrim_cmd  = []string{"qtrim_front", "qtrim_back"}
-	qpush_cmd  = []string{"qpush_front", "qpush_back"}
-	qpop_cmd   = []string{"qpop_front", "qpop_back"}
-	qslice_cmd = []string{"qslice", "qrange"}
+	qTrimCmd  = []string{"qtrim_front", "qtrim_back"}
+	qPushCmd  = []string{"qpush_front", "qpush_back"}
+	qPopCmd   = []string{"qpop_front", "qpop_back"}
+	qSliceCmd = []string{"qslice", "qrange"}
 )
 
 //返回队列的长度.
@@ -69,13 +69,13 @@ func (c *Client) qPush(name string, reverse bool, value ...interface{}) (size in
 	if reverse {
 		index = 1
 	}
-	args := []interface{}{qpush_cmd[index], name}
+	args := []interface{}{qPushCmd[index], name}
 
 	args = append(args, value...)
 
 	resp, err := c.Do(args...)
 	if err != nil {
-		return -1, goerr.Errorf(err, "%s %s error", qpush_cmd[index], name)
+		return -1, goerr.Errorf(err, "%s %s error", qPushCmd[index], name)
 	}
 	if len(resp) == 2 && resp[0] == oK {
 		return Value(resp[1]).Int64(), nil
@@ -131,9 +131,9 @@ func (c *Client) QPop(name string, reverse ...bool) (v Value, err error) {
 	if len(reverse) > 0 && !reverse[0] {
 		index = 1
 	}
-	resp, err := c.Do(qpop_cmd[index], name)
+	resp, err := c.Do(qPopCmd[index], name)
 	if err != nil {
-		return "", goerr.Errorf(err, "%s %s error", qpop_cmd[index], name)
+		return "", goerr.Errorf(err, "%s %s error", qPopCmd[index], name)
 	}
 	if len(resp) == 2 && resp[0] == oK {
 		return Value(resp[1]), nil
@@ -171,9 +171,9 @@ func (c *Client) QPopArray(name string, size int64, reverse ...bool) (v []Value,
 	if len(reverse) > 0 && !reverse[0] {
 		index = 0
 	}
-	resp, err := c.Do(qpop_cmd[index], name, size)
+	resp, err := c.Do(qPopCmd[index], name, size)
 	if err != nil {
-		return nil, goerr.Errorf(err, "%s %s error", qpop_cmd[index], name)
+		return nil, goerr.Errorf(err, "%s %s error", qPopCmd[index], name)
 	}
 
 	respsize := len(resp)
@@ -230,9 +230,9 @@ func (c *Client) slice(name string, args ...int) (v []Value, err error) {
 	if len(args) > 2 {
 		index = args[2]
 	}
-	resp, err := c.Do(qslice_cmd[index], name, begin, end)
+	resp, err := c.Do(qSliceCmd[index], name, begin, end)
 	if err != nil {
-		return nil, goerr.Errorf(err, "%s %s error", qslice_cmd[index], name)
+		return nil, goerr.Errorf(err, "%s %s error", qSliceCmd[index], name)
 	}
 	size := len(resp)
 	if size >= 1 && resp[0] == oK {
@@ -256,9 +256,9 @@ func (c *Client) QTrim(name string, size int, reverse ...bool) (delSize int64, e
 	if len(reverse) > 0 && reverse[0] {
 		index = 1
 	}
-	resp, err := c.Do(qtrim_cmd[index], name, size)
+	resp, err := c.Do(qTrimCmd[index], name, size)
 	if err != nil {
-		return -1, goerr.Errorf(err, "%s %s error", qtrim_cmd[index], name)
+		return -1, goerr.Errorf(err, "%s %s error", qTrimCmd[index], name)
 	}
 	if len(resp) == 2 && resp[0] == oK {
 		return Value(resp[1]).Int64(), nil
@@ -420,11 +420,11 @@ func (c *Client) qPushArray(name string, reverse bool, value []interface{}) (siz
 	if reverse {
 		index = 1
 	}
-	args := []interface{}{qpush_cmd[index], name}
+	args := []interface{}{qPushCmd[index], name}
 	args = append(args, value...)
 	resp, err := c.Do(args...)
 	if err != nil {
-		return -1, goerr.Errorf(err, "%s %s error", qpush_cmd[index], name)
+		return -1, goerr.Errorf(err, "%s %s error", qPushCmd[index], name)
 	}
 	if len(resp) == 2 && resp[0] == oK {
 		return Value(resp[1]).Int64(), nil
