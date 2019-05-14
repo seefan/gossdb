@@ -181,33 +181,36 @@ func BenchmarkConnectors_NewClient5000(b *testing.B) {
 	pool.Close()
 }
 
-func TestCheck(t *testing.T) {
-	pool := NewConnectors(&conf.Config{
-		Host:         "127.0.0.1",
-		Port:         8888,
-		MaxWaitSize:  10000,
-		PoolSize:     10,
-		MinPoolSize:  10,
-		MaxPoolSize:  10,
-		HealthSecond: 2,
-	})
-	err := pool.Start()
-	if err != nil {
-		panic(err)
-	}
-	defer pool.Close()
-	for {
-		c, err := pool.NewClient()
-		if err == nil {
-			v, err := c.Get("a")
-			log.Println(v, err)
-			c.Close()
-		} else {
-			t.Error(err)
-		}
-	}
-
-}
+//func TestCheck(t *testing.T) {
+//	pool := NewConnectors(&conf.Config{
+//		Host:         "127.0.0.1",
+//		Port:         8888,
+//		MaxWaitSize:  10000,
+//		PoolSize:     10,
+//		MinPoolSize:  10,
+//		MaxPoolSize:  10,
+//		HealthSecond: 2,
+//	})
+//	err := pool.Start()
+//	if err != nil {
+//		panic(err)
+//	}
+//	defer pool.Close()
+//	for {
+//		c, err := pool.NewClient()
+//		if err == nil {
+//			if v, err := c.Get("a"); err == nil {
+//				t.Log(v.String())
+//			} else {
+//				t.Error(err)
+//			}
+//			c.Close()
+//		} else {
+//			t.Error(err)
+//		}
+//	}
+//
+//}
 func TestAutoClose1(t *testing.T) {
 	pool := NewConnectors(&conf.Config{
 		Host:         "127.0.0.1",
