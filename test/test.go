@@ -10,7 +10,6 @@ import (
 	"net/http"
 	_ "net/http/pprof"
 	"os"
-	"time"
 
 	"github.com/seefan/gossdb"
 	"github.com/seefan/gossdb/conf"
@@ -22,8 +21,8 @@ func main() {
 		Port:        8888,
 		MaxWaitSize: 10000,
 		PoolSize:    10,
-		MinPoolSize: 10,
-		MaxPoolSize: 50,
+		MinPoolSize: 100,
+		MaxPoolSize: 100,
 		AutoClose:   true,
 	})
 	if err != nil {
@@ -56,7 +55,7 @@ func main() {
 					}
 				}
 				//println(failed, p.Info())
-				time.Sleep(time.Second)
+				//time.Sleep(time.Second)
 
 			}
 		}()

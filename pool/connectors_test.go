@@ -1,10 +1,8 @@
 package pool
 
 import (
-	"log"
 	"sync"
 	"testing"
-	"time"
 
 	"github.com/seefan/gossdb/conf"
 )
@@ -15,7 +13,8 @@ func BenchmarkConnectors_NewClient(b *testing.B) {
 		Port:        8888,
 		MaxWaitSize: 10000,
 		PoolSize:    10,
-		MaxPoolSize: 200,
+		MaxPoolSize: 100,
+		MinPoolSize: 100,
 	})
 	err := pool.Start()
 	if err != nil {
@@ -36,6 +35,7 @@ func BenchmarkConnectors_NewClient(b *testing.B) {
 
 	pool.Close()
 }
+
 func Test1(t *testing.T) {
 	pool := NewConnectors(&conf.Config{
 		Host:         "127.0.0.1",
@@ -76,10 +76,10 @@ func Test1000(t *testing.T) {
 		panic(err)
 	}
 	var wait sync.WaitGroup
-	for i := 0; i < 1000; i++ {
+	for i := 0; i < 100; i++ {
 		wait.Add(1)
 		go func() {
-			for j := 0; j < 1000; j++ {
+			for j := 0; j < 100; j++ {
 				c, err := pool.NewClient()
 				if err == nil {
 					_, _ = c.Get("a")
@@ -92,7 +92,7 @@ func Test1000(t *testing.T) {
 		}()
 	}
 	wait.Wait()
-	time.Sleep(time.Second * 20)
+	//time.Sleep(time.Second * 20)
 	pool.Close()
 }
 
@@ -102,6 +102,7 @@ func BenchmarkConnectors_NewClient100(b *testing.B) {
 		Port:        8888,
 		MaxWaitSize: 10000,
 		PoolSize:    20,
+		MinPoolSize: 100,
 		MaxPoolSize: 100,
 	})
 	err := pool.Start()
@@ -129,6 +130,7 @@ func BenchmarkConnectors_NewClient1000(b *testing.B) {
 		Port:        8888,
 		MaxWaitSize: 10000,
 		PoolSize:    20,
+		MinPoolSize: 500,
 		MaxPoolSize: 500,
 	})
 	err := pool.Start()
@@ -154,9 +156,10 @@ func BenchmarkConnectors_NewClient5000(b *testing.B) {
 	pool := NewConnectors(&conf.Config{
 		Host:        "127.0.0.1",
 		Port:        8888,
-		MaxWaitSize: 10000,
-		PoolSize:    20,
-		MaxPoolSize: 1000,
+		MaxWaitSize: 1000000,
+		PoolSize:    10,
+		MaxPoolSize: 100,
+		MinPoolSize: 100,
 	})
 	err := pool.Start()
 	if err != nil {
@@ -177,6 +180,7 @@ func BenchmarkConnectors_NewClient5000(b *testing.B) {
 
 	pool.Close()
 }
+
 func TestCheck(t *testing.T) {
 	pool := NewConnectors(&conf.Config{
 		Host:         "127.0.0.1",

@@ -11,7 +11,7 @@ type Queue struct {
 	value  []int
 	size   int
 	//lock
-	lock sync.Mutex
+	lock sync.RWMutex
 }
 
 //建立一个队列
@@ -31,8 +31,8 @@ func newQueue(size int) *Queue {
 //
 //  @return bool
 func (q *Queue) Empty() bool {
-	q.lock.Lock()
-	defer q.lock.Unlock()
+	q.lock.RLock()
+	defer q.lock.RUnlock()
 	return q.pos < 0
 }
 
@@ -47,7 +47,6 @@ func (q *Queue) Pop() (re int) {
 	if q.pos < 0 {
 		return -1
 	}
-
 	re = q.value[q.pos]
 	q.value[q.pos] = -1
 	q.pos--

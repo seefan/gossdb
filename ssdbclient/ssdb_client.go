@@ -6,7 +6,6 @@ package ssdbclient
 import (
 	"bytes"
 	"errors"
-	//"encoding/json"
 	"fmt"
 	"io"
 	"net"
@@ -15,7 +14,6 @@ import (
 
 	"github.com/seefan/goerr"
 	"github.com/seefan/gossdb/conf"
-	//"github.com/seefan/gossdb"
 )
 
 const (
@@ -320,14 +318,17 @@ func (s *SSDBClient) send(args []interface{}) (err error) {
 func (s *SSDBClient) recv() (resp []string, err error) {
 	var bufSize int
 	s.packetBuf.Reset()
+
+	//数据包分解，发现长度，找到结尾，循环发现，发现空行，结束
+	end := false
 	//设置读取数据超时，
 	if err = s.sock.SetReadDeadline(time.Now().Add(time.Second * time.Duration(s.readTimeout))); err != nil {
 		return nil, err
 	}
-	//数据包分解，发现长度，找到结尾，循环发现，发现空行，结束
-	end := false
 	for !end {
+
 		bufSize, err = s.sock.Read(s.readBuf)
+
 		if err != nil {
 			return nil, goerr.Errorf(err, "client socket read error")
 		}
