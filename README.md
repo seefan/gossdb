@@ -1,5 +1,6 @@
 # gossdb
 
+[English Readme](https://gowalker.org/github.com/seefan/gossdb)
 ### 功能列表
 
 * 参考官方驱动开发，增加连接池支持，改进协议实现方式，提高了数据吞吐量
