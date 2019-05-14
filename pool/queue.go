@@ -27,13 +27,13 @@ func newQueue(size int) *Queue {
 	}
 }
 
-//Exists check available index
+//Empty check available index
 //
 //  @return bool
-func (q *Queue) Exists() bool {
+func (q *Queue) Empty() bool {
 	q.lock.Lock()
 	defer q.lock.Unlock()
-	return q.pos >= 0
+	return q.pos < 0
 }
 
 //Pop get a index

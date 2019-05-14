@@ -94,35 +94,40 @@ func (c *Connectors) watchHealth() {
 			if activeCount < (size-1)*c.cfg.PoolSize && size-1 >= c.minSize {
 				c.size--
 			}
-			for i := size; i < c.maxSize; i++ {
-				if c.pool[i] != nil {
-					if c.pool[i].available.pos == c.pool[i].available.size && c.pool[i].status != consts.PoolStop {
-						c.pool[i].status = consts.PoolStop
-					}
-					if c.pool[i].status == consts.PoolStop {
-						c.pool[i].Close()
-					}
-				}
-			}
-
-			for i := 0; i < size; i++ {
-				if c.pool[i].status == consts.PoolCheck {
-					count := 0
-					for _, c := range c.pool[i].pooled {
-						if c.IsOpen() {
-							count++
-						}
-					}
-					if count == c.pool[i].size {
-						c.pool[i].status = consts.PoolStart
-					}
-				}
-			}
+			c.watchPool(size)
+			c.watchConnection(size)
 		}
 		waitCount := atomic.LoadInt32(&c.waitCount)
 		if waitCount > 0 && size < c.maxSize {
 			if err := c.appendPool(); err != nil {
 				time.Sleep(time.Millisecond * 10)
+			}
+		}
+	}
+}
+func (c *Connectors) watchConnection(size int) {
+	for i := 0; i < size; i++ {
+		if c.pool[i].status == consts.PoolCheck {
+			count := 0
+			for _, c := range c.pool[i].pooled {
+				if c.IsOpen() {
+					count++
+				}
+			}
+			if count == c.pool[i].size {
+				c.pool[i].status = consts.PoolStart
+			}
+		}
+	}
+}
+func (c *Connectors) watchPool(size int) {
+	for i := size; i < c.maxSize; i++ {
+		if c.pool[i] != nil {
+			if c.pool[i].available.pos == c.pool[i].available.size && c.pool[i].status != consts.PoolStop {
+				c.pool[i].status = consts.PoolStop
+			}
+			if c.pool[i].status == consts.PoolStop {
+				c.pool[i].Close()
 			}
 		}
 	}
@@ -224,17 +229,7 @@ func (c *Connectors) GetClient() *Client {
 	}
 	return &Client{Client: client.Client{Error: err}}
 }
-
-//NewClient take a new connection in the connection pool and return an error if there is an error
-//
-//  @return client new client
-//  @return error possible error, operation successfully returned nil
-//
-//在连接池取一个新连接，如果出错将返回一个错误
-func (c *Connectors) NewClient() (cli *Client, err error) {
-	if c.status != consts.PoolStart {
-		return nil, errors.New("connectors not start")
-	}
+func (c *Connectors) createClient() (cli *Client, err error) {
 	//首先按位置，直接取连接，给2次机会
 	for i := 0; i < 2; i++ {
 		pos := c.pos
@@ -261,6 +256,23 @@ func (c *Connectors) NewClient() (cli *Client, err error) {
 			}
 		}
 		c.pos++
+	}
+	return
+}
+
+//NewClient take a new connection in the connection pool and return an error if there is an error
+//
+//  @return client new client
+//  @return error possible error, operation successfully returned nil
+//
+//在连接池取一个新连接，如果出错将返回一个错误
+func (c *Connectors) NewClient() (cli *Client, err error) {
+	if c.status != consts.PoolStart {
+		return nil, errors.New("connectors not start")
+	}
+	cli, err = c.createClient()
+	if cli != nil || err != nil {
+		return
 	}
 	//enter slow pool
 	waitCount := atomic.LoadInt32(&c.waitCount)

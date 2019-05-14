@@ -77,6 +77,9 @@ func (p *Pool) Get() (client *Client) {
 		return nil
 	}
 	//检查是否有缓存的连接
+	//if p.available.Empty() {
+	//	return nil
+	//}
 	pos := p.available.Pop()
 	if pos == -1 {
 		return nil

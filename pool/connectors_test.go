@@ -215,6 +215,11 @@ func TestAutoClose1(t *testing.T) {
 		HealthSecond: 2,
 		AutoClose:    true,
 	})
+	err := pool.Start()
+	if err != nil {
+		panic(err)
+	}
+	defer pool.Close()
 	//
 	v, err := pool.GetClient().Get("a")
 	t.Log(v, err)

@@ -12,6 +12,7 @@
 //
 //  Major improvements in 2.0
 //
+//     modify the names of all functions to make them conform to the golang coding program and pass the golint verification
 //     improve protocol implementation to improve parsing efficiency
 //     improve connection pool mode to improve access efficiency of connection pool. Instead of a single connection pool, the connection pool is a block pool,
 //     each block is a separate connection pool, and multiple connection pools collaborate to reduce lock contention time

@@ -7,6 +7,8 @@
 package main
 
 import (
+	"net/http"
+	_ "net/http/pprof"
 	"os"
 	"time"
 
@@ -27,28 +29,34 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	go func() {
+		err := http.ListenAndServe(":9999", nil)
+		if err != nil {
+			panic(err)
+		}
+	}()
 	for i := 0; i < 100; i++ {
 		go func() {
 			for {
-				failed := 0
+				//failed := 0
 				for j := 0; j < 1000; j++ {
-					if _, err := p.GetClient().Get("a"); err != nil {
-						//println(goerr.Error(err).Trace())
-						failed++
-						println(failed, j)
-					}
-					//c, err := p.NewClient()
-					//if err != nil {
-					//	println(err.Error(), p.Info())
-					//} else {
-					//	if _, err := c.Get("a"); err != nil {
-					//		println(goerr.Error(err).Trace())
-					//	}
-					//	c.Close()
+					//if _, err := p.GetClient().Get("a"); err != nil {
+					//	//println(goerr.Error(err).Trace())
+					//	failed++
+					//	println(failed, j)
 					//}
+					c, err := p.NewClient()
+					if err != nil {
+						println(err.Error(), p.Info())
+					} else {
+						//if _, err := c.Get("a"); err != nil {
+						//	println(goerr.Error(err).Trace())
+						//}
+						c.Close()
+					}
 				}
-				println(failed, p.Info())
-				time.Sleep(time.Minute)
+				//println(failed, p.Info())
+				time.Sleep(time.Second)
 
 			}
 		}()
