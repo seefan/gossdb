@@ -1,130 +1,107 @@
 # gossdb
 
-### 性能测试
-
-    测试环境
-    MacBook Pro (13-inch, Mid 2012) 
-    cpu 2.5 GHz Intel Core i5
-    内存 8 GB 1600 MHz DDR3
-    goos: darwin
-    goarch: amd64
-    pkg: github.com/seefan/gossdb/example
-    5000000	       318 ns/op
-    5000000	       307 ns/op
-    5000000	       309 ns/op
-    5000000	       316 ns/op
-    5000000	       321 ns/op
-    3000000	       409 ns/op
-    3000000	       417 ns/op
-    3000000	       431 ns/op
-    5000000	       394 ns/op
-    3000000	       402 ns/op
-    PASS
-
 ### 功能列表
 
-* 修改自官方的驱动。
-* 支持连接池。新版本使用了新的连接池，性能比原连接池大约提升10%，使用的渐近回收的方式，防止在并发不稳定的情况下，回收和新建连接过快。
-* 已支持 set 相关方法
-* 已支持 zset 相关方法
-* 已支持 hset 相关方法
-* 已支持 queue 相关方法
-* 已支持返回值类型转换，可以方便的把从ssdb中取到的内容转化为指定类型。
+* 参考官方驱动开发，增加连接池支持，改进协议实现方式，提高了数据吞吐量
+* 支持 set 相关函数
+* 支持 zset 相关函数
+* 支持 hset 相关函数
+* 支持 queue 相关函数
+* 支持 multi 相关函数
+* 支持返回值类型转换，可以方便的把从ssdb中取到的内容转化为指定类型
+* 支持对象json的序列化，只需要开启gossdb.Encoding选项
+* 支持连接自动回收，支持无错误获取连接，代码调用更简便
 
-### 连接池参数
+### 2.0主要改进
+* 修改所有函数名字，使其符合golang编码规划，通过 golint 验证
+* 改进协议实现方式，提高解析效率
+* 改进连接池方式，提高连接池的存取效率。连接池由原来的单一连接池，改为块状池，每个块都是一个独立的连接池，多个连接池协作，减少锁的竞争时间
+* 支持连接自动回收，支持无错误获取连接，代码调用更简便。原来使用连接必须判断连接是否获取成功，并手工关闭，现在可以省略掉这部分重复代码，使得您更专注于业务逻辑
 
-* MaxPoolSize int 最大连接池个数，默认为 20
-* MinPoolSize int 最小连接池数，默认为 5
-* GetClientTimeout int 获取连接超时时间，单位为秒，默认为 5
-* AcquireIncrement int  当连接池中的连接耗尽的时候一次同时获取的连接数。默认值: 5
-* MaxWaitSize int //最大等待数目，当连接池满后，新建连接将等待池中连接释放后才可以继续，本值限制最大等待的数量，超过本值后将抛出异常。默认值: 1000，建议在内存允许的情况下，设置为最大并发数量。
-* HealthSecond int 健康检查时间隔，单位为秒。默认值: 5。定期回收长期不用的连接。
+### 主要配置项
 
-### 示例配置
-
-    [ssdb]
-    #ssdb的主机IP
-    host=127.0.0.1
-    #ssdb的端口
-    port=8888
-    #连接池检查时间间隔
-    health_second=5
-    #连接密码，默认为空
-    password=
-    #最大等待数目，当连接池满后，新建连接将等待池中连接释放后才可以继续，本值限制最大等待的数量，超过本值后将抛出异常。默认值: 1000
-    max_wait_size=1000
-    #当连接池中的连接耗尽的时候一次同时获取的连接数。默认值: 5
-    acquire_increment=5
-    #最小连接池数。默认值: 5
-    min_pool_size=5
-    #最大连接池个数。默认值: 20
-    max_pool_size=20
-    #获取连接超时时间，单位为秒。默认值: 5
-    get_client_timeout=5
+* //ssdb的ip或主机名
+* Host string
+* //ssdb的端口
+* Port int
+* //获取连接超时时间，单位为秒。默认值: 5
+* GetClientTimeout int
+* //连接读写超时时间，单位为秒。默认值: 60
+* ReadWriteTimeout int
+* //连接写超时时间，单位为秒，如果不设置与ReadWriteTimeout会保持一致。默认值: 0
+* WriteTimeout int
+* //连接读超时时间，单位为秒，如果不设置与ReadWriteTimeout会保持一致。默认值: 0
+* ReadTimeout int
+* //最大连接个数。默认值: 100，PoolSize的整数倍，不足的话自动补足。
+* MaxPoolSize int
+* //最小连接个数。默认值: 20，PoolSize的整数倍，不足的话自动补足。
+* MinPoolSize int
+* //连接池块的连接数。默认值: 20，连接池扩展和收缩时，以此值步进，可根据机器性能调整。
+* PoolSize int
+* //最大等待数目，当连接池满后，新建连接将等待池中连接释放后才可以继续，本值限制最大等待的数量，超过本值后将抛出异常。默认值: 1000
+* MaxWaitSize int
+* //连接池内缓存的连接状态检查时间隔，单位为秒。默认值: 5
+* HealthSecond int
+* //连接的密钥
+* Password string
+* //连接写缓冲，默认为8k，单位为kb
+* WriteBufferSize int
+* //连接读缓冲，默认为8k，单位为kb
+* ReadBufferSize int
+* //是否启用重试，设置为true时，如果请求失败会再重试一次。默认值: false
+* RetryEnabled bool
+* //创建连接的超时时间，单位为秒。默认值: 5
+* ConnectTimeout int
+* //是否自动回收连接，如果开启后，获取的连接在使用后立即会被回收，所以不要重复使用。
+* AutoClose bool	
+* //是否开启自动序列化
+* Encoding bool
 
 更多说明请见[这里](https://gowalker.org/github.com/seefan/gossdb)
 
 所有的API基本上忠于ssdb的原始API用法，只针对go的特点增加部分方法。所以也可以参照官方文档使用。
 
-示例：
+示例1：使用自动关闭
 
+    //打开连接池，使用默认配置,Host=127.0.0.1,Port=8888,AutoClose=true
+	if err := gossdb.Start(); err != nil {
+		panic(err)
+	}
+	//别忘了结束时关闭连接池，当然如果你没有关闭，ssdb也会因错误中断连接的
+	defer gossdb.Shutdown()
+	//使用连接，因为AutoClose为true，所以我们没有手工关闭连接
+	//gossdb.Client()为无错误获取连接方式，所以可以在获取连接后直接调用其它操作函数，如果获取连接出错或是调用函数出错，都会返回err
+	if v, err := gossdb.Client().Get("a"); err == nil {
+		println(v.String())
+	} else {
+		println(err.Error())
+	}
 
-	pool, err := gossdb.NewPool(&conf.Config{
-		Host:             "127.0.0.1",
-		Port:             6380,
-		MinPoolSize:      5,
-		MaxPoolSize:      50,
-		AcquireIncrement: 5,
+调用起来是不是简单很多^_^
+
+示例2： 不使用自动关闭，适用于一个连接多个请求的方式
+
+    //使用配置文件，没有将AutoClose设置为true
+    err := gossdb.Start(&conf.Config{
+		Host: "127.0.0.1",
+		Port: 8888,
 	})
 	if err != nil {
-		log.Fatal(err)
-		return
+		panic(err)
 	}
-
-
-	c, err := pool.NewClient()
+	defer gossdb.Shutdown()
+	c, err := gossdb.Client()
 	if err != nil {
-		log.Println(err.Error())
-		return
+		panic(err)
 	}
 	defer c.Close()
-	c.Set("test","hello world.")
-	re, err := c.Get("test")
-	if err != nil {
-		log.Println(err)
+	if v, err := c.Get("a"); err == nil {
+		println(v.String())
 	} else {
-		log.Println(re, "is get")
+		println(err.Error())
 	}
-	//设置10 秒过期
-	c.Set("test1",1225,10)
-	//取出数据，并指定类型为 int
-	re, err = c.Get("test1")
-	if err != nil {
-		log.Println(err)
+    if v, err := c.Get("b"); err == nil {
+		println(v.String())
 	} else {
-		log.Println(re.Int(), "is get")
+		println(err.Error())
 	}
-
-### 更方便的方法
-使用ssdb目录下的工具类
-
-    if err := ssdb.Start(); err != nil {
-		println("无法连接到ssdb")
-		os.Exit(1)
-	}
-	defer ssdb.Close()
-	//获取client
-	client, err := ssdb.Client()
-	if err != nil {
-		println("无法获取连接")
-		os.Exit(1)
-	}
-	defer client.Close()
-	client.Set("a", 1)
-	client.Get("a")
-	//another simple run
-    ssdb.Simple(func(c *gossdb.Client) (err error) {
-    	err=c.Set("test", "hello world")
-    	err=c.Get("test")
-    	return
-    })
