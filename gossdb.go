@@ -76,9 +76,8 @@ func Shutdown() {
 func Client() *pool.Client {
 	if pooled != nil {
 		return pooled.GetClient()
-	} else {
-		return nil //故意返回nil，让程序崩溃
 	}
+	return nil //故意返回nil，让程序崩溃
 }
 
 //NewClient returns a cached connection and possible errors

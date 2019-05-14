@@ -1,8 +1,9 @@
+//Package pool available index queue
 package pool
 
 import "sync"
 
-//queue for available index
+//Queue queue for available index
 //可用连接的队列
 type Queue struct {
 	pos    int //available pos
@@ -26,7 +27,9 @@ func newQueue(size int) *Queue {
 	}
 }
 
-//check available index
+//Exists check available index
+//
+//  @return bool
 func (q *Queue) Exists() bool {
 	q.lock.Lock()
 	defer q.lock.Unlock()
@@ -61,7 +64,7 @@ func (q *Queue) Put(i int) int {
 	q.lock.Lock()
 	defer q.lock.Unlock()
 	pos := q.pos + 1
-	if q.putPos < int(pos) {
+	if q.putPos < pos {
 		q.value[pos] = q.value[q.putPos]
 		q.value[q.putPos] = i
 		q.putPos++

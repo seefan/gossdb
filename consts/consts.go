@@ -1,16 +1,17 @@
 package consts
 
 const (
+	//None none
 	None = iota
-	//poos is not start
+	//PoolNotStart poos is not start
 	PoolNotStart
-	//pool stop
+	//PoolStop pool stop
 	//连接池状态：关闭
 	PoolStop
-	//pool start
+	//PoolStart pool start
 	//连接池状态：运行
 	PoolStart
-	//to check
+	//PoolCheck to check
 	//连接池状态：检查
 	PoolCheck
 )

@@ -4,7 +4,7 @@ import (
 	"github.com/seefan/goerr"
 )
 
-//设置 zset 中指定 key 对应的权重值.
+//ZSet 设置 zset 中指定 key 对应的权重值.
 //
 //  setName zset名称
 //  key zset 中的 key.
@@ -22,7 +22,7 @@ func (c *Client) ZSet(setName, key string, score int64) (err error) {
 	return makeError(resp, setName, key)
 }
 
-//获取 zset 中指定 key 对应的权重值.
+//ZGet 获取 zset 中指定 key 对应的权重值.
 //
 //  setName zset名称
 //  key zset 中的 key.
@@ -39,7 +39,7 @@ func (c *Client) ZGet(setName, key string) (score int64, err error) {
 	return 0, makeError(resp, setName, key)
 }
 
-//删除 zset 中指定 key
+//ZDel 删除 zset 中指定 key
 //
 //  setName zset名称
 //  key zset 中的 key.
@@ -55,7 +55,7 @@ func (c *Client) ZDel(setName, key string) (err error) {
 	return makeError(resp, setName, key)
 }
 
-//判断指定的 key 是否存在于 zset 中.
+//ZExists 判断指定的 key 是否存在于 zset 中.
 //
 //  setName zset名称
 //  key zset 中的 key.
@@ -73,7 +73,7 @@ func (c *Client) ZExists(setName, key string) (re bool, err error) {
 	return false, makeError(resp, setName, key)
 }
 
-//返回处于区间 [start,end] key 数量.
+//ZCount 返回处于区间 [start,end] key 数量.
 //
 //  setName zset名称
 //  start key 的最小权重值(包含), 空字符串表示 -inf.
@@ -92,7 +92,7 @@ func (c *Client) ZCount(setName string, start, end interface{}) (count int64, er
 	return -1, makeError(resp, setName)
 }
 
-//删除 zset 中的所有 key.
+//ZClear 删除 zset 中的所有 key.
 //
 //  setName zset名称
 //  返回 err，可能的错误，操作成功返回 nil
@@ -108,7 +108,7 @@ func (c *Client) ZClear(setName string) (err error) {
 	return makeError(resp, setName)
 }
 
-//列出 zset 中处于区间 (key_start+score_start, score_end] 的 key-score 列表.
+//ZScan 列出 zset 中处于区间 (key_start+score_start, score_end] 的 key-score 列表.
 //
 //  如果 key_start 为空, 那么对应权重值大于或者等于 score_start 的 key 将被返回. 如果 key_start 不为空, 那么对应权重值大于 score_start 的 key, 或者大于 key_start 且对应权重值等于 score_start 的 key 将被返回.
 //  也就是说, 返回的 key 在 (key.score == score_start && key > key_start || key.score > score_start), 并且 key.score <= score_end 区间. 先判断 score_start, score_end, 然后判断 key_start.
@@ -141,7 +141,7 @@ func (c *Client) ZScan(setName string, keyStart string, scoreStart, scoreEnd int
 	return nil, nil, makeError(resp, setName, keyStart, scoreStart, scoreEnd, limit)
 }
 
-//列出 zset 中的 key-score 列表, 反向顺序
+//ZRScan 列出 zset 中的 key-score 列表, 反向顺序
 //
 //  setName zset名称
 //  keyStart score_start 对应的 key.
@@ -172,7 +172,7 @@ func (c *Client) ZRScan(setName string, keyStart string, scoreStart, scoreEnd in
 	return nil, nil, makeError(resp, setName, keyStart, scoreStart, scoreEnd, limit)
 }
 
-//批量设置 zset 中的 key-score.
+//MultiZSet 批量设置 zset 中的 key-score.
 //
 //  setName zset名称
 //  kvs 包含 key-score 的map
@@ -196,7 +196,7 @@ func (c *Client) MultiZSet(setName string, kvs map[string]int64) (err error) {
 	return makeError(resp, setName, kvs)
 }
 
-//批量获取 zset 中的 key-score.
+//MultiZGet 批量获取 zset 中的 key-score.
 //
 //  setName zset名称
 //  key 要获取key的列表，支持多个key
@@ -228,7 +228,7 @@ func (c *Client) MultiZGet(setName string, key ...string) (val map[string]int64,
 	return nil, makeError(resp, key)
 }
 
-//批量获取 zset 中的 key-score.
+//MultiZGetSlice 批量获取 zset 中的 key-score.
 //
 //  setName zset名称
 //  key 要获取key的列表，支持多个key
@@ -264,7 +264,7 @@ func (c *Client) MultiZGetSlice(setName string, key ...string) (keys []string, s
 	return nil, nil, makeError(resp, setName, key)
 }
 
-//批量获取 zset 中的 key-score.
+//MultiZGetArray 批量获取 zset 中的 key-score.
 //
 //  setName zset名称
 //  key 要获取key的slice
@@ -274,7 +274,7 @@ func (c *Client) MultiZGetArray(setName string, key []string) (val map[string]in
 	return c.MultiZGet(setName, key...)
 }
 
-//批量获取 zset 中的 key-score.
+//MultiZgetSliceArray 批量获取 zset 中的 key-score.
 //
 //  setName zset名称
 //  key 要获取key的slice
@@ -285,7 +285,7 @@ func (c *Client) MultiZgetSliceArray(setName string, key []string) (keys []strin
 	return c.MultiZGetSlice(setName, key...)
 }
 
-//批量删除 zset 中的 key-score.
+//MultiZDel 批量删除 zset 中的 key-score.
 //
 //  setName zset名称
 //  key 要删除key的列表，支持多个key
@@ -309,7 +309,7 @@ func (c *Client) MultiZDel(setName string, key ...string) (err error) {
 	return makeError(resp, setName, key)
 }
 
-//使 zset 中的 key 对应的值增加 num. 参数 num 可以为负数.
+//ZIncr 使 zset 中的 key 对应的值增加 num. 参数 num 可以为负数.
 //
 //  setName zset名称
 //  key 要增加权重的key
@@ -331,7 +331,7 @@ func (c *Client) ZIncr(setName string, key string, num int64) (int64, error) {
 	return 0, makeError(resp, setName, key)
 }
 
-//列出名字处于区间 (name_start, name_end] 的 zset.
+//ZList 列出名字处于区间 (name_start, name_end] 的 zset.
 //
 //  name_start - 返回的起始名字(不包含), 空字符串表示 -inf.
 //  name_end - 返回的结束名字(包含), 空字符串表示 +inf.
@@ -348,7 +348,7 @@ func (c *Client) ZList(nameStart, nameEnd string, limit int64) ([]string, error)
 		size := len(resp)
 		keyList := make([]string, 0, size-1)
 
-		for i := 1; i < size; i += 1 {
+		for i := 1; i < size; i++ {
 			keyList = append(keyList, resp[i])
 		}
 		return keyList, nil
@@ -356,7 +356,7 @@ func (c *Client) ZList(nameStart, nameEnd string, limit int64) ([]string, error)
 	return nil, makeError(resp, nameStart, nameEnd, limit)
 }
 
-//返回 zset 中的元素个数.
+//ZSize 返回 zset 中的元素个数.
 //
 //  name zset的名称.
 //  返回 val 返回包含名字元素的个数.
@@ -374,7 +374,7 @@ func (c *Client) ZSize(name string) (val int64, err error) {
 	return 0, makeError(resp, name)
 }
 
-//列出 zset 中的 key 列表. 参见 zscan().
+//ZKeys 列出 zset 中的 key 列表. 参见 zscan().
 //
 //  setName zset名称
 //  keyStart score_start 对应的 key.
@@ -402,7 +402,7 @@ func (c *Client) ZKeys(setName string, keyStart string, scoreStart, scoreEnd int
 	return nil, makeError(resp, setName, keyStart, scoreStart, scoreEnd, limit)
 }
 
-//返回 key 处于区间 [start,end] 的 score 的和.
+//ZSum 返回 key 处于区间 [start,end] 的 score 的和.
 //
 //  setName zset名称
 //  scoreStart  key 的最小权重值(可能不包含, 依赖 key_start), 空字符串表示 -inf.
@@ -422,7 +422,7 @@ func (c *Client) ZSum(setName string, scoreStart, scoreEnd interface{}) (val int
 	return 0, makeError(resp, setName, scoreStart, scoreEnd)
 }
 
-//返回 key 处于区间 [start,end] 的 score 的平均值.
+//ZAvg 返回 key 处于区间 [start,end] 的 score 的平均值.
 //
 //  setName zset名称
 //  scoreStart  key 的最小权重值(可能不包含, 依赖 key_start), 空字符串表示 -inf.
@@ -442,7 +442,7 @@ func (c *Client) ZAvg(setName string, scoreStart, scoreEnd interface{}) (val int
 	return 0, makeError(resp, setName, scoreStart, scoreEnd)
 }
 
-//返回指定 key 在 zset 中的排序位置(排名), 排名从 0 开始. 注意! 本方法可能会非常慢! 请在离线环境中使用.
+//ZRank 返回指定 key 在 zset 中的排序位置(排名), 排名从 0 开始. 注意! 本方法可能会非常慢! 请在离线环境中使用.
 //
 //  setName zset名称
 //  key 指定key名
@@ -461,7 +461,7 @@ func (c *Client) ZRank(setName, key string) (val int64, err error) {
 	return 0, makeError(resp, setName, key)
 }
 
-//返回指定 key 在 zset 中的倒序排名.注意! 本方法可能会非常慢! 请在离线环境中使用.
+//ZRRank 返回指定 key 在 zset 中的倒序排名.注意! 本方法可能会非常慢! 请在离线环境中使用.
 //
 //  setName zset名称
 //  key 指定key名
@@ -480,7 +480,7 @@ func (c *Client) ZRRank(setName, key string) (val int64, err error) {
 	return 0, makeError(resp, setName, key)
 }
 
-//根据下标索引区间 [offset, offset + limit) 获取 key-score 对, 下标从 0 开始.注意! 本方法在 offset 越来越大时, 会越慢!
+//ZRange 根据下标索引区间 [offset, offset + limit) 获取 key-score 对, 下标从 0 开始.注意! 本方法在 offset 越来越大时, 会越慢!
 //
 //  setName zset名称
 //  offset 从此下标处开始返回. 从 0 开始.
@@ -504,7 +504,7 @@ func (c *Client) ZRange(setName string, offset, limit int64) (val map[string]int
 	return nil, makeError(resp, setName, offset, limit)
 }
 
-//根据下标索引区间 [offset, offset + limit) 获取 获取 key和score 数组对, 下标从 0 开始.注意! 本方法在 offset 越来越大时, 会越慢!
+//ZRangeSlice 根据下标索引区间 [offset, offset + limit) 获取 获取 key和score 数组对, 下标从 0 开始.注意! 本方法在 offset 越来越大时, 会越慢!
 //
 //  setName zset名称
 //  offset 从此下标处开始返回. 从 0 开始.
@@ -530,7 +530,7 @@ func (c *Client) ZRangeSlice(setName string, offset, limit int64) (key []string,
 	return nil, nil, makeError(resp, setName, offset, limit)
 }
 
-//根据下标索引区间 [offset, offset + limit) 获取 key-score 对, 反向顺序获取.注意! 本方法在 offset 越来越大时, 会越慢!
+//ZRRange 根据下标索引区间 [offset, offset + limit) 获取 key-score 对, 反向顺序获取.注意! 本方法在 offset 越来越大时, 会越慢!
 //
 //  setName zset名称
 //  offset 从此下标处开始返回. 从 0 开始.
@@ -555,7 +555,7 @@ func (c *Client) ZRRange(setName string, offset, limit int64) (val map[string]in
 	return nil, makeError(resp, setName, offset, limit)
 }
 
-//根据下标索引区间 [offset, offset + limit) 获取 key和score 数组对, 反向顺序获取.注意! 本方法在 offset 越来越大时, 会越慢!
+//ZRRangeSlice 根据下标索引区间 [offset, offset + limit) 获取 key和score 数组对, 反向顺序获取.注意! 本方法在 offset 越来越大时, 会越慢!
 //
 //  setName zset名称
 //  offset 从此下标处开始返回. 从 0 开始.
@@ -582,7 +582,7 @@ func (c *Client) ZRRangeSlice(setName string, offset, limit int64) (key []string
 	return nil, nil, makeError(resp, setName, offset, limit)
 }
 
-//删除位置处于区间 [start,end] 的元素.
+//ZRemRangeByRank 删除位置处于区间 [start,end] 的元素.
 //
 //  setName zset名称
 //  start 区间开始，包含start值
@@ -600,7 +600,7 @@ func (c *Client) ZRemRangeByRank(setName string, start, end int64) (err error) {
 	return makeError(resp, setName, start, end)
 }
 
-//删除权重处于区间 [start,end] 的元素.
+//ZRemRangeByScore 删除权重处于区间 [start,end] 的元素.
 //
 //  setName zset名称
 //  start 区间开始，包含start值
@@ -618,7 +618,7 @@ func (c *Client) ZRemRangeByScore(setName string, start, end int64) (err error) 
 	return makeError(resp, setName, start, end)
 }
 
-//从 zset 首部删除并返回 `limit` 个元素.
+//ZPopFront 从 zset 首部删除并返回 `limit` 个元素.
 //
 //  setName zset名称
 //  limit 最多要删除并返回这么多个 key-score 对.
@@ -641,7 +641,7 @@ func (c *Client) ZPopFront(setName string, limit int64) (val map[string]int64, e
 	return nil, makeError(resp, setName, limit)
 }
 
-//从 zset 尾部删除并返回 `limit` 个元素.
+//ZPopBack 从 zset 尾部删除并返回 `limit` 个元素.
 //
 //  setName zset名称
 //  limit 最多要删除并返回这么多个 key-score 对.

@@ -4,7 +4,7 @@ import (
 	"github.com/seefan/goerr"
 )
 
-//设置 hashmap 中指定 key 对应的值内容.
+//HSet 设置 hashmap 中指定 key 对应的值内容.
 //
 //  setName hashmap 的名字
 //  key hashmap 的 key
@@ -22,7 +22,7 @@ func (c *Client) HSet(setName, key string, value interface{}) (err error) {
 	return makeError(resp, setName, key)
 }
 
-//获取 hashmap 中指定 key 的值内容.
+//HGet 获取 hashmap 中指定 key 的值内容.
 //
 //  setName hashmap 的名字
 //  key hashmap 的 key
@@ -39,7 +39,7 @@ func (c *Client) HGet(setName, key string) (value Value, err error) {
 	return "", makeError(resp, setName, key)
 }
 
-//删除 hashmap 中的指定 key，不能通过返回值来判断被删除的 key 是否存在.
+//HDel 删除 hashmap 中的指定 key，不能通过返回值来判断被删除的 key 是否存在.
 //
 //  setName hashmap 的名字
 //  key hashmap 的 key
@@ -55,7 +55,7 @@ func (c *Client) HDel(setName, key string) (err error) {
 	return makeError(resp, setName, key)
 }
 
-//判断指定的 key 是否存在于 hashmap 中.
+//HExists 判断指定的 key 是否存在于 hashmap 中.
 //
 //  setName hashmap 的名字
 //  key hashmap 的 key
@@ -73,7 +73,7 @@ func (c *Client) HExists(setName, key string) (re bool, err error) {
 	return false, makeError(resp, setName, key)
 }
 
-//删除 hashmap 中的所有 key
+//HClear 删除 hashmap 中的所有 key
 //
 //  setName hashmap 的名字
 //  返回 err，执行的错误，操作成功返回 nil
@@ -89,7 +89,7 @@ func (c *Client) HClear(setName string) (err error) {
 	return makeError(resp, setName)
 }
 
-//列出 hashmap 中处于区间 (key_start, key_end] 的 key-value 列表. ("", ""] 表示整个区间.
+//HScan 列出 hashmap 中处于区间 (key_start, key_end] 的 key-value 列表. ("", ""] 表示整个区间.
 //
 //  setName - hashmap 的名字.
 //  keyStart - 返回的起始 key(不包含), 空字符串表示 -inf.
@@ -99,7 +99,7 @@ func (c *Client) HClear(setName string) (err error) {
 //  返回 err，执行的错误，操作成功返回 nil
 func (c *Client) HScan(setName string, keyStart, keyEnd string, limit int64, reverse ...bool) (map[string]Value, error) {
 	cmd := "hscan"
-	if len(reverse) > 0 && reverse[0] == true {
+	if len(reverse) > 0 && reverse[0] {
 		cmd = "hrscan"
 	}
 
@@ -120,7 +120,7 @@ func (c *Client) HScan(setName string, keyStart, keyEnd string, limit int64, rev
 	return nil, makeError(resp, setName, keyStart, keyEnd, limit)
 }
 
-//列出 hashmap 中处于区间 (key_start, key_end] 的 key,value 列表. ("", ""] 表示整个区间.
+//HScanArray 列出 hashmap 中处于区间 (key_start, key_end] 的 key,value 列表. ("", ""] 表示整个区间.
 //
 //  setName - hashmap 的名字.
 //  keyStart - 返回的起始 key(不包含), 空字符串表示 -inf.
@@ -130,7 +130,7 @@ func (c *Client) HScan(setName string, keyStart, keyEnd string, limit int64, rev
 //  返回 err，执行的错误，操作成功返回 nil
 func (c *Client) HScanArray(setName string, keyStart, keyEnd string, limit int64, reverse ...bool) ([]string, []Value, error) {
 	cmd := "hscan"
-	if len(reverse) > 0 && reverse[0] == true {
+	if len(reverse) > 0 && reverse[0] {
 		cmd = "hrscan"
 	}
 	resp, err := c.Do(cmd, setName, keyStart, keyEnd, limit)
@@ -152,7 +152,7 @@ func (c *Client) HScanArray(setName string, keyStart, keyEnd string, limit int64
 	return nil, nil, makeError(resp, setName, keyStart, keyEnd, limit)
 }
 
-//列出 hashmap 中处于区间 (key_start, key_end] 的 key,value 列表. ("", ""] 表示整个区间.
+//HRScanArray 列出 hashmap 中处于区间 (key_start, key_end] 的 key,value 列表. ("", ""] 表示整个区间.
 //
 //  setName - hashmap 的名字.
 //  keyStart - 返回的起始 key(不包含), 空字符串表示 -inf.
@@ -164,7 +164,7 @@ func (c *Client) HRScanArray(setName string, keyStart, keyEnd string, limit int6
 	return c.HScanArray(setName, keyStart, keyEnd, limit, true)
 }
 
-//列出 hashmap 中处于区间 (key_start, key_end] 的 key-value 列表. ("", ""] 表示整个区间.
+//HRScan 列出 hashmap 中处于区间 (key_start, key_end] 的 key-value 列表. ("", ""] 表示整个区间.
 //
 //  setName - hashmap 的名字.
 //  keyStart - 返回的起始 key(不包含), 空字符串表示 -inf.
@@ -176,7 +176,7 @@ func (c *Client) HRScan(setName string, keyStart, keyEnd string, limit int64) (m
 	return c.HScan(setName, keyStart, keyEnd, limit, true)
 }
 
-//批量设置 hashmap 中的 key-value.
+//MultiHSet 批量设置 hashmap 中的 key-value.
 //
 //  setName - hashmap 的名字.
 //  kvs - 包含 key-value 的关联数组 .
@@ -200,7 +200,7 @@ func (c *Client) MultiHSet(setName string, kvs map[string]interface{}) (err erro
 	return makeError(resp, setName, kvs)
 }
 
-//批量获取 hashmap 中多个 key 对应的权重值.
+//MultiHGet 批量获取 hashmap 中多个 key 对应的权重值.
 //
 //  setName - hashmap 的名字.
 //  keys - 包含 key 的数组 .
@@ -232,7 +232,7 @@ func (c *Client) MultiHGet(setName string, key ...string) (val map[string]Value,
 	return nil, makeError(resp, key)
 }
 
-//批量获取 hashmap 中多个 key 对应的权重值.
+//MultiHGetSlice 批量获取 hashmap 中多个 key 对应的权重值.
 //
 //  setName - hashmap 的名字.
 //  keys - 包含 key 的数组 .
@@ -265,7 +265,7 @@ func (c *Client) MultiHGetSlice(setName string, key ...string) (keys []string, v
 	return nil, nil, makeError(resp, key)
 }
 
-//批量获取 hashmap 中多个 key 对应的权重值.（输入分片）
+//MultiHGetArray 批量获取 hashmap 中多个 key 对应的权重值.（输入分片）
 //
 //  setName - hashmap 的名字.
 //  keys - 包含 key 的数组 .
@@ -275,7 +275,7 @@ func (c *Client) MultiHGetArray(setName string, key []string) (val map[string]Va
 	return c.MultiHGet(setName, key...)
 }
 
-//批量获取 hashmap 中多个 key 对应的权重值.（输入分片）
+//MultiHGetSliceArray 批量获取 hashmap 中多个 key 对应的权重值.（输入分片）
 //
 //  setName - hashmap 的名字.
 //  keys - 包含 key 的数组 .
@@ -285,7 +285,7 @@ func (c *Client) MultiHGetSliceArray(setName string, key []string) (keys []strin
 	return c.MultiHGetSlice(setName, key...)
 }
 
-//批量获取 hashmap 中全部 对应的权重值.
+//MultiHGetAll 批量获取 hashmap 中全部 对应的权重值.
 //
 //  setName - hashmap 的名字.
 //  keys - 包含 key 的数组 .
@@ -309,7 +309,7 @@ func (c *Client) MultiHGetAll(setName string) (val map[string]Value, err error) 
 	return nil, makeError(resp)
 }
 
-//批量获取 hashmap 中全部 对应的权重值.
+//MultiHGetAllSlice 批量获取 hashmap 中全部 对应的权重值.
 //
 //  setName - hashmap 的名字.
 //  返回 包含 key和value 的有序数组, 如果某个 key 不存在, 则它不会出现在返回数组中.
@@ -335,7 +335,7 @@ func (c *Client) MultiHGetAllSlice(setName string) (keys []string, values []Valu
 	return nil, nil, makeError(resp)
 }
 
-//批量删除 hashmap 中的 key.
+//MultiHDel 批量删除 hashmap 中的 key.
 //
 //  setName - hashmap 的名字.
 //  keys - 包含 key 的数组.
@@ -359,7 +359,7 @@ func (c *Client) MultiHDel(setName string, key ...string) (err error) {
 	return makeError(resp, key)
 }
 
-//批量删除 hashmap 中的 key.（输入分片）
+//MultiHDelArray 批量删除 hashmap 中的 key.（输入分片）
 //
 //  setName - hashmap 的名字.
 //  keys - 包含 key 的数组.
@@ -368,7 +368,7 @@ func (c *Client) MultiHDelArray(setName string, key []string) (err error) {
 	return c.MultiHDel(setName, key...)
 }
 
-//列出名字处于区间 (name_start, name_end] 的 hashmap. ("", ""] 表示整个区间.
+//HList 列出名字处于区间 (name_start, name_end] 的 hashmap. ("", ""] 表示整个区间.
 //
 //  nameStart - 返回的起始 key(不包含), 空字符串表示 -inf.
 //  nameEnd - 返回的结束 key(包含), 空字符串表示 +inf.
@@ -385,7 +385,7 @@ func (c *Client) HList(nameStart, nameEnd string, limit int64) ([]string, error)
 		size := len(resp)
 		keyList := make([]string, 0, size-1)
 
-		for i := 1; i < size; i += 1 {
+		for i := 1; i < size; i++ {
 			keyList = append(keyList, resp[i])
 		}
 		return keyList, nil
@@ -393,7 +393,7 @@ func (c *Client) HList(nameStart, nameEnd string, limit int64) ([]string, error)
 	return nil, makeError(resp, nameStart, nameEnd, limit)
 }
 
-//设置 hashmap 中指定 key 对应的值增加 num. 参数 num 可以为负数.
+//HIncr 设置 hashmap 中指定 key 对应的值增加 num. 参数 num 可以为负数.
 //
 //  setName - hashmap 的名字.
 //  key 键值
@@ -413,7 +413,7 @@ func (c *Client) HIncr(setName, key string, num int64) (val int64, err error) {
 	return -1, makeError(resp, key)
 }
 
-//返回 hashmap 中的元素个数.
+//HSize 返回 hashmap 中的元素个数.
 //
 //  setName - hashmap 的名字.
 //  返回 val，整数，增加 num 后的新值
@@ -431,7 +431,7 @@ func (c *Client) HSize(setName string) (val int64, err error) {
 	return -1, makeError(resp, setName)
 }
 
-//列出 hashmap 中处于区间 (keyStart, keyEnd] 的 key 列表.
+//HKeys 列出 hashmap 中处于区间 (keyStart, keyEnd] 的 key 列表.
 //
 //  name - hashmap 的名字.
 //  keyStart - 返回的起始 key(不包含), 空字符串表示 -inf.
@@ -451,7 +451,7 @@ func (c *Client) HKeys(setName, keyStart, keyEnd string, limit int64) ([]string,
 	return nil, makeError(resp, keyStart, keyEnd, limit)
 }
 
-//批量获取 hashmap 中全部 对应的权重值.
+//HGetAll 批量获取 hashmap 中全部 对应的权重值.
 //
 //  setName - hashmap 的名字.
 //  返回 包含 key-value 的关联数组, 如果某个 key 不存在, 则它不会出现在返回数组中.

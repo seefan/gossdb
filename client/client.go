@@ -1,4 +1,4 @@
-//Encapsulates all functions of SSDB
+//Package client Encapsulates all functions of SSDB
 //封装ssdb的所有函数
 package client
 
@@ -137,7 +137,6 @@ func makeError(resp []string, errKey ...interface{}) error {
 	}
 	if len(errKey) > 0 {
 		return fmt.Errorf("access ssdb error, code is %v, parameter is %v", resp, errKey)
-	} else {
-		return fmt.Errorf("access ssdb error, code is %v", resp)
 	}
+	return fmt.Errorf("access ssdb error, code is %v", resp)
 }

@@ -14,10 +14,34 @@ import (
 	"github.com/seefan/gossdb/ssdbclient"
 )
 
-//Connectors
+//Connectors connection pool
 //
 //连接池
 type Connectors struct {
+	//连接池个数
+	size byte
+	//状态 0：创建 1：正常 -1：关闭
+	status byte
+	//pos
+	pos byte
+
+	//处理等待状态的连接数
+	waitCount int32
+	//最大等待数量
+	maxWaitSize int32
+	//active
+	activeCount int32
+	//连接池最大个数
+	maxSize int
+	//连接池最小个数
+	minSize int
+	//pool
+	pool []*Pool
+
+	//This function is called when automatic serialization is performed, and it can be modified to use a custom serialization method
+	//进行自动序列化时将调用这个函数，修改它可以使用自定义的序列化方式
+	EncodingFunc func(v interface{}) []byte
+	//config
 	cfg *conf.Config
 	//心跳检查
 	//等待池
@@ -25,27 +49,6 @@ type Connectors struct {
 	//最后的动作时间
 	//
 	watchTicker *time.Ticker
-	//连接池个数
-	size byte
-	//连接池最大个数
-	maxSize int
-	//连接池最小个数
-	minSize int
-	//状态 0：创建 1：正常 -1：关闭
-	status byte
-	//pool
-	pool []*Pool
-	//pos
-	pos byte
-	//处理等待状态的连接数
-	waitCount int32
-	//最大等待数量
-	maxWaitSize int32
-	//active
-	activeCount int32
-	//This function is called when automatic serialization is performed, and it can be modified to use a custom serialization method
-	//进行自动序列化时将调用这个函数，修改它可以使用自定义的序列化方式
-	EncodingFunc func(v interface{}) []byte
 }
 
 //NewConnectors initialize the connection pool using the configuration
@@ -120,7 +123,6 @@ func (c *Connectors) watchHealth() {
 		if waitCount > 0 && size < c.maxSize {
 			if err := c.appendPool(); err != nil {
 				time.Sleep(time.Millisecond * 10)
-				_ = c.appendPool() //retry
 			}
 		}
 	}
@@ -216,11 +218,11 @@ func (c *Connectors) closeClient(client *Client) {
 //
 //获取一个无错误的连接，如果有错误，将在调用连接的函数时返回
 func (c *Connectors) GetClient() *Client {
-	if cc, err := c.NewClient(); err == nil {
+	cc, err := c.NewClient()
+	if err == nil {
 		return cc
-	} else {
-		return &Client{Client: client.Client{Error: err}}
 	}
+	return &Client{Client: client.Client{Error: err}}
 }
 
 //NewClient take a new connection in the connection pool and return an error if there is an error

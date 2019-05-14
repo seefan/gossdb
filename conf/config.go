@@ -1,9 +1,13 @@
+//Package conf gossdb config
 package conf
 
-//Config
+//Config gossdb config
 //
 //ssdb连接池的配置
 type Config struct {
+	//he connection key
+	//连接的密钥
+	Password string
 	//ssdb hostname or ip
 	//ssdb的ip或主机名
 	Host string
@@ -37,18 +41,12 @@ type Config struct {
 	//the connection status check interval for the cache in the connection pool is in seconds. Default: 5
 	//连接池内缓存的连接状态检查时间隔，单位为秒。默认值: 5
 	HealthSecond int
-	//he connection key
-	//连接的密钥
-	Password string
 	//connection write buffer, default 8k, in kb
 	//连接写缓冲，默认为8k，单位为kb
 	WriteBufferSize int
 	//connection read buffer, default 8k, in kb
 	//连接读缓冲，默认为8k，单位为kb
 	ReadBufferSize int
-	//if retry is enabled, set to true and try again if the request fails.
-	//是否启用重试，设置为true时，如果请求失败会再重试一次。
-	RetryEnabled bool
 	//the timeout for creating a connection in seconds. Default: 5
 	//创建连接的超时时间，单位为秒。默认值: 5
 	ConnectTimeout int
@@ -58,6 +56,9 @@ type Config struct {
 	//Automatic serialization of unknown types
 	//是否自动进行序列化
 	Encoding bool
+	//if retry is enabled, set to true and try again if the request fails.
+	//是否启用重试，设置为true时，如果请求失败会再重试一次。
+	RetryEnabled bool
 }
 
 //Default Gets the default configuration parameters
@@ -102,7 +103,6 @@ func (c *Config) Default() *Config {
 func defaultValue(param, defaultValue int) int {
 	if param < 1 {
 		return defaultValue
-	} else {
-		return param
 	}
+	return param
 }

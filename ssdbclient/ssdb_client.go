@@ -1,4 +1,4 @@
-//Establish a connection with SSDB, parse the data and convert it into a regular format
+//Package ssdbclient Establish a connection with SSDB, parse the data and convert it into a regular format
 //
 //与ssdb建立连接，对数据进行解析，转换成常规格式
 package ssdbclient
@@ -45,33 +45,37 @@ func NewSSDBClient(cfg *conf.Config) *SSDBClient {
 	}
 }
 
-//SSDBClient
+//SSDBClient ssdb client
 type SSDBClient struct {
-	isOpen   bool
-	password string
-	host     string
-	port     int
-
-	sock      *net.TCPConn
-	readBuf   []byte
-	packetBuf bytes.Buffer
+	//是否重试
+	retryEnabled bool
+	//是否自动转码
+	encoding bool
+	//whether the connection is open
+	isOpen bool
 	//packetBuf bytes.Buffer
 	//连接写缓冲，默认为8k，单位为kb
 	writeBufferSize int
 	//连接读缓冲，默认为8k，单位为kb
 	readBufferSize int
-	//是否重试
-	retryEnabled bool
 	//写超时
 	writeTimeout int
 	//读超时
 	readTimeout int
-	//0时间
-	timeZero time.Time
 	//创建连接的超时时间，单位为秒。默认值: 5
 	connectTimeout int
-	//是否自动转码
-	encoding bool
+	//ssdb port
+	port int
+	//0时间
+	timeZero time.Time
+	//connection info
+	password string
+	host     string
+
+	sock *net.TCPConn
+	//buf
+	readBuf   []byte
+	packetBuf bytes.Buffer
 	//The input parameter is converted to [] bytes, which by default is converted to json format
 	//and can be modified to use a custom serialization
 	//将输入参数成[]byte，默认会转换成json格式,可以修改这个参数以便使用自定义的序列化方式
@@ -157,6 +161,24 @@ func (s *SSDBClient) do(args ...interface{}) (resp []string, err error) {
 	}
 	return
 }
+func (s *SSDBClient) auth() error {
+	if s.password != "" {
+		resp, err := s.do("auth", []string{s.password})
+		if err != nil {
+			if e := s.Close(); e != nil {
+				err = goerr.Errorf(err, "client close failed")
+			}
+			return goerr.Errorf(err, "authentication failed")
+		}
+		if len(resp) > 0 && resp[0] == oK {
+			//验证成功
+			s.password = ""
+		} else {
+			return goerr.String("authentication failed,password is wrong")
+		}
+	}
+	return nil
+}
 
 //Do common function
 //
@@ -166,20 +188,8 @@ func (s *SSDBClient) do(args ...interface{}) (resp []string, err error) {
 //
 //通用调用方法，所有操作ssdb的函数最终都是调用这个函数
 func (s *SSDBClient) Do(args ...interface{}) ([]string, error) {
-	if s.password != "" {
-		resp, err := s.do("auth", []string{s.password})
-		if err != nil {
-			if e := s.Close(); e != nil {
-				err = goerr.Errorf(err, "client close failed")
-			}
-			return nil, goerr.Errorf(err, "authentication failed")
-		}
-		if len(resp) > 0 && resp[0] == oK {
-			//验证成功
-			s.password = ""
-		} else {
-			return nil, goerr.String("authentication failed,password is wrong")
-		}
+	if err := s.auth(); err != nil {
+		return nil, err
 	}
 	resp, err := s.do(args...)
 	if err != nil {
@@ -201,81 +211,95 @@ func (s *SSDBClient) Do(args ...interface{}) ([]string, error) {
 }
 
 //write write to buf
-func (s *SSDBClient) write(bs []byte) {
-	s.packetBuf.Write(strconv.AppendInt(nil, int64(len(bs)), 10))
-	s.packetBuf.WriteByte(endN)
-	s.packetBuf.Write(bs)
-	s.packetBuf.WriteByte(endN)
+func (s *SSDBClient) write(bs []byte) error {
+	if _, err := s.packetBuf.Write(strconv.AppendInt(nil, int64(len(bs)), 10)); err != nil {
+		return err
+	}
+	if err := s.packetBuf.WriteByte(endN); err != nil {
+		return err
+	}
+	if _, err := s.packetBuf.Write(bs); err != nil {
+		return err
+	}
+	if err := s.packetBuf.WriteByte(endN); err != nil {
+		return err
+	}
+	return nil
 }
 
 //send cmd to ssdb
-func (s *SSDBClient) send(args []interface{}) error {
+func (s *SSDBClient) send(args []interface{}) (err error) {
 	s.packetBuf.Reset()
 	for _, arg := range args {
 		switch arg := arg.(type) {
 		case string:
-			s.write([]byte(arg))
+			err = s.write([]byte(arg))
 		case []byte:
-			s.write(arg)
+			err = s.write(arg)
 		case int:
 			bs := strconv.AppendInt(nil, int64(arg), 10)
-			s.write(bs)
+			err = s.write(bs)
 		case int8:
 			bs := strconv.AppendInt(nil, int64(arg), 10)
-			s.write(bs)
+			err = s.write(bs)
 		case int16:
 			bs := strconv.AppendInt(nil, int64(arg), 10)
-			s.write(bs)
+			err = s.write(bs)
 		case int32:
 			bs := strconv.AppendInt(nil, int64(arg), 10)
-			s.write(bs)
+			err = s.write(bs)
 		case int64:
 			bs := strconv.AppendInt(nil, arg, 10)
-			s.write(bs)
+			err = s.write(bs)
 		case uint8:
 			bs := strconv.AppendUint(nil, uint64(arg), 10)
-			s.write(bs)
+			err = s.write(bs)
 		case uint16:
 			bs := strconv.AppendUint(nil, uint64(arg), 10)
-			s.write(bs)
+			err = s.write(bs)
 		case uint32:
 			bs := strconv.AppendUint(nil, uint64(arg), 10)
-			s.write(bs)
+			err = s.write(bs)
 		case uint64:
-			bs := strconv.AppendUint(nil, uint64(arg), 10)
-			s.write(bs)
+			bs := strconv.AppendUint(nil, arg, 10)
+			err = s.write(bs)
 		case float32:
 			bs := strconv.AppendFloat(nil, float64(arg), 'g', -1, 32)
-			s.write(bs)
+			err = s.write(bs)
 		case float64:
 			bs := strconv.AppendFloat(nil, arg, 'g', -1, 64)
-			s.write(bs)
+			err = s.write(bs)
 		case bool:
 			if arg {
-				s.write([]byte{1})
+				err = s.write([]byte{1})
 			} else {
-				s.write([]byte{1})
+				err = s.write([]byte{1})
 			}
-			s.packetBuf.WriteByte(endN)
 		case time.Time:
 			bs := strconv.AppendInt(nil, arg.Unix(), 10)
-			s.write(bs)
+			err = s.write(bs)
 		case time.Duration:
 			bs := strconv.AppendInt(nil, arg.Nanoseconds(), 10)
-			s.write(bs)
+			err = s.write(bs)
 		case nil:
-			s.write([]byte{})
+			err = s.write([]byte{})
 		default:
 			if s.encoding && s.EncodingFunc != nil {
-				s.write(s.EncodingFunc(arg))
+				err = s.write(s.EncodingFunc(arg))
 			} else {
 				return errors.New("bad arguments type")
 			}
 		}
 
 	}
-	s.packetBuf.WriteByte(endN)
-	if err := s.sock.SetWriteDeadline(time.Now().Add(time.Second * time.Duration(s.writeTimeout))); err != nil {
+	if err != nil {
+		return err
+	}
+	err = s.packetBuf.WriteByte(endN)
+	if err != nil {
+		return err
+	}
+	if err = s.sock.SetWriteDeadline(time.Now().Add(time.Second * time.Duration(s.writeTimeout))); err != nil {
 		return err
 	}
 	for _, err := s.packetBuf.WriteTo(s.sock); s.packetBuf.Len() > 0; {
@@ -285,7 +309,7 @@ func (s *SSDBClient) send(args []interface{}) error {
 		}
 	}
 	//设置不超时
-	if err := s.sock.SetWriteDeadline(s.timeZero); err != nil {
+	if err = s.sock.SetWriteDeadline(s.timeZero); err != nil {
 		return err
 	}
 
@@ -294,7 +318,7 @@ func (s *SSDBClient) send(args []interface{}) error {
 
 //recv receive data
 func (s *SSDBClient) recv() (resp []string, err error) {
-	bufSize := -1
+	var bufSize int
 	s.packetBuf.Reset()
 	//设置读取数据超时，
 	if err = s.sock.SetReadDeadline(time.Now().Add(time.Second * time.Duration(s.readTimeout))); err != nil {
@@ -310,7 +334,9 @@ func (s *SSDBClient) recv() (resp []string, err error) {
 		if bufSize < 1 {
 			continue
 		}
-		s.packetBuf.Write(s.readBuf[:bufSize])
+		if _, err = s.packetBuf.Write(s.readBuf[:bufSize]); err != nil {
+			return nil, goerr.Errorf(err, "client socket read error")
+		}
 		n := bytes.IndexByte(s.readBuf, endN)
 		if n == -1 {
 			continue
@@ -336,9 +362,11 @@ func (s *SSDBClient) recv() (resp []string, err error) {
 			resp = append(resp, rs)
 		}
 	}
-	//设置不超时
-	if err = s.sock.SetReadDeadline(s.timeZero); err != nil {
-		return nil, err
+	if err == nil {
+		//设置不超时
+		if err = s.sock.SetReadDeadline(s.timeZero); err != nil {
+			return nil, err
+		}
 	}
 	return resp, nil
 }

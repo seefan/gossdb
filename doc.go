@@ -1,4 +1,4 @@
-//  gossdb
+//Package gossdb the client, derived from the official client, supports connection pooling and USES the same conventions as most clients.
 //
 //     refer to official driver development, add connection pool support, improve protocol implementation, and improve data throughput
 //     support for set dependent functions

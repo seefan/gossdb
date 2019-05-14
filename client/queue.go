@@ -11,7 +11,7 @@ var (
 	qSliceCmd = []string{"qslice", "qrange"}
 )
 
-//返回队列的长度.
+//QSize 返回队列的长度.
 //
 //  name  队列的名字
 //  返回 size，队列的长度；
@@ -28,7 +28,7 @@ func (c *Client) QSize(name string) (size int64, err error) {
 	return -1, makeError(resp, name)
 }
 
-//清空一个队列.
+//QClear 清空一个队列.
 //
 //  name  队列的名字
 //  返回 err，执行的错误，操作成功返回 nil
@@ -44,7 +44,7 @@ func (c *Client) QClear(name string) (err error) {
 	return makeError(resp, name)
 }
 
-//往队列的首部添加一个或者多个元素
+//QPushFront 往队列的首部添加一个或者多个元素
 //
 //  name  队列的名字
 //  value  存贮的值，可以为多值.
@@ -54,7 +54,7 @@ func (c *Client) QPushFront(name string, value ...interface{}) (size int64, err 
 	return c.qPush(name, false, value...)
 }
 
-//往队列的首部添加一个或者多个元素
+//qPush 往队列的首部添加一个或者多个元素
 //
 //  name  队列的名字
 //  reverse 是否反向
@@ -83,7 +83,7 @@ func (c *Client) qPush(name string, reverse bool, value ...interface{}) (size in
 	return -1, makeError(resp, name)
 }
 
-//往队列的尾部添加一个或者多个元素
+//QPush 往队列的尾部添加一个或者多个元素
 //
 //  name  队列的名字
 //  value  存贮的值，可以为多值.
@@ -93,7 +93,7 @@ func (c *Client) QPush(name string, value ...interface{}) (size int64, err error
 	return c.qPush(name, true, value...)
 }
 
-//往队列的尾部添加一个或者多个元素
+//QPushBack 往队列的尾部添加一个或者多个元素
 //
 //  name  队列的名字
 //  value  存贮的值，可以为多值.
@@ -103,7 +103,7 @@ func (c *Client) QPushBack(name string, value ...interface{}) (size int64, err e
 	return c.qPush(name, true, value...)
 }
 
-//从队列首部弹出最后一个元素.
+//QPopFront 从队列首部弹出最后一个元素.
 //
 //  name 队列的名字
 //  返回 v，返回一个元素，并在队列中删除 v；队列为空时返回空值
@@ -112,7 +112,7 @@ func (c *Client) QPopFront(name string) (v Value, err error) {
 	return c.QPop(name)
 }
 
-//从队列尾部弹出最后一个元素.
+//QPopBack 从队列尾部弹出最后一个元素.
 //
 //  name 队列的名字
 //  返回 v，返回一个元素，并在队列中删除 v；队列为空时返回空值
@@ -121,7 +121,7 @@ func (c *Client) QPopBack(name string) (v Value, err error) {
 	return c.QPop(name, true)
 }
 
-//从队列首部弹出最后一个元素.
+//QPop 从队列首部弹出最后一个元素.
 //
 //  name 队列的名字
 //  返回 v，返回一个元素，并在队列中删除 v；队列为空时返回空值
@@ -141,7 +141,7 @@ func (c *Client) QPop(name string, reverse ...bool) (v Value, err error) {
 	return "", makeError(resp, name)
 }
 
-//从队列首部弹出最后多个元素.
+//QPopFrontArray 从队列首部弹出最后多个元素.
 //
 //  name 队列的名字
 //  返回 v，返回多个元素，并在队列中弹出多个元素；
@@ -150,7 +150,7 @@ func (c *Client) QPopFrontArray(name string, size int64) (v []Value, err error) 
 	return c.QPopArray(name, size, false)
 }
 
-//从队列尾部弹出最后多个元素.
+//QPopBackArray 从队列尾部弹出最后多个元素.
 //
 //  name 队列的名字
 //  返回 v，返回多个元素，并在队列中弹出多个元素；
@@ -159,7 +159,7 @@ func (c *Client) QPopBackArray(name string, size int64) (v []Value, err error) {
 	return c.QPopArray(name, size, true)
 }
 
-//从队列首部弹出最后多个个元素.
+//QPopArray 从队列首部弹出最后多个个元素.
 //
 //  name 队列的名字
 //  size 取出元素的数量
@@ -186,7 +186,7 @@ func (c *Client) QPopArray(name string, size int64, reverse ...bool) (v []Value,
 	return nil, makeError(resp, name)
 }
 
-//返回下标处于区域 [offset, offset + limit] 的元素.
+//QRange 返回下标处于区域 [offset, offset + limit] 的元素.
 //
 //  name queue 的名字.
 //  offset 整数, 从此下标处开始返回. 从 0 开始. 可以是负数, 表示从末尾算起.
@@ -197,7 +197,7 @@ func (c *Client) QRange(name string, offset, limit int) (v []Value, err error) {
 	return c.slice(name, offset, limit, 1)
 }
 
-//返回下标处于区域 [begin, end] 的元素. begin 和 end 可以是负数
+//QSlice 返回下标处于区域 [begin, end] 的元素. begin 和 end 可以是负数
 //
 //  name queue 的名字.
 //  begin 正整数, 从此下标处开始返回。从 0 开始。
@@ -208,7 +208,7 @@ func (c *Client) QSlice(name string, begin, end int) (v []Value, err error) {
 	return c.slice(name, begin, end, 0)
 }
 
-//返回下标处于区域 [begin, end] 的元素. begin 和 end 可以是负数
+//slice 返回下标处于区域 [begin, end] 的元素. begin 和 end 可以是负数
 //
 //  name queue 的名字.
 //  begin 正整数, 从此下标处开始返回。从 0 开始。
@@ -244,7 +244,7 @@ func (c *Client) slice(name string, args ...int) (v []Value, err error) {
 	return nil, makeError(resp, name)
 }
 
-//从队列头部删除多个元素.
+//QTrim 从队列头部删除多个元素.
 //
 //  name queue 的名字.
 //  size 最多从队列删除这么多个元素
@@ -266,7 +266,7 @@ func (c *Client) QTrim(name string, size int, reverse ...bool) (delSize int64, e
 	return -1, makeError(resp, name)
 }
 
-//从队列头部删除多个元素.
+//QTrimFront 从队列头部删除多个元素.
 //
 //  name queue 的名字.
 //  size 最多从队列删除这么多个元素
@@ -276,7 +276,7 @@ func (c *Client) QTrimFront(name string, size int) (delSize int64, err error) {
 	return c.QTrim(name, size)
 }
 
-//从队列尾部删除多个元素.
+//QTrimBack 从队列尾部删除多个元素.
 //
 //  name queue 的名字.
 //  size 最多从队列删除这么多个元素
@@ -286,7 +286,7 @@ func (c *Client) QTrimBack(name string, size int) (delSize int64, err error) {
 	return c.QTrim(name, size, true)
 }
 
-//列出名字处于区间 (name_start, name_end] 的 queue/list.
+//QList 列出名字处于区间 (name_start, name_end] 的 queue/list.
 //
 //  name_start  返回的起始名字(不包含), 空字符串表示 -inf.
 //  name_end  返回的结束名字(包含), 空字符串表示 +inf.
@@ -303,7 +303,7 @@ func (c *Client) QList(nameStart, nameEnd string, limit int64) ([]string, error)
 		size := len(resp)
 		keyList := make([]string, 0, size-1)
 
-		for i := 1; i < size; i += 1 {
+		for i := 1; i < size; i++ {
 			keyList = append(keyList, resp[i])
 		}
 		return keyList, nil
@@ -311,7 +311,7 @@ func (c *Client) QList(nameStart, nameEnd string, limit int64) ([]string, error)
 	return nil, makeError(resp, nameStart, nameEnd, limit)
 }
 
-//列出名字处于区间 (name_start, name_end] 的 queue/list.
+//QRList 列出名字处于区间 (name_start, name_end] 的 queue/list.
 //
 //  name_start  返回的起始名字(不包含), 空字符串表示 -inf.
 //  name_end  返回的结束名字(包含), 空字符串表示 +inf.
@@ -328,7 +328,7 @@ func (c *Client) QRList(nameStart, nameEnd string, limit int64) ([]string, error
 		size := len(resp)
 		keyList := make([]string, 0, size-1)
 
-		for i := 1; i < size; i += 1 {
+		for i := 1; i < size; i++ {
 			keyList = append(keyList, resp[i])
 		}
 		return keyList, nil
@@ -336,7 +336,7 @@ func (c *Client) QRList(nameStart, nameEnd string, limit int64) ([]string, error
 	return nil, makeError(resp, nameStart, nameEnd, limit)
 }
 
-//更新位于 index 位置的元素. 如果超过现有的元素范围, 会返回错误.
+//QSet 更新位于 index 位置的元素. 如果超过现有的元素范围, 会返回错误.
 //
 //  key  队列的名字
 //  index 指定的位置，可传负数.
@@ -356,7 +356,7 @@ func (c *Client) QSet(key string, index int64, val interface{}) (err error) {
 	return makeError(resp, key)
 }
 
-//返回指定位置的元素. 0 表示第一个元素, 1 是第二个 ... -1 是最后一个.
+//QGet 返回指定位置的元素. 0 表示第一个元素, 1 是第二个 ... -1 是最后一个.
 //
 //  key  队列的名字
 //  index 指定的位置，可传负数.
@@ -373,7 +373,7 @@ func (c *Client) QGet(key string, index int64) (Value, error) {
 	return "", makeError(resp, key)
 }
 
-//返回队列的第一个元素.
+//QFront 返回队列的第一个元素.
 //
 //  key  队列的名字
 //  返回 val，返回的值.
@@ -389,7 +389,7 @@ func (c *Client) QFront(key string) (Value, error) {
 	return "", makeError(resp, key)
 }
 
-//返回队列的最后一个元素.
+//QBack 返回队列的最后一个元素.
 //
 //  key  队列的名字
 //  返回 val，返回的值.
@@ -405,7 +405,7 @@ func (c *Client) QBack(key string) (Value, error) {
 	return "", makeError(resp, key)
 }
 
-//往队列的首部添加一个或者多个元素
+//qPushArray 往队列的首部添加一个或者多个元素
 //
 //  name  队列的名字
 //  reverse 是否反向
@@ -432,7 +432,7 @@ func (c *Client) qPushArray(name string, reverse bool, value []interface{}) (siz
 	return -1, makeError(resp, name)
 }
 
-//往队列的尾部添加一个或者多个元素
+//QPushArray 往队列的尾部添加一个或者多个元素
 //
 //  name  队列的名字
 //  value  存贮的值，可以为多值.
@@ -442,7 +442,7 @@ func (c *Client) QPushArray(name string, value []interface{}) (size int64, err e
 	return c.qPushArray(name, true, value)
 }
 
-//往队列的尾部添加一个或者多个元素
+//QPushBackArray 往队列的尾部添加一个或者多个元素
 //
 //  name  队列的名字
 //  value  存贮的值，可以为多值.
@@ -452,7 +452,7 @@ func (c *Client) QPushBackArray(name string, value []interface{}) (size int64, e
 	return c.qPushArray(name, true, value)
 }
 
-//往队列的首部添加一个或者多个元素
+//QPushFrontArray 往队列的首部添加一个或者多个元素
 //
 //  name  队列的名字
 //  value  存贮的值，可以为多值.
