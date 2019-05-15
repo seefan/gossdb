@@ -7,7 +7,7 @@ import (
 	"github.com/seefan/gossdb/conf"
 )
 
-func BenchmarkConnectors_NewClient(b *testing.B) {
+func BenchmarkConnectors_NewClient10(b *testing.B) {
 	pool := NewConnectors(&conf.Config{
 		Host:        "127.0.0.1",
 		Port:        8888,
@@ -101,7 +101,7 @@ func BenchmarkConnectors_NewClient100(b *testing.B) {
 		Host:        "127.0.0.1",
 		Port:        8888,
 		MaxWaitSize: 10000,
-		PoolSize:    20,
+		PoolSize:    10,
 		MinPoolSize: 100,
 		MaxPoolSize: 100,
 	})
@@ -158,8 +158,8 @@ func BenchmarkConnectors_NewClient5000(b *testing.B) {
 		Port:        8888,
 		MaxWaitSize: 1000000,
 		PoolSize:    10,
-		MaxPoolSize: 100,
-		MinPoolSize: 100,
+		MaxPoolSize: 200,
+		MinPoolSize: 200,
 	})
 	err := pool.Start()
 	if err != nil {

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"runtime"
 	"sync/atomic"
 	"time"
 
@@ -24,13 +25,16 @@ type Connectors struct {
 	status byte
 	//pos
 	pos byte
-
+	//从快速连接池中取连接的次数，超过次数取不到就进入慢速池
+	retry int
 	//处理等待状态的连接数
 	waitCount int32
 	//最大等待数量
 	maxWaitSize int32
-	//active
-	activeCount int32
+	//number of calls per second
+	available int32
+	//parallel count
+	parallel int32
 	//连接池最大个数
 	maxSize int
 	//连接池最小个数
@@ -75,6 +79,7 @@ func NewConnectors(cfg *conf.Config) *Connectors {
 	this.poolWait = make(chan *Client, cfg.MaxWaitSize)
 	this.watchTicker = time.NewTicker(time.Second)
 	this.pool = make([]*Pool, this.maxSize)
+	this.retry = 3
 	this.EncodingFunc = func(v interface{}) []byte {
 		if bs, err := json.Marshal(v); err == nil {
 			return bs
@@ -85,13 +90,23 @@ func NewConnectors(cfg *conf.Config) *Connectors {
 	return this
 }
 
+//SetNewClientRetryCount The number of times a connection is fetched from the fast connection pool, more than the retry number will enter the slow connection pool
+//
+//  @param count retry number
+//
+//设置重试次数，大于这个次数就进入慢速池
+func (c *Connectors) SetNewClientRetryCount(count byte) {
+	c.retry = int(count)
+}
+
 //后台的观察函数，处理连接池大小的扩展和收缩，连接池状态的检查等
 func (c *Connectors) watchHealth() {
 	for v := range c.watchTicker.C {
+		atomic.StoreInt32(&c.available, 0)
 		size := int(c.size)
 		if v.Second()%c.cfg.HealthSecond == 0 {
-			activeCount := int(atomic.LoadInt32(&c.activeCount))
-			if activeCount < (size-1)*c.cfg.PoolSize && size-1 >= c.minSize {
+			parallel := int(atomic.LoadInt32(&c.parallel))
+			if parallel < (size-1)*c.cfg.PoolSize && size-1 >= c.minSize {
 				c.size--
 			}
 			c.watchPool(size)
@@ -196,7 +211,6 @@ func (c *Connectors) Start() (err error) {
 //回收Client
 func (c *Connectors) closeClient(client *Client) {
 	client.used = false
-	atomic.AddInt32(&c.activeCount, -1)
 	if c.status == consts.PoolStop {
 		if client.SSDBClient.IsOpen() {
 			_ = client.SSDBClient.Close()
@@ -207,10 +221,12 @@ func (c *Connectors) closeClient(client *Client) {
 			if waitCount > 0 && client.index%3 == 0 {
 				c.poolWait <- client
 			} else {
+				atomic.AddInt32(&c.parallel, -1)
 				client.pool.Set(client)
 				c.pos = client.pool.index
 			}
 		} else {
+			atomic.AddInt32(&c.parallel, -1)
 			client.pool.Set(client)
 			client.pool.status = consts.PoolCheck
 		}
@@ -230,8 +246,8 @@ func (c *Connectors) GetClient() *Client {
 	return &Client{Client: client.Client{Error: err}}
 }
 func (c *Connectors) createClient() (cli *Client, err error) {
-	//首先按位置，直接取连接，给2次机会
-	for i := 0; i < 2; i++ {
+	//首先按位置，直接取连接，给n次机会
+	for i := 0; i < c.retry; i++ {
 		pos := c.pos
 		if pos >= c.size {
 			pos = 0
@@ -248,7 +264,7 @@ func (c *Connectors) createClient() (cli *Client, err error) {
 					err = cli.SSDBClient.Start()
 				}
 				if err == nil {
-					atomic.AddInt32(&c.activeCount, 1)
+					atomic.AddInt32(&c.available, 1)
 					cli.used = true
 					return cli, nil
 				}
@@ -256,6 +272,7 @@ func (c *Connectors) createClient() (cli *Client, err error) {
 			}
 		}
 		c.pos++
+		runtime.Gosched()
 	}
 	return
 }
@@ -270,10 +287,14 @@ func (c *Connectors) NewClient() (cli *Client, err error) {
 	if c.status != consts.PoolStart {
 		return nil, errors.New("connectors not start")
 	}
+
+	atomic.AddInt32(&c.available, 1)
 	cli, err = c.createClient()
-	if cli != nil || err != nil {
+	if cli != nil && err == nil {
+		atomic.AddInt32(&c.parallel, 1)
 		return
 	}
+
 	//enter slow pool
 	waitCount := atomic.LoadInt32(&c.waitCount)
 	if waitCount >= c.maxWaitSize {
@@ -289,7 +310,6 @@ func (c *Connectors) NewClient() (cli *Client, err error) {
 			err = errors.New("pool is Closed, can not get new client")
 		} else {
 			cli.used = true
-			atomic.AddInt32(&c.activeCount, 1)
 			err = nil
 		}
 	}
@@ -318,5 +338,8 @@ func (c *Connectors) Close() {
 //
 //返回连接池状态信息
 func (c *Connectors) Info() string {
-	return fmt.Sprintf("available is %d,wait is %d,connection count is %d,status is %d", c.activeCount, c.waitCount, int(c.size)*c.cfg.PoolSize, c.status)
+	available := atomic.LoadInt32(&c.available)
+	parallel := atomic.LoadInt32(&c.parallel)
+	waitCount := atomic.LoadInt32(&c.waitCount)
+	return fmt.Sprintf("available is %d,active is %d,wait is %d,connection count is %d,status is %d", available, parallel, waitCount, int(c.size)*c.cfg.PoolSize, c.status)
 }

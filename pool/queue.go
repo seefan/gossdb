@@ -30,10 +30,11 @@ func newQueue(size int) *Queue {
 //Empty check available index
 //
 //  @return bool
-func (q *Queue) Empty() bool {
+func (q *Queue) Empty() (re bool) {
 	q.lock.RLock()
-	defer q.lock.RUnlock()
-	return q.pos < 0
+	re = q.pos < 0
+	q.lock.RUnlock()
+	return
 }
 
 //Pop get a index
@@ -43,13 +44,14 @@ func (q *Queue) Empty() bool {
 //获取一个可以连接的位置
 func (q *Queue) Pop() (re int) {
 	q.lock.Lock()
-	defer q.lock.Unlock()
 	if q.pos < 0 {
+		q.lock.Unlock()
 		return -1
 	}
 	re = q.value[q.pos]
 	q.value[q.pos] = -1
 	q.pos--
+	q.lock.Unlock()
 	return
 }
 
@@ -61,7 +63,7 @@ func (q *Queue) Pop() (re int) {
 //归还索引值
 func (q *Queue) Put(i int) int {
 	q.lock.Lock()
-	defer q.lock.Unlock()
+
 	pos := q.pos + 1
 	if q.putPos < pos {
 		q.value[pos] = q.value[q.putPos]
@@ -72,5 +74,6 @@ func (q *Queue) Put(i int) int {
 		q.putPos = 0
 	}
 	q.pos = pos
-	return q.pos
+	q.lock.Unlock()
+	return pos
 }
