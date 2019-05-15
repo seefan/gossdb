@@ -2,6 +2,7 @@ package pool
 
 import (
 	"reflect"
+	"sync"
 	"testing"
 )
 
@@ -178,4 +179,20 @@ func BenchmarkQueue1000(b *testing.B) {
 		}
 	})
 	b.Log("fail", failed)
+}
+
+func BenchmarkMap(b *testing.B) {
+	b.SetParallelism(100)
+
+	m := &sync.Map{}
+
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			m.Store(1, 1)
+			_, ok := m.Load(1)
+			if !ok {
+				b.Error(ok)
+			}
+		}
+	})
 }

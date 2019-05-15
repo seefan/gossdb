@@ -91,7 +91,7 @@
 		panic(err)
 	}
 	defer gossdb.Shutdown()
-	c, err := gossdb.Client()
+	c, err := gossdb.NewClient()
 	if err != nil {
 		panic(err)
 	}
