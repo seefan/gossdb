@@ -12,9 +12,9 @@ func BenchmarkConnectors_NewClient10(b *testing.B) {
 		Host:        "127.0.0.1",
 		Port:        8888,
 		MaxWaitSize: 10000,
-		PoolSize:    10,
-		MaxPoolSize: 100,
-		MinPoolSize: 100,
+		PoolSize:    5,
+		MaxPoolSize: 10,
+		MinPoolSize: 10,
 	})
 	err := pool.Start()
 	if err != nil {

@@ -247,11 +247,8 @@ func (c *Connectors) GetClient() *Client {
 }
 func (c *Connectors) createClient() (cli *Client, err error) {
 	//首先按位置，直接取连接，给n次机会
+	pos := c.pos
 	for i := 0; i < c.retry; i++ {
-		pos := c.pos
-		if pos >= c.size {
-			pos = 0
-		}
 		p := c.pool[pos]
 		if p.status != consts.PoolStop {
 			cli = p.Get()
@@ -264,14 +261,14 @@ func (c *Connectors) createClient() (cli *Client, err error) {
 					err = cli.SSDBClient.Start()
 				}
 				if err == nil {
-					atomic.AddInt32(&c.available, 1)
 					cli.used = true
 					return cli, nil
 				}
 				p.Set(cli) //如果没有成功返回，就放回到连接池内
 			}
 		}
-		c.pos++
+		pos++
+		pos %= c.size
 		runtime.Gosched()
 	}
 	return

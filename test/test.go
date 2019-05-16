@@ -7,9 +7,9 @@
 package main
 
 import (
-	"net/http"
+	"fmt"
 	_ "net/http/pprof"
-	"os"
+	"sync"
 	"time"
 
 	"github.com/seefan/gossdb"
@@ -29,41 +29,45 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	go func() {
-		err := http.ListenAndServe(":9999", nil)
-		if err != nil {
-			panic(err)
-		}
-	}()
+	defer p.Close()
+	//go func() {
+	//	err := http.ListenAndServe(":9999", nil)
+	//	if err != nil {
+	//		panic(err)
+	//	}
+	//}()
+	now := time.Now()
+	var wait sync.WaitGroup
 	for i := 0; i < 1000; i++ {
+		wait.Add(1)
 		go func() {
-			for {
-				//failed := 0
-				for j := 0; j < 1000; j++ {
-					//if _, err := p.GetClient().Get("a"); err != nil {
-					//	//println(goerr.Error(err).Trace())
-					//	failed++
-					//	println(failed, j)
+			//for {
+			//failed := 0
+			for j := 0; j < 10000; j++ {
+				//if _, err := p.GetClient().Get("a"); err != nil {
+				//	//println(goerr.Error(err).Trace())
+				//	failed++
+				//	println(failed, j)
+				//}
+				c, err := p.NewClient()
+				if err != nil {
+					println(err.Error(), p.Info())
+				} else {
+					//if _, err := c.Get("a"); err != nil {
+					//	println(goerr.Error(err).Trace())
 					//}
-					c, err := p.NewClient()
-					if err != nil {
-						println(err.Error(), p.Info())
-					} else {
-						//if _, err := c.Get("a"); err != nil {
-						//	println(goerr.Error(err).Trace())
-						//}
-						c.Close()
-					}
+					c.Close()
 				}
-				println(p.Info())
-				time.Sleep(time.Second)
-
 			}
+			wait.Done()
+			//}
 		}()
 	}
-	bs := make([]byte, 1)
-	os.Stdin.Read(bs)
-	p.Close()
+	wait.Wait()
+	f := time.Since(now).Seconds()
+	fmt.Printf("%f,%f", f, 10000000/f)
+	//bs := make([]byte, 1)
+	//os.Stdin.Read(bs)
 }
 func TestReadme() {
 	err := gossdb.Start(&conf.Config{
