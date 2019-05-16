@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"math"
 	"runtime"
+	"sync"
 	"sync/atomic"
 	"time"
 
@@ -52,7 +53,10 @@ type Connectors struct {
 	poolWait chan *Client //连接池
 	//最后的动作时间
 	//
+	//watchTicker
 	watchTicker *time.Ticker
+	//poolTemp
+	poolTemp *sync.Pool
 }
 
 //NewConnectors initialize the connection pool using the configuration
@@ -85,6 +89,11 @@ func NewConnectors(cfg *conf.Config) *Connectors {
 			return bs
 		}
 		return nil
+	}
+	this.poolTemp = &sync.Pool{
+		New: func() interface{} {
+			return &Client{Client: client.Client{}}
+		},
 	}
 	this.status = consts.PoolStop
 	return this
@@ -243,7 +252,9 @@ func (c *Connectors) GetClient() *Client {
 	if err == nil {
 		return cc
 	}
-	return &Client{Client: client.Client{Error: err}}
+	cc = c.poolTemp.Get().(*Client)
+	cc.Error = err
+	return cc
 }
 func (c *Connectors) createClient() (cli *Client, err error) {
 	//首先按位置，直接取连接，给n次机会

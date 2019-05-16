@@ -22,8 +22,8 @@ func main() {
 		Port:        8888,
 		MaxWaitSize: 10000,
 		PoolSize:    10,
-		MinPoolSize: 1000,
-		MaxPoolSize: 1000,
+		MinPoolSize: 500,
+		MaxPoolSize: 500,
 		AutoClose:   true,
 	})
 	if err != nil {
@@ -43,7 +43,7 @@ func main() {
 		go func() {
 			//for {
 			//failed := 0
-			for j := 0; j < 10000; j++ {
+			for j := 0; j < 100000; j++ {
 				//if _, err := p.GetClient().Get("a"); err != nil {
 				//	//println(goerr.Error(err).Trace())
 				//	failed++
@@ -65,7 +65,7 @@ func main() {
 	}
 	wait.Wait()
 	f := time.Since(now).Seconds()
-	fmt.Printf("%f,%f", f, 10000000/f)
+	fmt.Printf("%f,%f", f, 100000000/f)
 	//bs := make([]byte, 1)
 	//os.Stdin.Read(bs)
 }
