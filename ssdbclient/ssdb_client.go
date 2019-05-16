@@ -161,7 +161,7 @@ func (s *SSDBClient) do(args ...interface{}) (resp []string, err error) {
 }
 func (s *SSDBClient) auth() error {
 	if s.password != "" {
-		resp, err := s.do("auth", []string{s.password})
+		resp, err := s.do("auth", s.password)
 		if err != nil {
 			if e := s.Close(); e != nil {
 				err = goerr.Errorf(err, "client close failed")

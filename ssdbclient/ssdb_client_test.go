@@ -195,3 +195,29 @@ func TestSSDBClient_byte(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+func TestSSDBClient_pwd(t *testing.T) {
+	cfg := &conf.Config{
+		Host:     "127.0.0.1",
+		Port:     8888,
+		Password: "vdsfsfafapaddssrd#@Ddfasfdsfedssdfsdfsd",
+	}
+	c := NewSSDBClient(cfg.Default())
+	if err := c.Start(); err != nil {
+		t.Fatal(err)
+	}
+	bt := byte(126)
+	if v, err := c.Do("set", "ab", bt); err == nil {
+		t.Log(v)
+	} else {
+		t.Error(err)
+	}
+	if v, err := c.Do("get", "ab"); err == nil {
+		t.Log(v)
+	} else {
+		t.Error(err)
+	}
+
+	if err := c.Close(); err != nil {
+		t.Fatal(err)
+	}
+}
