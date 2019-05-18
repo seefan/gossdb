@@ -132,6 +132,7 @@ func BenchmarkConnectors_NewClient1000(b *testing.B) {
 		PoolSize:    20,
 		MinPoolSize: 500,
 		MaxPoolSize: 500,
+		//Password:    "vdsfsfafapaddssrd#@Ddfasfdsfedssdfsdfsd",
 	})
 	err := pool.Start()
 	if err != nil {
@@ -291,7 +292,7 @@ func TestAutoClose3(t *testing.T) {
 		MaxPoolSize:  10,
 		HealthSecond: 2,
 		AutoClose:    true,
-		//Password:     "vdsfsfafapaddssrd#@Ddfasfdsfedssdfsdfsd",
+		Password:     "vdsfsfafapaddssrd#@Ddfasfdsfedssdfsdfsd",
 	})
 	//
 

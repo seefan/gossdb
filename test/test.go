@@ -8,6 +8,7 @@ package main
 
 import (
 	"fmt"
+	"math"
 	_ "net/http/pprof"
 	"sync"
 	"time"
@@ -23,7 +24,7 @@ func main() {
 		Port:        8888,
 		MaxWaitSize: 10000,
 		PoolSize:    10,
-		MinPoolSize: 50,
+		MinPoolSize: 10,
 		MaxPoolSize: 50,
 		AutoClose:   true,
 		Password:    "vdsfsfafapaddssrd#@Ddfasfdsfedssdfsdfsd",
@@ -43,31 +44,34 @@ func main() {
 	for i := 0; i < 1000; i++ {
 		wait.Add(1)
 		go func() {
-			//for {
-			//failed := 0
-			for j := 0; j < 1000; j++ {
-				//if _, err := p.GetClient().Get("a"); err != nil {
-				//	//println(goerr.Error(err).Trace())
-				//	failed++
-				//	println(failed, j)
-				//}
-				c, err := p.NewClient()
-				if err != nil {
-					println(err.Error(), p.Info())
-				} else {
-					if _, err := c.Get("a"); err != nil {
-						println(goerr.Error(err).Trace())
+			for {
+				//failed := 0
+				for j := 0; j < 100; j++ {
+					//if _, err := p.GetClient().Get("a"); err != nil {
+					//	//println(goerr.Error(err).Trace())
+					//	failed++
+					//	println(failed, j)
+					//}
+					c, err := p.NewClient()
+					if err != nil {
+						println(err.Error(), p.Info())
+					} else {
+						if _, err := c.Get("a"); err != nil {
+							println(goerr.Error(err).Trace())
+						}
+						c.Close()
 					}
-					c.Close()
 				}
+				time.Sleep(time.Second * time.Duration(math.Round(10)))
+				//println(p.Info())
+
 			}
 			wait.Done()
-			//}
 		}()
 	}
 	wait.Wait()
 	f := time.Since(now).Seconds()
-	fmt.Printf("%f,%f", f, 100000000/f)
+	fmt.Printf("%f,%f", f, 10000000/f)
 	//bs := make([]byte, 1)
 	//os.Stdin.Read(bs)
 }

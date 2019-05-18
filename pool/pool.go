@@ -92,11 +92,10 @@ func (p *Pool) Set(client *Client) {
 	if client == nil {
 		return
 	}
+	p.available.Put(client.index)
 	if p.status == consts.PoolStop {
 		if client.IsOpen() {
 			_ = client.SSDBClient.Close()
 		}
-	} else {
-		p.available.Put(client.index)
 	}
 }

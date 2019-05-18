@@ -26,7 +26,7 @@ func (c *Client) Close() {
 
 //Close put the client to Connectors
 func (c *Client) close() {
-	if c.Error == nil {
+	if c.Error == nil && c.over != nil {
 		if c.used {
 			c.over.closeClient(c)
 		}

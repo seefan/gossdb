@@ -113,7 +113,7 @@ func (c *Connectors) watchHealth() {
 	for v := range c.watchTicker.C {
 		atomic.StoreInt32(&c.available, 0)
 		size := int(c.size)
-		if v.Second()%c.cfg.HealthSecond == 0 {
+		if c.minSize != c.maxSize && v.Second()%c.cfg.HealthSecond == 0 {
 			parallel := int(atomic.LoadInt32(&c.parallel))
 			if parallel < (size-1)*c.cfg.PoolSize && size-1 >= c.minSize {
 				c.size--
@@ -129,6 +129,8 @@ func (c *Connectors) watchHealth() {
 		}
 	}
 }
+
+//检查运行的连接池块状态，如果是PoolCheck，检查一下所有连接是否都正常打开了
 func (c *Connectors) watchConnection(size int) {
 	for i := 0; i < size; i++ {
 		if c.pool[i].status == consts.PoolCheck {
@@ -144,6 +146,8 @@ func (c *Connectors) watchConnection(size int) {
 		}
 	}
 }
+
+//检查一下可关闭的连接池块，如果没有活动连接，可以关闭
 func (c *Connectors) watchPool(size int) {
 	for i := size; i < c.maxSize; i++ {
 		if c.pool[i] != nil {

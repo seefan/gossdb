@@ -51,8 +51,8 @@ type SSDBClient struct {
 	encoding bool
 	//whether the connection is open
 	isOpen bool
-	//whether the connection is authorization
-	isAuth bool
+	////whether the connection is authorization
+	//isAuth bool
 	//packetBuf bytes.Buffer
 	//连接写缓冲，默认为8k，单位为kb
 	writeBufferSize int
@@ -107,8 +107,8 @@ func (s *SSDBClient) Start() error {
 	s.sock = sock
 	s.timeZero = time.Time{}
 	s.isOpen = true
-	s.isAuth = s.password == ""
-	return nil
+	//s.isAuth = s.password == ""
+	return s.auth()
 }
 
 //Close close SSDBClient
@@ -155,22 +155,23 @@ func (s *SSDBClient) do(args ...interface{}) (resp []string, err error) {
 	return
 }
 func (s *SSDBClient) auth() error {
-	if !s.isAuth {
-		resp, err := s.do("auth", s.password)
-		if err != nil {
-			if e := s.Close(); e != nil {
-				err = goerr.Errorf(err, "client close failed")
-			}
-			return goerr.Errorf(err, "authentication failed")
+	//if !s.isAuth {
+	resp, err := s.do("auth", s.password)
+	if err != nil {
+		if e := s.Close(); e != nil {
+			err = goerr.Errorf(err, "client close failed")
 		}
-		if len(resp) > 0 && resp[0] == oK {
-			//验证成功
-			s.isAuth = true
-		} else {
-			return goerr.String("authentication failed,password is wrong")
-		}
+		return goerr.Errorf(err, "authentication failed")
 	}
-	return nil
+	if len(resp) > 0 && resp[0] == oK {
+		//验证成功
+		//s.isAuth = true
+		return nil
+	}
+	return goerr.String("authentication failed,password is wrong")
+
+	//}
+	//return nil
 }
 
 //Do common function
@@ -181,9 +182,9 @@ func (s *SSDBClient) auth() error {
 //
 //通用调用方法，所有操作ssdb的函数最终都是调用这个函数
 func (s *SSDBClient) Do(args ...interface{}) ([]string, error) {
-	if err := s.auth(); err != nil {
-		return nil, err
-	}
+	//if err := s.auth(); err != nil {
+	//	return nil, err
+	//}
 	resp, err := s.do(args...)
 	if err != nil {
 		if e := s.Close(); e != nil {
