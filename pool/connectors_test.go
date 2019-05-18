@@ -258,3 +258,58 @@ func TestAutoClose2(t *testing.T) {
 		t.Log(v, err)
 	}
 }
+func BenchmarkConnectors_NewClient5000a(b *testing.B) {
+
+	b.SetParallelism(5000)
+	a := "a"
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			_ = a == ""
+		}
+	})
+
+}
+func BenchmarkConnectors_NewClient5000b(b *testing.B) {
+
+	b.SetParallelism(5000)
+	a := 0
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			_ = a == 0
+		}
+	})
+
+}
+
+func TestAutoClose3(t *testing.T) {
+	pool := NewConnectors(&conf.Config{
+		Host:         "127.0.0.1",
+		Port:         8888,
+		MaxWaitSize:  10000,
+		PoolSize:     10,
+		MinPoolSize:  10,
+		MaxPoolSize:  10,
+		HealthSecond: 2,
+		AutoClose:    true,
+		//Password:     "vdsfsfafapaddssrd#@Ddfasfdsfedssdfsdfsd",
+	})
+	//
+
+	err := pool.Start()
+	if err != nil {
+		panic(err)
+	}
+	defer pool.Close()
+	for i := 0; i < 100; i++ {
+		c, err := pool.NewClient()
+		if err != nil {
+			panic(err)
+		}
+		if v, err := c.Get("a"); err != nil {
+			t.Log(err)
+		} else {
+			t.Log(v)
+		}
+		c.Close()
+	}
+}

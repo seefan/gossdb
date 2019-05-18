@@ -51,6 +51,8 @@ type SSDBClient struct {
 	encoding bool
 	//whether the connection is open
 	isOpen bool
+	//whether the connection is authorization
+	isAuth bool
 	//packetBuf bytes.Buffer
 	//连接写缓冲，默认为8k，单位为kb
 	writeBufferSize int
@@ -66,13 +68,15 @@ type SSDBClient struct {
 	port int
 	//0时间
 	timeZero time.Time
-	//connection info
+	//connection token
 	password string
-	host     string
-
+	//ssdb host
+	host string
+	//connection
 	sock *net.TCPConn
 	//buf
-	readBuf   []byte
+	readBuf []byte
+	//read and write buffer
 	packetBuf bytes.Buffer
 	//The input parameter is converted to [] bytes, which by default is converted to json format
 	//and can be modified to use a custom serialization
@@ -103,6 +107,7 @@ func (s *SSDBClient) Start() error {
 	s.sock = sock
 	s.timeZero = time.Time{}
 	s.isOpen = true
+	s.isAuth = s.password == ""
 	return nil
 }
 
@@ -128,16 +133,6 @@ func (s *SSDBClient) IsOpen() bool {
 	return s.isOpen
 }
 
-//Ping ping
-//
-//  @return bool returns true if the connection is normal
-//
-// 状态检查，正常返回true
-func (s *SSDBClient) Ping() bool {
-	_, err := s.Do("version")
-	return err == nil
-}
-
 //执行ssdb命令
 func (s *SSDBClient) do(args ...interface{}) (resp []string, err error) {
 	if !s.isOpen {
@@ -160,7 +155,7 @@ func (s *SSDBClient) do(args ...interface{}) (resp []string, err error) {
 	return
 }
 func (s *SSDBClient) auth() error {
-	if s.password != "" {
+	if !s.isAuth {
 		resp, err := s.do("auth", s.password)
 		if err != nil {
 			if e := s.Close(); e != nil {
@@ -170,7 +165,7 @@ func (s *SSDBClient) auth() error {
 		}
 		if len(resp) > 0 && resp[0] == oK {
 			//验证成功
-			s.password = ""
+			s.isAuth = true
 		} else {
 			return goerr.String("authentication failed,password is wrong")
 		}

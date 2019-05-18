@@ -19,6 +19,13 @@ type Client struct {
 
 //Close put the client to Connectors
 func (c *Client) Close() {
+	if !c.AutoClose {
+		c.close()
+	}
+}
+
+//Close put the client to Connectors
+func (c *Client) close() {
 	if c.Error == nil {
 		if c.used {
 			c.over.closeClient(c)

@@ -12,6 +12,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/seefan/goerr"
 	"github.com/seefan/gossdb"
 	"github.com/seefan/gossdb/conf"
 )
@@ -22,9 +23,10 @@ func main() {
 		Port:        8888,
 		MaxWaitSize: 10000,
 		PoolSize:    10,
-		MinPoolSize: 500,
-		MaxPoolSize: 500,
+		MinPoolSize: 50,
+		MaxPoolSize: 50,
 		AutoClose:   true,
+		Password:    "vdsfsfafapaddssrd#@Ddfasfdsfedssdfsdfsd",
 	})
 	if err != nil {
 		panic(err)
@@ -43,7 +45,7 @@ func main() {
 		go func() {
 			//for {
 			//failed := 0
-			for j := 0; j < 100000; j++ {
+			for j := 0; j < 1000; j++ {
 				//if _, err := p.GetClient().Get("a"); err != nil {
 				//	//println(goerr.Error(err).Trace())
 				//	failed++
@@ -53,9 +55,9 @@ func main() {
 				if err != nil {
 					println(err.Error(), p.Info())
 				} else {
-					//if _, err := c.Get("a"); err != nil {
-					//	println(goerr.Error(err).Trace())
-					//}
+					if _, err := c.Get("a"); err != nil {
+						println(goerr.Error(err).Trace())
+					}
 					c.Close()
 				}
 			}

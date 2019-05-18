@@ -75,13 +75,8 @@ func (c *Client) Do(args ...interface{}) (rsp []string, err error) {
 	return
 }
 
-//Ping check the connection status and return true if the information can be queried normally or false otherwise
-//
-//  @return bool
-//
-//检查连接状态，如果可以正常查询信息，就返回true，否则返回false
 func (c *Client) Ping() bool {
-	_, err := c.Info()
+	_, err := c.Do("version")
 	return err == nil
 }
 
