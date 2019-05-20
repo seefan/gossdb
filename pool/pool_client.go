@@ -31,6 +31,6 @@ func (c *Client) close() {
 			c.over.closeClient(c)
 		}
 	} else {
-		c.over.poolTemp.Put(c)
+		c.over.clientTemp.Put(c)
 	}
 }

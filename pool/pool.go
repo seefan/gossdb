@@ -37,17 +37,25 @@ func newPool(size int) *Pool {
 //  @return error possible error, operation successfully returned nil
 //
 //启动连接
-func (p *Pool) Start() error {
+func (p *Pool) Start() (err error) {
 	if p.status != consts.PoolStop {
 		return errors.New("pool already start")
 	}
 
 	for i := 0; i < p.size; i++ {
-		if c, err := p.New(); err == nil {
-			c.index = i
-			p.pooled[i] = c
-		} else {
-			return err
+		c := p.pooled[i]
+		if c == nil {
+			if c, err = p.New(); err != nil {
+				return err
+			} else {
+				c.index = i
+				p.pooled[i] = c
+			}
+		}
+		if !c.IsOpen() {
+			if err := c.Start(); err != nil {
+				return err
+			}
 		}
 	}
 	p.status = consts.PoolStart

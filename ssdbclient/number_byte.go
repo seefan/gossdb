@@ -1,9 +1,7 @@
 package ssdbclient
 
 var (
-	byt              = []int{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9}
-	maxByteSize byte = 57
-	minByteSize byte = 48
+	byt = []int{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9}
 )
 
 //toNum
@@ -12,7 +10,7 @@ var (
 func toNum(bs []byte) int {
 	re := 0
 	for _, v := range bs {
-		if v > maxByteSize || v < minByteSize {
+		if v > '9' || v < '0' {
 			return re
 		}
 		re = re*10 + byt[v]

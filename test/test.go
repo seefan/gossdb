@@ -7,8 +7,8 @@
 package main
 
 import (
-	"fmt"
 	"math"
+	"net/http"
 	_ "net/http/pprof"
 	"sync"
 	"time"
@@ -20,31 +20,32 @@ import (
 
 func main() {
 	p, err := gossdb.NewPool(&conf.Config{
-		Host:        "127.0.0.1",
-		Port:        8888,
-		MaxWaitSize: 10000,
-		PoolSize:    10,
-		MinPoolSize: 10,
-		MaxPoolSize: 50,
-		AutoClose:   true,
-		Password:    "vdsfsfafapaddssrd#@Ddfasfdsfedssdfsdfsd",
+		Host:         "127.0.0.1",
+		Port:         8888,
+		MaxWaitSize:  10000,
+		PoolSize:     10,
+		MinPoolSize:  10,
+		MaxPoolSize:  50,
+		AutoClose:    true,
+		Password:     "vdsfsfafapaddssrd#@Ddfasfdsfedssdfsdfsd",
+		HealthSecond: 3,
 	})
 	if err != nil {
 		panic(err)
 	}
 	defer p.Close()
-	//go func() {
-	//	err := http.ListenAndServe(":9999", nil)
-	//	if err != nil {
-	//		panic(err)
-	//	}
-	//}()
-	now := time.Now()
+	go func() {
+		err := http.ListenAndServe(":9999", nil)
+		if err != nil {
+			panic(err)
+		}
+	}()
+
 	var wait sync.WaitGroup
 	for i := 0; i < 1000; i++ {
 		wait.Add(1)
 		go func() {
-			for {
+			for k := 0; k < 1000; k++ {
 				//failed := 0
 				for j := 0; j < 100; j++ {
 					//if _, err := p.GetClient().Get("a"); err != nil {
@@ -70,8 +71,7 @@ func main() {
 		}()
 	}
 	wait.Wait()
-	f := time.Since(now).Seconds()
-	fmt.Printf("%f,%f", f, 10000000/f)
+	time.Sleep(time.Minute)
 	//bs := make([]byte, 1)
 	//os.Stdin.Read(bs)
 }

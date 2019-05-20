@@ -41,7 +41,7 @@
 //     PoolSize int
 //     // the maximum number of waits. When the connection pool is full, the new connection will wait for the connection in the pool to be released before //    ontinuing. This value limits the maximum number of waits. Default: 1000
 //     MaxWaitSize int
-//     // the connection status check interval for the cache in the connection pool is in seconds. Default: 5
+//     // the connection status check interval for the cache in the connection pool is in seconds. Default: 30
 //     HealthSecond int
 //     // key for connection
 //     the Password string

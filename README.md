@@ -31,7 +31,7 @@
 * MinPoolSize int //最小连接个数。默认值: 20，PoolSize的整数倍，不足的话自动补足。
 * PoolSize int //连接池块的连接数。默认值: 20，连接池扩展和收缩时，以此值步进，可根据机器性能调整。
 * MaxWaitSize int //最大等待数目，当连接池满后，新建连接将等待池中连接释放后才可以继续，本值限制最大等待的数量，超过本值后将抛出异常。默认值: 1000
-* HealthSecond int //连接池内缓存的连接状态检查时间隔，单位为秒。默认值: 5
+* HealthSecond int //连接池内缓存的连接状态检查时间隔，单位为秒。默认值: 30
 * Password string //连接的密钥
 * WriteBufferSize int //连接写缓冲，默认为8k，单位为kb
 * ReadBufferSize int //连接读缓冲，默认为8k，单位为kb

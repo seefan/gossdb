@@ -56,7 +56,9 @@ type Connectors struct {
 	//watchTicker
 	watchTicker *time.Ticker
 	//poolTemp
-	poolTemp *sync.Pool
+	clientTemp *sync.Pool
+	//timer timp
+	timerTemp *sync.Pool
 }
 
 //NewConnectors initialize the connection pool using the configuration
@@ -90,9 +92,16 @@ func NewConnectors(cfg *conf.Config) *Connectors {
 		}
 		return nil
 	}
-	this.poolTemp = &sync.Pool{
+	this.clientTemp = &sync.Pool{
 		New: func() interface{} {
 			return &Client{Client: client.Client{}}
+		},
+	}
+	this.timerTemp = &sync.Pool{
+		New: func() interface{} {
+			t := time.NewTimer(time.Duration(this.cfg.GetClientTimeout) * time.Second)
+			t.Stop()
+			return t
 		},
 	}
 	this.status = consts.PoolStop
@@ -109,6 +118,10 @@ func (c *Connectors) SetNewClientRetryCount(count byte) {
 }
 
 //后台的观察函数，处理连接池大小的扩展和收缩，连接池状态的检查等
+//基本流程为先标记，再关闭
+//标记的条件为如果活跃连接数不足，测试将连接池块长度缩减，然后检查该连接池块的连接有没有全部回收，如果全部回收就进行标记
+//在下一个检查周期，将标记的块回收
+//在检查周期过程中标记状态可能改变，如果块重用，将块内所有连接的状态检查一下，没有open的重新start一下
 func (c *Connectors) watchHealth() {
 	for v := range c.watchTicker.C {
 		atomic.StoreInt32(&c.available, 0)
@@ -127,6 +140,7 @@ func (c *Connectors) watchHealth() {
 				time.Sleep(time.Millisecond * 10)
 			}
 		}
+		println(c.Info())
 	}
 }
 
@@ -151,11 +165,11 @@ func (c *Connectors) watchConnection(size int) {
 func (c *Connectors) watchPool(size int) {
 	for i := size; i < c.maxSize; i++ {
 		if c.pool[i] != nil {
-			if c.pool[i].available.pos == c.pool[i].available.size && c.pool[i].status != consts.PoolStop {
-				c.pool[i].status = consts.PoolStop
-			}
 			if c.pool[i].status == consts.PoolStop {
 				c.pool[i].Close()
+			}
+			if c.pool[i].available.pos == c.pool[i].available.size && c.pool[i].status != consts.PoolStop {
+				c.pool[i].status = consts.PoolStop
 			}
 		}
 	}
@@ -256,7 +270,7 @@ func (c *Connectors) GetClient() *Client {
 	if err == nil {
 		return cc
 	}
-	cc = c.poolTemp.Get().(*Client)
+	cc = c.clientTemp.Get().(*Client)
 	cc.Error = err
 	return cc
 }
@@ -313,7 +327,9 @@ func (c *Connectors) NewClient() (cli *Client, err error) {
 		return nil, fmt.Errorf("pool is busy,Wait for connection creation has reached %d", waitCount)
 	}
 	atomic.AddInt32(&c.waitCount, 1)
-	timeout := time.NewTimer(time.Duration(c.cfg.GetClientTimeout) * time.Second)
+	//timeout := time.NewTimer(time.Duration(c.cfg.GetClientTimeout) * time.Second)
+	timeout := c.timerTemp.Get().(*time.Timer)
+	timeout.Reset(time.Duration(c.cfg.GetClientTimeout) * time.Second)
 	select {
 	case <-timeout.C:
 		err = fmt.Errorf("pool is busy,can not get new client in %d seconds,wait count is %d", c.cfg.GetClientTimeout, c.waitCount)
@@ -327,6 +343,7 @@ func (c *Connectors) NewClient() (cli *Client, err error) {
 	}
 	atomic.AddInt32(&c.waitCount, -1)
 	timeout.Stop()
+	c.timerTemp.Put(timeout)
 	return
 }
 

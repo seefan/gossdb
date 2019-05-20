@@ -82,6 +82,8 @@ type SSDBClient struct {
 	//and can be modified to use a custom serialization
 	//将输入参数成[]byte，默认会转换成json格式,可以修改这个参数以便使用自定义的序列化方式
 	EncodingFunc func(v interface{}) []byte
+	//dialer
+	dialer *net.Dialer
 }
 
 //Start start socket
@@ -90,7 +92,10 @@ type SSDBClient struct {
 //
 //启动连接，并设置读写的缓存
 func (s *SSDBClient) Start() error {
-	conn, err := net.DialTimeout("tcp", fmt.Sprintf("%s:%d", s.host, s.port), time.Second)
+	if s.dialer == nil {
+		s.dialer = &net.Dialer{Timeout: time.Second * time.Duration(s.connectTimeout)}
+	}
+	conn, err := s.dialer.Dial("tcp", fmt.Sprintf("%s:%d", s.host, s.port))
 	if err != nil {
 		return err
 	}
@@ -107,7 +112,6 @@ func (s *SSDBClient) Start() error {
 	s.sock = sock
 	s.timeZero = time.Time{}
 	s.isOpen = true
-	//s.isAuth = s.password == ""
 	return s.auth()
 }
 
@@ -234,8 +238,7 @@ func (s *SSDBClient) send(args []interface{}) (err error) {
 			bs := strconv.AppendInt(nil, int64(arg), 10)
 			err = s.write(bs)
 		case int8:
-			bs := strconv.AppendInt(nil, int64(arg), 10)
-			err = s.write(bs)
+			err = s.write([]byte{byte(arg)})
 		case int16:
 			bs := strconv.AppendInt(nil, int64(arg), 10)
 			err = s.write(bs)
@@ -246,8 +249,7 @@ func (s *SSDBClient) send(args []interface{}) (err error) {
 			bs := strconv.AppendInt(nil, arg, 10)
 			err = s.write(bs)
 		case uint8:
-			bs := strconv.AppendUint(nil, uint64(arg), 10)
-			err = s.write(bs)
+			err = s.write([]byte{byte(arg)})
 		case uint16:
 			bs := strconv.AppendUint(nil, uint64(arg), 10)
 			err = s.write(bs)
@@ -267,7 +269,7 @@ func (s *SSDBClient) send(args []interface{}) (err error) {
 			if arg {
 				err = s.write([]byte{1})
 			} else {
-				err = s.write([]byte{1})
+				err = s.write([]byte{0})
 			}
 		case time.Time:
 			bs := strconv.AppendInt(nil, arg.Unix(), 10)
@@ -382,6 +384,7 @@ func (s *SSDBClient) parse() (resp string, end bool, err error) {
 		return "", true, nil
 	}
 	blockSize := toNum(ns)
+
 	if ns[size-1] == endR {
 		size = 2
 	} else {
