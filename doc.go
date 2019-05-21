@@ -18,6 +18,7 @@
 //     each block is a separate connection pool, and multiple connection pools collaborate to reduce lock contention time
 //     support automatic connection recovery, support error free connection acquisition, code call is easier. Instead of having to determine if the connection
 //     was successful and close it manually, you can omit this duplicated code and focus on the business logic
+//     the memory leak problem with high concurrency is solved primarily by recycling timers and reusing connections
 //
 //  The main configuration item
 //
