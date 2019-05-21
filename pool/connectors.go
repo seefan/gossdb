@@ -140,7 +140,7 @@ func (c *Connectors) watchHealth() {
 				time.Sleep(time.Millisecond * 10)
 			}
 		}
-		println(c.Info())
+		//println(c.Info())
 	}
 }
 

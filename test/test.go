@@ -45,7 +45,7 @@ func main() {
 	for i := 0; i < 1000; i++ {
 		wait.Add(1)
 		go func() {
-			for k := 0; k < 1000; k++ {
+			for k := 0; k < 100000; k++ {
 				//failed := 0
 				for j := 0; j < 100; j++ {
 					//if _, err := p.GetClient().Get("a"); err != nil {
