@@ -75,6 +75,9 @@ func (c *Client) Do(args ...interface{}) (rsp []string, err error) {
 	return
 }
 
+//Ping ping ssdb
+//
+//  @return ssdb is available
 func (c *Client) Ping() bool {
 	_, err := c.Do("version")
 	return err == nil

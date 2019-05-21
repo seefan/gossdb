@@ -47,10 +47,9 @@ func (p *Pool) Start() (err error) {
 		if c == nil {
 			if c, err = p.New(); err != nil {
 				return err
-			} else {
-				c.index = i
-				p.pooled[i] = c
 			}
+			c.index = i
+			p.pooled[i] = c
 		}
 		if !c.IsOpen() {
 			if err := c.Start(); err != nil {
