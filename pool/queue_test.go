@@ -82,9 +82,7 @@ func TestQueue_Put(t *testing.T) {
 				value:  tt.fields.value,
 				size:   tt.fields.size,
 			}
-			if got := q.Put(tt.args.i); got != tt.want {
-				t.Errorf("Queue.Put() = %v, want %v", got, tt.want)
-			}
+			q.Put(tt.args.i)
 		})
 	}
 }
@@ -98,35 +96,7 @@ func TestQueue_All(t *testing.T) {
 	t.Log(q.value)
 	t.Log(q.Pop())
 	t.Log(q.value)
-	t.Log(q.Put(20))
-	t.Log(q.value)
-	t.Log(q.Put(21))
-	t.Log(q.value)
-	t.Log(q.Pop())
-	t.Log(q.value)
-	t.Log(q.Pop())
-	t.Log(q.value)
-	t.Log(q.Pop())
-	t.Log(q.value)
-	t.Log(q.Pop())
-	t.Log(q.value)
-	t.Log(q.Pop())
-	t.Log(q.value)
-	t.Log(q.Pop())
-	t.Log(q.value)
-	t.Log(q.Pop())
-	t.Log(q.value)
-	t.Log(q.Put(23))
-	t.Log(q.value)
-	t.Log(q.Put(24))
-	t.Log(q.value)
-	t.Log(q.Put(25))
-	t.Log(q.value)
-	t.Log(q.Put(26))
-	t.Log(q.value)
-	t.Log(q.Put(27))
-	t.Log(q.value)
-	t.Log(q.Put(28))
+
 }
 
 func BenchmarkQueue10(b *testing.B) {

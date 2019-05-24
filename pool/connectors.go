@@ -168,7 +168,7 @@ func (c *Connectors) watchPool(size int) {
 			if c.pool[i].status == consts.PoolStop {
 				c.pool[i].Close()
 			}
-			if c.pool[i].available.pos == c.pool[i].available.size && c.pool[i].status != consts.PoolStop {
+			if c.pool[i].available.Available() == 0 && c.pool[i].status != consts.PoolStop {
 				c.pool[i].status = consts.PoolStop
 			}
 		}

@@ -27,6 +27,11 @@ func newQueue(size int) *Queue {
 	}
 }
 
+//Available queue available size
+func (q *Queue) Available() int {
+	return q.size - q.pos
+}
+
 //Empty check available index
 //
 //  @return bool
@@ -61,7 +66,7 @@ func (q *Queue) Pop() (re int) {
 //  @return int pos
 //
 //归还索引值
-func (q *Queue) Put(i int) int {
+func (q *Queue) Put(i int) {
 	q.lock.Lock()
 
 	pos := q.pos + 1
@@ -75,5 +80,4 @@ func (q *Queue) Put(i int) int {
 	}
 	q.pos = pos
 	q.lock.Unlock()
-	return pos
 }

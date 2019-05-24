@@ -15,7 +15,7 @@ type Pool struct {
 	//element list
 	pooled []*Client
 	//available index
-	available *Queue
+	available Avaliable
 	//状态
 	status int
 	//new client
