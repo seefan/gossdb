@@ -159,6 +159,9 @@ func (s *SSDBClient) do(args ...interface{}) (resp []string, err error) {
 	return
 }
 func (s *SSDBClient) auth() error {
+	if s.password == "" {//without a password, authentication is not required
+		return nil
+	}
 	//if !s.isAuth {
 	resp, err := s.do("auth", s.password)
 	if err != nil {
