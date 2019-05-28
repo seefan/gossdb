@@ -7,8 +7,8 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"io"
 	"net"
+	"runtime"
 	"strconv"
 	"time"
 
@@ -74,8 +74,9 @@ type SSDBClient struct {
 	host string
 	//connection
 	sock *net.TCPConn
-	//buf
-	readBuf []byte
+	//readBuf
+	readBuf     []byte
+	readBufSize int
 	//read and write buffer
 	packetBuf bytes.Buffer
 	//The input parameter is converted to [] bytes, which by default is converted to json format
@@ -108,7 +109,8 @@ func (s *SSDBClient) Start() error {
 	if err != nil {
 		return err
 	}
-	s.readBuf = make([]byte, s.readBufferSize*1024)
+	s.readBufSize = s.readBufferSize * 1024
+	s.readBuf = make([]byte, s.readBufSize)
 	s.sock = sock
 	s.timeZero = time.Time{}
 	s.isOpen = true
@@ -159,7 +161,7 @@ func (s *SSDBClient) do(args ...interface{}) (resp []string, err error) {
 	return
 }
 func (s *SSDBClient) auth() error {
-	if s.password == "" {//without a password, authentication is not required
+	if s.password == "" { //without a password, authentication is not required
 		return nil
 	}
 	//if !s.isAuth {
@@ -212,100 +214,107 @@ func (s *SSDBClient) Do(args ...interface{}) ([]string, error) {
 }
 
 //write write to buf
-func (s *SSDBClient) write(bs []byte) error {
-	if _, err := s.packetBuf.Write(strconv.AppendInt(nil, int64(len(bs)), 10)); err != nil {
+func (s *SSDBClient) writeBytes(bs []byte) error {
+	lbs := strconv.AppendInt(nil, int64(len(bs)), 10)
+	if err := s.write(lbs, len(lbs)); err != nil {
 		return err
 	}
-	if err := s.packetBuf.WriteByte(endN); err != nil {
+	if err := s.write([]byte{endN}, 1); err != nil {
 		return err
 	}
-	if _, err := s.packetBuf.Write(bs); err != nil {
+	if err := s.write(bs, len(bs)); err != nil {
 		return err
 	}
-	if err := s.packetBuf.WriteByte(endN); err != nil {
+	if err := s.write([]byte{endN}, 1); err != nil {
 		return err
 	}
 	return nil
 }
+func (s *SSDBClient) write(bs []byte, size int) error {
+	wn := 0
+	for {
+		n, err := s.sock.Write(bs)
+		if err != nil {
+			return err
+		}
+		if n == size || wn+n == size {
+			return nil
+		}
+		wn += n
+		runtime.Gosched()
+	}
+}
 
 //send cmd to ssdb
 func (s *SSDBClient) send(args []interface{}) (err error) {
-	s.packetBuf.Reset()
+	if err = s.sock.SetWriteDeadline(time.Now().Add(time.Second * time.Duration(s.writeTimeout))); err != nil {
+		return err
+	}
 	for _, arg := range args {
 		switch arg := arg.(type) {
 		case string:
-			err = s.write([]byte(arg))
+			err = s.writeBytes([]byte(arg))
 		case []byte:
-			err = s.write(arg)
+			err = s.writeBytes(arg)
 		case int:
 			bs := strconv.AppendInt(nil, int64(arg), 10)
-			err = s.write(bs)
+			err = s.writeBytes(bs)
 		case int8:
-			err = s.write([]byte{byte(arg)})
+			err = s.writeBytes([]byte{byte(arg)})
 		case int16:
 			bs := strconv.AppendInt(nil, int64(arg), 10)
-			err = s.write(bs)
+			err = s.writeBytes(bs)
 		case int32:
 			bs := strconv.AppendInt(nil, int64(arg), 10)
-			err = s.write(bs)
+			err = s.writeBytes(bs)
 		case int64:
 			bs := strconv.AppendInt(nil, arg, 10)
-			err = s.write(bs)
+			err = s.writeBytes(bs)
 		case uint8:
-			err = s.write([]byte{byte(arg)})
+			err = s.writeBytes([]byte{byte(arg)})
 		case uint16:
 			bs := strconv.AppendUint(nil, uint64(arg), 10)
-			err = s.write(bs)
+			err = s.writeBytes(bs)
 		case uint32:
 			bs := strconv.AppendUint(nil, uint64(arg), 10)
-			err = s.write(bs)
+			err = s.writeBytes(bs)
 		case uint64:
 			bs := strconv.AppendUint(nil, arg, 10)
-			err = s.write(bs)
+			err = s.writeBytes(bs)
 		case float32:
 			bs := strconv.AppendFloat(nil, float64(arg), 'g', -1, 32)
-			err = s.write(bs)
+			err = s.writeBytes(bs)
 		case float64:
 			bs := strconv.AppendFloat(nil, arg, 'g', -1, 64)
-			err = s.write(bs)
+			err = s.writeBytes(bs)
 		case bool:
 			if arg {
-				err = s.write([]byte{1})
+				err = s.writeBytes([]byte{1})
 			} else {
-				err = s.write([]byte{0})
+				err = s.writeBytes([]byte{0})
 			}
 		case time.Time:
 			bs := strconv.AppendInt(nil, arg.Unix(), 10)
-			err = s.write(bs)
+			err = s.writeBytes(bs)
 		case time.Duration:
 			bs := strconv.AppendInt(nil, arg.Nanoseconds(), 10)
-			err = s.write(bs)
+			err = s.writeBytes(bs)
 		case nil:
-			err = s.write([]byte{})
+			err = s.writeBytes([]byte{})
 		default:
 			if s.encoding && s.EncodingFunc != nil {
-				err = s.write(s.EncodingFunc(arg))
+				err = s.writeBytes(s.EncodingFunc(arg))
 			} else {
 				return errors.New("bad arguments type")
 			}
 		}
-
-	}
-	if err != nil {
-		return err
-	}
-	err = s.packetBuf.WriteByte(endN)
-	if err != nil {
-		return err
-	}
-	if err = s.sock.SetWriteDeadline(time.Now().Add(time.Second * time.Duration(s.writeTimeout))); err != nil {
-		return err
-	}
-	for _, err := s.packetBuf.WriteTo(s.sock); s.packetBuf.Len() > 0; {
 		if err != nil {
-			s.packetBuf.Reset()
-			return goerr.Errorf(err, "client socket write error")
+			return err
 		}
+	}
+	err = s.write([]byte{endN}, 1)
+	if err != nil {
+		return err
 	}
 	//设置不超时
 	if err = s.sock.SetWriteDeadline(s.timeZero); err != nil {
@@ -315,89 +324,69 @@ func (s *SSDBClient) send(args []interface{}) (err error) {
 	return nil
 }
 
-//recv receive data
+//接收数据
 func (s *SSDBClient) recv() (resp []string, err error) {
-	var bufSize int
-	s.packetBuf.Reset()
-
-	//数据包分解，发现长度，找到结尾，循环发现，发现空行，结束
-	end := false
+	bufSize := 0
+	packetBuf := []byte{}
 	//设置读取数据超时，
 	if err = s.sock.SetReadDeadline(time.Now().Add(time.Second * time.Duration(s.readTimeout))); err != nil {
 		return nil, err
 	}
-	for !end {
-
+	//数据包分解，发现长度，找到结尾，循环发现，发现空行，结束
+	for {
 		bufSize, err = s.sock.Read(s.readBuf)
-
 		if err != nil {
 			return nil, goerr.Errorf(err, "client socket read error")
 		}
 		if bufSize < 1 {
 			continue
 		}
-		if _, err = s.packetBuf.Write(s.readBuf[:bufSize]); err != nil {
-			return nil, goerr.Errorf(err, "client socket read error")
-		}
-		n := bytes.IndexByte(s.readBuf, endN)
-		if n == -1 {
-			continue
-		}
+		packetBuf = append(packetBuf, s.readBuf[:bufSize]...)
 
 		for {
-			rs, re, e := s.parse()
-			//end
-			if re {
-				end = true
+			rsp, n := s.parse(packetBuf)
+			if n == -1 {
 				break
+			} else if n == -2 {
+				return
+			} else {
+				resp = append(resp, rsp)
+				packetBuf = packetBuf[n+1:]
 			}
-			//err
-			if e != nil && re {
-				err = goerr.Errorf(e, "client socket read error")
-				end = true
-				break
-			}
-			//no data
-			if err != nil && !re {
-				break
-			}
-			resp = append(resp, rs)
 		}
 	}
-	if err == nil {
-		//设置不超时
-		if err = s.sock.SetReadDeadline(s.timeZero); err != nil {
-			return nil, err
-		}
+	packetBuf = nil
+	//设置不超时
+	if err = s.sock.SetReadDeadline(s.timeZero); err != nil {
+		return nil, err
 	}
 	return resp, nil
 }
 
-//解析数据为string
-func (s *SSDBClient) parse() (resp string, end bool, err error) {
-	ns, err := s.packetBuf.ReadBytes(endN)
-	if err == io.EOF {
-		return "", true, nil
-	}
-	if err != nil {
-		return "", true, err
-	}
-	size := len(ns)
-	if size == 1 && ns[0] == endN || size == 2 && ns[0] == endR { //空行，说明一个数据包结束
-		return "", true, nil
-	}
-	blockSize := toNum(ns)
+//解析数据为string的slice
+func (s *SSDBClient) parse(buf []byte) (resp string, size int) {
+	n := bytes.IndexByte(buf, endN)
+	blockSize := -1
+	size = -1
+	if n != -1 {
+		if n == 0 || n == 1 && buf[0] == endR { //空行，说明一个数据包结束
+			size = -2
+			return
+		}
+		//数据包开始，包长度解析
+		blockSize = toNum(buf[:n])
+		bufSize := len(buf)
 
-	if ns[size-1] == endR {
-		size = 2
-	} else {
-		size = 1
-	}
-	if s.packetBuf.Len() < blockSize+size {
-		return "", false, io.EOF
+		if n+blockSize < bufSize {
+			resp = string(buf[n+1 : blockSize+n+1])
+			for i := blockSize + n + 1; i < bufSize; i++ {
+				if buf[i] == endN {
+					size = i
+					return
+				}
+			}
+		}
 	}
 
-	ns = s.packetBuf.Next(blockSize)
-	s.packetBuf.Next(size)
-	return string(ns), false, nil
+	return
 }
