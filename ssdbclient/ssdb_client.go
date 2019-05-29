@@ -66,19 +66,20 @@ type SSDBClient struct {
 	connectTimeout int
 	//ssdb port
 	port int
+	//bufSize
+	bufSize int
+	//tmpSize
+	offset int
 	//0时间
 	timeZero time.Time
 	//connection token
 	password string
-	//ssdb host
+	//host ssdb host
 	host string
 	//connection
 	sock *net.TCPConn
 	//readBuf
-	readBuf     []byte
-	readBufSize int
-	//read and write buffer
-	packetBuf bytes.Buffer
+	buf []byte
 	//The input parameter is converted to [] bytes, which by default is converted to json format
 	//and can be modified to use a custom serialization
 	//将输入参数成[]byte，默认会转换成json格式,可以修改这个参数以便使用自定义的序列化方式
@@ -109,8 +110,8 @@ func (s *SSDBClient) Start() error {
 	if err != nil {
 		return err
 	}
-	s.readBufSize = s.readBufferSize * 1024
-	s.readBuf = make([]byte, s.readBufSize)
+	s.bufSize = (s.readBufferSize + s.writeBufferSize) * 1024
+	s.buf = make([]byte, s.bufSize)
 	s.sock = sock
 	s.timeZero = time.Time{}
 	s.isOpen = true
@@ -122,7 +123,7 @@ func (s *SSDBClient) Start() error {
 //  @return error that may occur on shutdown. Return nil if successful shutdown
 func (s *SSDBClient) Close() error {
 	s.isOpen = false
-	s.readBuf = nil
+	s.buf = nil
 	if s.sock == nil {
 		return nil
 	}
@@ -231,6 +232,23 @@ func (s *SSDBClient) writeBytes(bs []byte) error {
 	return nil
 }
 func (s *SSDBClient) write(bs []byte, size int) error {
+	if s.offset+size < s.bufSize {
+		copy(s.buf[s.offset:], bs)
+		s.offset += size
+		return nil
+	}
+	err := s.writeSocket(s.buf[:s.offset], s.offset)
+	if err != nil {
+		return err
+	}
+	s.offset = 0
+	err = s.writeSocket(bs, size)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+func (s *SSDBClient) writeSocket(bs []byte, size int) error {
 	wn := 0
 	for {
 		n, err := s.sock.Write(bs)
@@ -312,10 +330,20 @@ func (s *SSDBClient) send(args []interface{}) (err error) {
 			return err
 		}
 	}
-	err = s.write([]byte{endN}, 1)
+	if s.offset < s.bufSize {
+		s.buf[s.offset] = endN
+		s.offset++
+		err = s.writeSocket(s.buf[:s.offset], s.offset)
+	} else {
+		if err = s.writeSocket(s.buf[:s.offset], s.offset); err == nil {
+			err = s.writeSocket([]byte{endN}, 1)
+		}
+	}
+
 	if err != nil {
 		return err
 	}
+	s.offset = 0
 	//设置不超时
 	if err = s.sock.SetWriteDeadline(s.timeZero); err != nil {
 		return err
@@ -326,36 +354,52 @@ func (s *SSDBClient) send(args []interface{}) (err error) {
 
 //接收数据
 func (s *SSDBClient) recv() (resp []string, err error) {
-	bufSize := 0
-	packetBuf := []byte{}
+	var bufSize, offset int
+	var rs []string
+	//数据包分解，发现长度，找到结尾，循环发现，发现空行，结束
+
 	//设置读取数据超时，
 	if err = s.sock.SetReadDeadline(time.Now().Add(time.Second * time.Duration(s.readTimeout))); err != nil {
 		return nil, err
 	}
-	//数据包分解，发现长度，找到结尾，循环发现，发现空行，结束
-	for {
-		bufSize, err = s.sock.Read(s.readBuf)
+	bufSize, err = s.sock.Read(s.buf)
+	if err != nil {
+		return nil, goerr.Errorf(err, "client socket read error")
+	}
+	if bufSize > 0 { //数据没有读满，可能返回数据少，小数据可以处理完成
+		rs, offset = s.parse(s.buf[:bufSize])
+		if offset == -1 {
+			return rs, nil //解析完成，返回
+		}
+		if offset > 0 {
+			resp = append(resp, rs...)
+		}
+	}
+	back := make([]byte, bufSize-offset)
+	copy(back, s.buf[offset:bufSize])
+	for offset != -1 {
+		bufSize, err = s.sock.Read(s.buf)
 		if err != nil {
 			return nil, goerr.Errorf(err, "client socket read error")
 		}
 		if bufSize < 1 {
 			continue
 		}
-		packetBuf = append(packetBuf, s.readBuf[:bufSize]...)
-
-		for {
-			rsp, n := s.parse(packetBuf)
-			if n == -1 {
-				break
-			} else if n == -2 {
-				return
-			} else {
-				resp = append(resp, rsp)
-				packetBuf = packetBuf[n+1:]
-			}
+		if bytes.IndexByte(s.buf[:bufSize], endN) == -1 {
+			back = append(back, s.buf[:bufSize]...)
+			continue
+		}
+		rs, offset = s.parse(append(back, s.buf[:bufSize]...))
+		if offset == -1 {
+			resp = append(resp, rs...)
+			break
+		} else if offset > 0 {
+			resp = append(resp, rs...)
+		}
+		if offset < bufSize {
+			back = append(back, s.buf[offset:bufSize]...)
 		}
 	}
-	packetBuf = nil
 	//设置不超时
 	if err = s.sock.SetReadDeadline(s.timeZero); err != nil {
 		return nil, err
@@ -364,29 +408,35 @@ func (s *SSDBClient) recv() (resp []string, err error) {
 }
 
 //解析数据为string的slice
-func (s *SSDBClient) parse(buf []byte) (resp string, size int) {
-	n := bytes.IndexByte(buf, endN)
-	blockSize := -1
-	size = -1
-	if n != -1 {
+//off 0 没有完整数据 -1 解析完成 >0 部分解析
+func (s *SSDBClient) parse(buf []byte) (resp []string, offset int) {
+	var blockSize int
+	var n int
+	var rn int
+	end := len(buf)
+	for {
+		n = bytes.IndexByte(buf[offset:], endN)
+		if n == -1 {
+			break
+		}
 		if n == 0 || n == 1 && buf[0] == endR { //空行，说明一个数据包结束
-			size = -2
-			return
+			offset = -1
+			break
+		}
+		if buf[offset+n-1] == endR {
+			rn = 2
+		} else {
+			rn = 1
 		}
 		//数据包开始，包长度解析
-		blockSize = toNum(buf[:n])
-		bufSize := len(buf)
-
-		if n+blockSize < bufSize {
-			resp = string(buf[n+1 : blockSize+n+1])
-			for i := blockSize + n + 1; i < bufSize; i++ {
-				if buf[i] == endN {
-					size = i
-					return
-				}
-			}
+		blockSize = toNum(buf[offset : offset+n])
+		if offset+blockSize+1+rn < end {
+			resp = append(resp, string(buf[offset+n+1:offset+blockSize+n+1]))
+			//skip end
+			offset = offset + n + 1 + blockSize + rn
+		} else { //数据不足
+			break
 		}
 	}
-
 	return
 }

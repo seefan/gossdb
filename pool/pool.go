@@ -25,9 +25,10 @@ type Pool struct {
 //新建一个池
 func newPool(size int) *Pool {
 	return &Pool{
-		pooled:    make([]*Client, size),
-		size:      size,
+		pooled: make([]*Client, size),
+		size:   size,
 		available: newQueue(size),
+		//available: newRing(size),
 		status:    consts.PoolStop,
 	}
 }

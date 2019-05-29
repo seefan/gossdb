@@ -221,3 +221,35 @@ func TestSSDBClient_pwd(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+func TestSSDBClient_getBig(t *testing.T) {
+	cfg := &conf.Config{
+		Host:            "127.0.0.1",
+		Port:            8888,
+		ReadBufferSize:  8,
+		WriteBufferSize: 8,
+		ReadTimeout:     300,
+	}
+	c := NewSSDBClient(cfg.Default())
+	if err := c.Start(); err != nil {
+		t.Fatal(err)
+	}
+	var s = make([]byte, 5*1024*1024)
+	//for i := 0; i < len(s); i++ {
+	//	s[i] = 'a'
+	//}
+	for i := 0; i < 100; i++ {
+		//if v, err := c.Do("set", "big", s); err == nil {
+		//	t.Log(v)
+		//} else {
+		//	t.Error(err)
+		//}
+		if v, err := c.Do("get", "big"); err == nil {
+			t.Log(len(v))
+		} else {
+			t.Error(err)
+		}
+	}
+	if err := c.Close(); err != nil {
+		t.Fatal(err)
+	}
+}

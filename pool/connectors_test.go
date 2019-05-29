@@ -130,8 +130,8 @@ func BenchmarkConnectors_NewClient1000(b *testing.B) {
 		Port:        8888,
 		MaxWaitSize: 10000,
 		PoolSize:    20,
-		MinPoolSize: 500,
-		MaxPoolSize: 500,
+		MinPoolSize: 100,
+		MaxPoolSize: 100,
 		//Password:    "vdsfsfafapaddssrd#@Ddfasfdsfedssdfsdfsd",
 	})
 	err := pool.Start()
@@ -157,15 +157,16 @@ func BenchmarkConnectors_NewClient5000(b *testing.B) {
 	pool := NewConnectors(&conf.Config{
 		Host:        "127.0.0.1",
 		Port:        8888,
-		MaxWaitSize: 1000000,
-		PoolSize:    10,
-		MaxPoolSize: 200,
-		MinPoolSize: 200,
+		MaxWaitSize: 100000,
+		PoolSize:    20,
+		MaxPoolSize: 500,
+		MinPoolSize: 500,
 	})
 	err := pool.Start()
 	if err != nil {
 		b.Fatal(err)
 	}
+	//pool.SetNewClientRetryCount(4)
 	b.SetParallelism(5000)
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
