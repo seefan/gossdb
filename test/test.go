@@ -42,7 +42,7 @@ func main() {
 	}()
 	bs := make([]byte, 100*1024)
 	var wait sync.WaitGroup
-	for i := 0; i < 10; i++ {
+	for i := 0; i < 100; i++ {
 		wait.Add(1)
 		go func() {
 			for k := 0; k < 10000000000; k++ {

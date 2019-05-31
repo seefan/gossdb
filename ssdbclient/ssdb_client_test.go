@@ -233,18 +233,19 @@ func TestSSDBClient_getBig(t *testing.T) {
 	if err := c.Start(); err != nil {
 		t.Fatal(err)
 	}
-	var s = make([]byte, 5*1024*1024)
+	//var s = make([]byte, 5*1024*1024)
 	//for i := 0; i < len(s); i++ {
 	//	s[i] = 'a'
 	//}
-	for i := 0; i < 100; i++ {
-		//if v, err := c.Do("set", "big", s); err == nil {
-		//	t.Log(v)
-		//} else {
-		//	t.Error(err)
-		//}
+
+	//if v, err := c.Do("set", "big", s); err == nil {
+	//	t.Log(v)
+	//} else {
+	//	t.Error(err)
+	//}
+	for i:=0;i<1000;i++{
 		if v, err := c.Do("get", "big"); err == nil {
-			t.Log(len(v))
+			t.Log(len(v[1]))
 		} else {
 			t.Error(err)
 		}
@@ -252,4 +253,24 @@ func TestSSDBClient_getBig(t *testing.T) {
 	if err := c.Close(); err != nil {
 		t.Fatal(err)
 	}
+}
+func TestSSDBClient_getScan(t *testing.T) {
+	cfg := &conf.Config{
+		Host:            "afcm222",
+		Port:            8888,
+		ReadBufferSize:  8,
+		WriteBufferSize: 8,
+		ReadTimeout:     300,
+	}
+	c := NewSSDBClient(cfg.Default())
+	if err := c.Start(); err != nil {
+		t.Fatal(err)
+	}
+	defer c.Close()
+	if v, err := c.Do("hscan", "rank:2019-05-18:0:free", "", "", 10000); err == nil {
+		t.Log(v)
+	} else {
+		t.Error(err)
+	}
+
 }
