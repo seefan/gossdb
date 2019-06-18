@@ -315,3 +315,56 @@ func TestAutoClose3(t *testing.T) {
 		c.Close()
 	}
 }
+func BenchmarkConnectors_Set1k(b *testing.B) {
+	pool := NewConnectors(&conf.Config{
+		Host:        "127.0.0.1",
+		Port:        8888,
+		MaxWaitSize: 100000,
+		PoolSize:    20,
+		MaxPoolSize: 100,
+		MinPoolSize: 100,
+		AutoClose:   true,
+	})
+	err := pool.Start()
+	if err != nil {
+		b.Fatal(err)
+	}
+	//pool.SetNewClientRetryCount(4)
+	b.SetParallelism(1000)
+	k1 := make([]byte, 1024)
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			if err := pool.GetClient().Set("1k", k1); err != nil {
+				b.Error(err)
+			}
+		}
+	})
+	pool.Close()
+}
+
+func BenchmarkConnectors_Get1k(b *testing.B) {
+	pool := NewConnectors(&conf.Config{
+		Host:        "127.0.0.1",
+		Port:        8888,
+		MaxWaitSize: 100000,
+		PoolSize:    20,
+		MaxPoolSize: 100,
+		MinPoolSize: 100,
+		AutoClose:   true,
+	})
+	err := pool.Start()
+	if err != nil {
+		b.Fatal(err)
+	}
+	//pool.SetNewClientRetryCount(4)
+	b.SetParallelism(1000)
+	//k1 := make([]byte, 1024)
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			if _, err := pool.GetClient().Get("big"); err != nil {
+				b.Error(err)
+			}
+		}
+	})
+	pool.Close()
+}

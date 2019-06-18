@@ -211,10 +211,12 @@ func (c *Client) MultiHGet(setName string, key ...string) (val map[string]Value,
 		return make(map[string]Value), nil
 	}
 
-	args := []interface{}{"multi_hget", setName}
+	args := make([]interface{}, len(key)+2)
+	args[0] = "multi_hget"
+	args[1] = setName
 
-	for _, v := range key {
-		args = append(args, v)
+	for i, v := range key {
+		args[i+2] = v
 	}
 
 	resp, err := c.Do(args...)

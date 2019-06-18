@@ -374,13 +374,15 @@ func (s *SSDBClient) recv() (resp []string, err error) {
 	return resp, nil
 }
 
-//解析数据为string的slice
-//数据包分解，发现长度，找到结尾，循环发现，发现空行，结束
+//parse 解析数据为string的slice
 func (s *SSDBClient) parse() (resp []string, err error) {
 	var blockSize, bufSize, status, offset int
 	var rs []string
-
+	//如何一次读取就可以解析完成，就不需要使用bytes.Buffer
 	bufSize, err = s.sock.Read(s.buf)
+	if err != nil {
+		return nil, err
+	}
 	if bufSize > 0 {
 		rs, status, blockSize, offset = s.parseBuffer(s.buf[:bufSize])
 		if status == 1 { //解析完成
@@ -390,11 +392,14 @@ func (s *SSDBClient) parse() (resp []string, err error) {
 			resp = append(resp, rs...)
 		}
 	}
-
+	//大数据量读取
 	var bs bytes.Buffer
 	bs.Write(s.buf[offset:bufSize])
 	for {
 		bufSize, err = s.sock.Read(s.buf)
+		if err != nil {
+			return nil, err
+		}
 		if bufSize == 0 {
 			runtime.Gosched()
 			continue //no data
@@ -419,6 +424,8 @@ func (s *SSDBClient) parse() (resp []string, err error) {
 	bs.Reset()
 	return
 }
+
+//parseBuffer 数据包分解，发现长度，找到结尾，循环发现，发现空行，结束
 func (s *SSDBClient) parseBuffer(buf []byte) (resp []string, status int, blockSize int, offset int) {
 	delim := 1
 	bufSize := len(buf)
