@@ -80,12 +80,10 @@ func (c *Config) Default() *Config {
 	if c.MinPoolSize < c.PoolSize {
 		c.MinPoolSize = c.PoolSize
 	}
-	if c.MaxPoolSize < c.PoolSize {
-		c.MaxPoolSize = c.PoolSize
-	}
-	if c.MaxPoolSize == c.MinPoolSize {
+	if c.MaxPoolSize < c.MinPoolSize {
 		c.MaxPoolSize = c.MinPoolSize
 	}
+
 	if c.ReadTimeout == 0 {
 		c.ReadTimeout = c.ReadWriteTimeout
 	}
