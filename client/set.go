@@ -296,44 +296,82 @@ func (c *Client) MultiDel(key ...string) (err error) {
 	return makeError(resp, key)
 }
 
-////设置字符串内指定位置的位值(BIT), 字符串的长度会自动扩展.
-////
-////  key 键值
-////  offset 位偏移
-////  bit  0 或 1
-////  返回 val，原来的位值
-////  返回 err，可能的错误，操作成功返回 nil
-//func (s *Client) Setbit(key string, offset int64, bit byte) (byte, error) {
+//Setbit 设置字符串内指定位置的位值(BIT), 字符串的长度会自动扩展.
+//
+//  key 键值
+//  offset 位偏移
+//  bit  0 或 1
+//  返回 val，原来的位值
+//  返回 err，可能的错误，操作成功返回 nil
+func (c *Client) Setbit(key string, offset int64, bit byte) (byte, error) {
 
-//	resp, err := s.Do("setbit", key, offset, bit)
+	resp, err := c.Do("setbit", key, offset, bit)
 
-//	if err != nil {
-//		return 255, goerr.Errorf(err, "Setbit %s error", key)
-//	}
-//	if len(resp) == 2 && resp[0] == oK {
-//		return Value(resp[1]).Byte(), nil
-//	}
-//	return 255, makeError(resp, key)
-//}
+	if err != nil {
+		return 0, goerr.Errorf(err, "Setbit %s error", key)
+	}
+	if len(resp) == 2 && resp[0] == oK {
+		return Value(resp[1]).Byte(), nil
+	}
+	return 0, makeError(resp, key)
+}
 
-////获取字符串内指定位置的位值(BIT).
-////
-////  key 键值
-////  offset 位偏移
-////  返回 val，位值
-////  返回 err，可能的错误，操作成功返回 nil
-//func (s *Client) Getbit(key string, offset int64) (byte, error) {
+//Getbit 获取字符串内指定位置的位值(BIT).
+//
+//  key 键值
+//  offset 位偏移
+//  返回 val，位值
+//  返回 err，可能的错误，操作成功返回 nil
+func (c *Client) Getbit(key string, offset int64) (byte, error) {
 
-//	resp, err := s.Do("getbit", key, offset)
+	resp, err := c.Do("getbit", key, offset)
 
-//	if err != nil {
-//		return 255, goerr.Errorf(err, "Getbit %s error", key)
-//	}
-//	if len(resp) == 2 && resp[0] == oK {
-//		return Value(resp[1]).Byte(), nil
-//	}
-//	return 255, makeError(resp, key)
-//}
+	if err != nil {
+		return 0, goerr.Errorf(err, "Getbit %s error", key)
+	}
+	if len(resp) == 2 && resp[0] == oK {
+		return Value(resp[1]).Byte(), nil
+	}
+	return 0, makeError(resp, key)
+}
+
+//BitCount 计算字符串的子串所包含的位值为 1 的个数. 若 start 是负数, 则从字符串末尾算起. 若 end 是负数, 则表示从字符串末尾算起(包含). 类似 Redis 的 bitcount
+//
+//  key 键值
+//  start 子串的字节偏移
+//  end 子串的字节结尾
+//  返回 val，位值
+//  返回 err，可能的错误，操作成功返回 nil
+func (c *Client) BitCount(key string, start int64, end int64) (byte, error) {
+	resp, err := c.Do("bitcount", key, start, end)
+	if err != nil {
+		return 0, goerr.Errorf(err, "BitCount %s error", key)
+	}
+	if len(resp) == 2 && resp[0] == oK {
+		//fmt.Println(Value(resp[1]).String())
+		return Value(resp[1]).Byte(), nil
+	}
+	return 0, makeError(resp, key)
+}
+
+//CountBit 计算字符串的子串所包含的位值为 1 的个数. 若 start 是负数, 则从字符串末尾算起. 若 size 是负数, 则表示从字符串末尾算起, 忽略掉那么多字节.
+//
+//  key 键值
+//  start 子串的字节偏移
+//  size 子串的字节结尾
+//  返回 val，位值
+//  返回 err，可能的错误，操作成功返回 nil
+func (c *Client) CountBit(key string, start int64, size int64) (byte, error) {
+	resp, err := c.Do("countbit", key, start, size)
+	if err != nil {
+		return 0, goerr.Errorf(err, "CountBit %s error", key)
+	}
+	if len(resp) == 2 && resp[0] == oK {
+		//fmt.Println(Value(resp[1]).String())
+		return Value(resp[1]).Byte(), nil
+	}
+	return 0, makeError(resp, key)
+}
 
 //Substr 获取字符串的子串.
 //
