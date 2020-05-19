@@ -350,7 +350,7 @@ func BenchmarkConnectors_Get1k(b *testing.B) {
 		PoolSize:    20,
 		MaxPoolSize: 100,
 		MinPoolSize: 100,
-		AutoClose:   true,
+		AutoClose:   false,
 	})
 	err := pool.Start()
 	if err != nil {
@@ -361,8 +361,8 @@ func BenchmarkConnectors_Get1k(b *testing.B) {
 	//k1 := make([]byte, 1024)
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			if _, err := pool.GetClient().Get("big"); err != nil {
-				b.Error(err)
+			if c, err := pool.NewClient(); err == nil {
+				c.Close()
 			}
 		}
 	})

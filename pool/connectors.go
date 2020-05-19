@@ -21,11 +21,9 @@ import (
 //连接池
 type Connectors struct {
 	//连接池个数
-	size byte
+	size int32
 	//状态 0：创建 1：正常 -1：关闭
 	status byte
-	//pos
-	pos byte
 	//从快速连接池中取连接的次数，超过次数取不到就进入慢速池
 	retry int
 	//处理等待状态的连接数
@@ -59,6 +57,8 @@ type Connectors struct {
 	clientTemp *sync.Pool
 	//timer timp
 	timerTemp *sync.Pool
+	//round number
+	round int32
 }
 
 //NewConnectors initialize the connection pool using the configuration
@@ -125,17 +125,16 @@ func (c *Connectors) SetNewClientRetryCount(count byte) {
 func (c *Connectors) watchHealth() {
 	for v := range c.watchTicker.C {
 		atomic.StoreInt32(&c.available, 0)
-		size := int(c.size)
+		size := atomic.LoadInt32(&c.size)
 		if c.minSize != c.maxSize && v.Second()%c.cfg.HealthSecond == 0 {
-			parallel := int(atomic.LoadInt32(&c.parallel))
-			if parallel < (size-1)*c.cfg.PoolSize && size-1 >= c.minSize {
-				c.size--
+			parallel := atomic.LoadInt32(&c.parallel)
+			if parallel < (size-1)*int32(c.cfg.PoolSize) && size-1 >= int32(c.minSize) {
+				atomic.AddInt32(&c.size, -1)
 			}
-			c.watchPool(size)
-			c.watchConnection(size)
+			c.watchPool(int(size))
 		}
 		waitCount := atomic.LoadInt32(&c.waitCount)
-		if waitCount > 0 && size < c.maxSize {
+		if waitCount > 0 && size < int32(c.maxSize) {
 			if err := c.appendPool(); err != nil {
 				time.Sleep(time.Millisecond * 10)
 			}
@@ -144,53 +143,36 @@ func (c *Connectors) watchHealth() {
 	}
 }
 
-//检查运行的连接池块状态，如果是PoolCheck，检查一下所有连接是否都正常打开了
-func (c *Connectors) watchConnection(size int) {
-	for i := 0; i < size; i++ {
-		if c.pool[i].status == consts.PoolCheck {
-			count := 0
-			for _, c := range c.pool[i].pooled {
-				if c.IsOpen() {
-					count++
-				}
-			}
-			if count == c.pool[i].size {
-				c.pool[i].status = consts.PoolStart
-			}
-		}
-	}
-}
-
 //检查一下可关闭的连接池块，如果没有活动连接，可以关闭
 func (c *Connectors) watchPool(size int) {
 	for i := size; i < c.maxSize; i++ {
 		if c.pool[i] != nil {
-			if c.pool[i].status == consts.PoolStop {
-				c.pool[i].Close()
-			}
-			if c.pool[i].available.Available() == 0 && c.pool[i].status != consts.PoolStop {
-				c.pool[i].status = consts.PoolStop
-			}
+			c.pool[i].CheckClose()
+		}
+	}
+	for i := 0; i < size; i++ {
+		if c.pool[i] != nil {
+			c.pool[i].CheckClose()
 		}
 	}
 }
 
 //初始化连接池
 func (c *Connectors) appendPool() (err error) {
-	size := int(c.size)
-	if size < c.maxSize {
+	size := atomic.LoadInt32(&c.size)
+	if size < int32(c.maxSize) {
 		p := c.pool[size]
 		if p == nil {
 			p = c.getPool()
 			c.pool[size] = p
 		}
-		if p.status == consts.PoolStop {
+		if p.status != consts.PoolStart {
 			if err = p.Start(); err != nil {
 				return err
 			}
 		}
-		p.index = byte(size)
-		c.size++
+		p.index = int32(size)
+		atomic.AddInt32(&c.size, 1)
 	}
 	return nil
 }
@@ -226,7 +208,6 @@ func (c *Connectors) getPool() *Pool {
 //启动连接池
 func (c *Connectors) Start() (err error) {
 	c.size = 0
-	c.pos = 0
 	c.status = consts.PoolStart
 	for i := 0; i < c.minSize && err == nil; i++ {
 		err = c.appendPool()
@@ -237,12 +218,12 @@ func (c *Connectors) Start() (err error) {
 
 //回收Client
 func (c *Connectors) closeClient(client *Client) {
-	client.used = false
 	if c.status == consts.PoolStop {
 		if client.SSDBClient.IsOpen() {
 			_ = client.SSDBClient.Close()
 		}
 	} else {
+		client.used = false
 		if client.SSDBClient.IsOpen() {
 			waitCount := atomic.LoadInt32(&c.waitCount)
 			if waitCount > 0 && client.index%3 == 0 {
@@ -250,7 +231,6 @@ func (c *Connectors) closeClient(client *Client) {
 			} else {
 				atomic.AddInt32(&c.parallel, -1)
 				client.pool.Set(client)
-				c.pos = client.pool.index
 			}
 		} else {
 			atomic.AddInt32(&c.parallel, -1)
@@ -276,8 +256,11 @@ func (c *Connectors) GetClient() *Client {
 }
 func (c *Connectors) createClient() (cli *Client, err error) {
 	//首先按位置，直接取连接，给n次机会
-	pos := c.pos
+
+	size := atomic.LoadInt32(&c.size)
 	for i := 0; i < c.retry; i++ {
+		rnd := atomic.AddInt32(&c.round, 1)
+		pos := rnd % size
 		p := c.pool[pos]
 		if p.status != consts.PoolStop {
 			cli = p.Get()
@@ -296,8 +279,6 @@ func (c *Connectors) createClient() (cli *Client, err error) {
 				p.Set(cli) //如果没有成功返回，就放回到连接池内
 			}
 		}
-		pos++
-		pos %= c.size
 		runtime.Gosched()
 	}
 	return
@@ -326,13 +307,13 @@ func (c *Connectors) NewClient() (cli *Client, err error) {
 	if waitCount >= c.maxWaitSize {
 		return nil, fmt.Errorf("pool is busy,Wait for connection creation has reached %d", waitCount)
 	}
-	atomic.AddInt32(&c.waitCount, 1)
+	waitCount = atomic.AddInt32(&c.waitCount, 1)
 	//timeout := time.NewTimer(time.Duration(c.cfg.GetClientTimeout) * time.Second)
 	timeout := c.timerTemp.Get().(*time.Timer)
 	timeout.Reset(time.Duration(c.cfg.GetClientTimeout) * time.Second)
 	select {
 	case <-timeout.C:
-		err = fmt.Errorf("pool is busy,can not get new client in %d seconds,wait count is %d", c.cfg.GetClientTimeout, c.waitCount)
+		err = fmt.Errorf("pool is busy,can not get new client in %d seconds,wait count is %d", c.cfg.GetClientTimeout, waitCount)
 	case cli = <-c.poolWait:
 		if cli == nil {
 			err = errors.New("pool is Closed, can not get new client")
@@ -358,7 +339,6 @@ func (c *Connectors) Close() {
 			cc.Close()
 		}
 	}
-	c.pool = c.pool[:0]
 }
 
 //Info returns connection pool status information

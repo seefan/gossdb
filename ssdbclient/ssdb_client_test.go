@@ -223,7 +223,7 @@ func TestSSDBClient_pwd(t *testing.T) {
 }
 func TestSSDBClient_getBig(t *testing.T) {
 	cfg := &conf.Config{
-		Host:            "127.0.0.1",
+		Host:            "afcm222",
 		Port:            8888,
 		ReadBufferSize:  8,
 		WriteBufferSize: 8,
@@ -243,13 +243,13 @@ func TestSSDBClient_getBig(t *testing.T) {
 	//} else {
 	//	t.Error(err)
 	//}
-	for i := 0; i < 1000; i++ {
-		if v, err := c.Do("get", "big"); err == nil {
+	//for i := 0; i < 1000; i++ {
+		if v, err := c.Do("hget", "app:0","1359003378"); err == nil {
 			t.Log(len(v[1]))
 		} else {
 			t.Error(err)
 		}
-	}
+	//}
 	if err := c.Close(); err != nil {
 		t.Fatal(err)
 	}
