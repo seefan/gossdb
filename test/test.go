@@ -9,7 +9,6 @@ package main
 import (
 	"log"
 	"math"
-	"net/http"
 	_ "net/http/pprof"
 	"sync"
 	"time"
@@ -28,34 +27,35 @@ func main() {
 		MaxPoolSize: 50,
 		AutoClose:   true,
 		//Password:     "vdsfsfafapaddssrd#@Ddfasfdsfedssdfsdfsd",
-		HealthSecond: 3,
+		HealthSecond: 1,
 	})
 	if err != nil {
 		panic(err)
 	}
 	defer p.Close()
-	go func() {
-		err := http.ListenAndServe(":9999", nil)
-		if err != nil {
-			panic(err)
-		}
-	}()
-	bs := make([]byte, 100*1024)
+	// go func() {
+	// 	err := http.ListenAndServe(":9999", nil)
+	// 	if err != nil {
+	// 		panic(err)
+	// 	}
+	// }()
+
 	var wait sync.WaitGroup
-	for i := 0; i < 100; i++ {
+	for i := 0; i < 10; i++ {
 		wait.Add(1)
 		go func() {
-			for k := 0; k < 10000000000; k++ {
-				//failed := 0
+			for k := 0; k < 100; k++ {
+
 				for j := 0; j < 100; j++ {
-					err = p.GetClient().Set("big", bs)
-					if err == nil {
-						if _, err := p.GetClient().Get("big"); err != nil {
-							log.Println(err)
+
+					e := p.GetClient().Set("big", "ddddd")
+					if e == nil {
+						if _, e := p.GetClient().Get("big"); err != nil {
+							log.Println(e)
 						}
 					}
 				}
-				time.Sleep(time.Second * time.Duration(math.Round(10)))
+				time.Sleep(time.Millisecond * time.Duration(math.Round(10)))
 				//println(p.Info())
 
 			}
@@ -63,7 +63,6 @@ func main() {
 		}()
 	}
 	wait.Wait()
-	time.Sleep(time.Minute)
 	//bs := make([]byte, 1)
 	//os.Stdin.Read(bs)
 }

@@ -303,7 +303,7 @@ func (c *Client) MultiDel(key ...string) (err error) {
 //  bit  0 或 1
 //  返回 val，原来的位值
 //  返回 err，可能的错误，操作成功返回 nil
-func (c *Client) Setbit(key string, offset int64, bit byte) (byte, error) {
+func (c *Client) Setbit(key string, offset int64, bit int) (byte, error) {
 
 	resp, err := c.Do("setbit", key, offset, bit)
 
@@ -340,16 +340,16 @@ func (c *Client) Getbit(key string, offset int64) (byte, error) {
 //  key 键值
 //  start 子串的字节偏移
 //  end 子串的字节结尾
-//  返回 val，位值
+//  返回 val，返回位值为 1 的个数
 //  返回 err，可能的错误，操作成功返回 nil
-func (c *Client) BitCount(key string, start int64, end int64) (byte, error) {
+func (c *Client) BitCount(key string, start int64, end int64) (int64, error) {
 	resp, err := c.Do("bitcount", key, start, end)
 	if err != nil {
 		return 0, goerr.Errorf(err, "BitCount %s error", key)
 	}
 	if len(resp) == 2 && resp[0] == oK {
 		//fmt.Println(Value(resp[1]).String())
-		return Value(resp[1]).Byte(), nil
+		return Value(resp[1]).Int64(), nil
 	}
 	return 0, makeError(resp, key)
 }
@@ -359,16 +359,16 @@ func (c *Client) BitCount(key string, start int64, end int64) (byte, error) {
 //  key 键值
 //  start 子串的字节偏移
 //  size 子串的字节结尾
-//  返回 val，位值
+//  返回 val，返回位值为 1 的个数
 //  返回 err，可能的错误，操作成功返回 nil
-func (c *Client) CountBit(key string, start int64, size int64) (byte, error) {
+func (c *Client) CountBit(key string, start int64, size int64) (int64, error) {
 	resp, err := c.Do("countbit", key, start, size)
 	if err != nil {
 		return 0, goerr.Errorf(err, "CountBit %s error", key)
 	}
 	if len(resp) == 2 && resp[0] == oK {
 		//fmt.Println(Value(resp[1]).String())
-		return Value(resp[1]).Byte(), nil
+		return Value(resp[1]).Int64(), nil
 	}
 	return 0, makeError(resp, key)
 }
