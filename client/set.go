@@ -303,7 +303,7 @@ func (c *Client) MultiDel(key ...string) (err error) {
 //  bit  0 或 1
 //  返回 val，原来的位值
 //  返回 err，可能的错误，操作成功返回 nil
-func (c *Client) Setbit(key string, offset int64, bit int) (byte, error) {
+func (c *Client) Setbit(key string, offset int64, bit int) (uint, error) {
 
 	resp, err := c.Do("setbit", key, offset, bit)
 
@@ -311,7 +311,7 @@ func (c *Client) Setbit(key string, offset int64, bit int) (byte, error) {
 		return 0, goerr.Errorf(err, "Setbit %s error", key)
 	}
 	if len(resp) == 2 && resp[0] == oK {
-		return Value(resp[1]).Byte(), nil
+		return Value(resp[1]).UInt(), nil
 	}
 	return 0, makeError(resp, key)
 }
@@ -322,7 +322,7 @@ func (c *Client) Setbit(key string, offset int64, bit int) (byte, error) {
 //  offset 位偏移
 //  返回 val，位值
 //  返回 err，可能的错误，操作成功返回 nil
-func (c *Client) Getbit(key string, offset int64) (byte, error) {
+func (c *Client) Getbit(key string, offset int64) (uint, error) {
 
 	resp, err := c.Do("getbit", key, offset)
 
@@ -330,7 +330,7 @@ func (c *Client) Getbit(key string, offset int64) (byte, error) {
 		return 0, goerr.Errorf(err, "Getbit %s error", key)
 	}
 	if len(resp) == 2 && resp[0] == oK {
-		return Value(resp[1]).Byte(), nil
+		return Value(resp[1]).UInt(), nil
 	}
 	return 0, makeError(resp, key)
 }
