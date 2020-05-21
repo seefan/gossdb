@@ -252,8 +252,8 @@ func (c *Client) MultiZGetSlice(setName string, key ...string) (keys []string, s
 	size := len(resp)
 	if size > 0 && resp[0] == oK {
 
-		keys := make([]string, (size-1)/2)
-		scores := make([]int64, (size-1)/2)
+		keys := make([]string, 0)
+		scores := make([]int64, 0)
 
 		for i := 1; i < size && i+1 < size; i += 2 {
 			keys = append(keys, resp[i])
