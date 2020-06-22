@@ -13,7 +13,7 @@ import (
 func (c *Client) HSet(setName, key string, value interface{}) (err error) {
 	resp, err := c.Do("hset", setName, key, value)
 	if err != nil {
-		return goerr.Errorf(err, "Hset %s/%s error,cause is ", setName, key)
+		return goerr.Errorf(err, "Hset %s/%s error ", setName, key)
 	}
 
 	if len(resp) > 0 && resp[0] == oK {
@@ -31,7 +31,7 @@ func (c *Client) HSet(setName, key string, value interface{}) (err error) {
 func (c *Client) HGet(setName, key string) (value Value, err error) {
 	resp, err := c.Do("hget", setName, key)
 	if err != nil {
-		return "", goerr.Errorf(err, "Hget %s/%s error,cause is ", setName, key)
+		return "", goerr.Errorf(err, "Hget %s/%s error", setName, key)
 	}
 	if len(resp) == 2 && resp[0] == oK {
 		return Value(resp[1]), nil
@@ -47,7 +47,7 @@ func (c *Client) HGet(setName, key string) (value Value, err error) {
 func (c *Client) HDel(setName, key string) (err error) {
 	resp, err := c.Do("hdel", setName, key)
 	if err != nil {
-		return goerr.Errorf(err, "Hdel %s/%s error,cause is ", setName, key)
+		return goerr.Errorf(err, "Hdel %s/%s error", setName, key)
 	}
 	if len(resp) > 0 && resp[0] == oK {
 		return nil
