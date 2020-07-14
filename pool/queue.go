@@ -1,8 +1,6 @@
 //Package pool available index queue
 package pool
 
-import "sync"
-
 //Queue queue for available index
 //可用连接的队列
 type Queue struct {
@@ -10,8 +8,6 @@ type Queue struct {
 	putPos int //exchange pos
 	value  []int
 	size   int
-	//lock
-	lock sync.RWMutex
 }
 
 //建立一个队列
@@ -36,9 +32,7 @@ func (q *Queue) Available() int {
 //
 //  @return bool
 func (q *Queue) Empty() (re bool) {
-	q.lock.RLock()
 	re = q.pos < 0
-	q.lock.RUnlock()
 	return
 }
 
@@ -48,15 +42,13 @@ func (q *Queue) Empty() (re bool) {
 //
 //获取一个可以连接的位置
 func (q *Queue) Pop() (re int) {
-	q.lock.Lock()
 	if q.pos < 0 {
-		q.lock.Unlock()
 		return -1
 	}
 	re = q.value[q.pos]
 	q.value[q.pos] = -1
 	q.pos--
-	q.lock.Unlock()
+	//println("pop", q.pos)
 	return
 }
 
@@ -67,8 +59,6 @@ func (q *Queue) Pop() (re int) {
 //
 //归还索引值
 func (q *Queue) Put(i int) {
-	q.lock.Lock()
-
 	pos := q.pos + 1
 	if q.putPos < pos {
 		q.value[pos] = q.value[q.putPos]
@@ -79,5 +69,5 @@ func (q *Queue) Put(i int) {
 		q.putPos = 0
 	}
 	q.pos = pos
-	q.lock.Unlock()
+	//println("put", q.pos)
 }

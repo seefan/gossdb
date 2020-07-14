@@ -40,6 +40,8 @@ type Connectors struct {
 	minSize int
 	//pool
 	pool []*Pool
+	//当前连接池编号
+	poolIndex int32
 
 	//This function is called when automatic serialization is performed, and it can be modified to use a custom serialization method
 	//进行自动序列化时将调用这个函数，修改它可以使用自定义的序列化方式
@@ -218,19 +220,24 @@ func (c *Connectors) Start() (err error) {
 
 //回收Client
 func (c *Connectors) closeClient(client *Client) {
+	pi := atomic.LoadInt32(&c.poolIndex)
 	if c.status == consts.PoolStop {
 		if client.SSDBClient.IsOpen() {
 			_ = client.SSDBClient.Close()
 		}
 	} else {
 		client.used = false
+		if pi > client.pool.index {
+			atomic.StoreInt32(&c.poolIndex, client.pool.index)
+		}
 		if client.SSDBClient.IsOpen() {
 			waitCount := atomic.LoadInt32(&c.waitCount)
-			if waitCount > 0 && client.index%3 == 0 {
+			avaCount := atomic.LoadInt32(&c.available)
+			if waitCount > 0 && avaCount%2 == 0 {
 				c.poolWait <- client
 			} else {
-				atomic.AddInt32(&c.parallel, -1)
 				client.pool.Set(client)
+				atomic.AddInt32(&c.parallel, -1)
 			}
 		} else {
 			atomic.AddInt32(&c.parallel, -1)
@@ -247,6 +254,7 @@ func (c *Connectors) closeClient(client *Client) {
 //获取一个无错误的连接，如果有错误，将在调用连接的函数时返回
 func (c *Connectors) GetClient() *Client {
 	cc, err := c.NewClient()
+	//println("client get ", c.Info())
 	if err == nil {
 		return cc
 	}
@@ -257,14 +265,14 @@ func (c *Connectors) GetClient() *Client {
 func (c *Connectors) createClient() (cli *Client, err error) {
 	//首先按位置，直接取连接，给n次机会
 
-	size := atomic.LoadInt32(&c.size)
-	for i := 0; i < c.retry; i++ {
-		rnd := atomic.AddInt32(&c.round, 1)
-		pos := rnd % size
-		p := c.pool[pos]
+	size := int(atomic.LoadInt32(&c.size))
+	pi := int(atomic.LoadInt32(&c.poolIndex))
+	for i := pi; i < c.retry && i < size; i++ {
+		p := c.pool[i]
 		if p.status != consts.PoolStop {
 			cli = p.Get()
 			if cli != nil {
+				cli.Error = nil
 				if p.status == consts.PoolCheck {
 					if !cli.Ping() {
 						err = cli.SSDBClient.Start()
@@ -274,6 +282,9 @@ func (c *Connectors) createClient() (cli *Client, err error) {
 				}
 				if err == nil {
 					cli.used = true
+					if i != pi {
+						atomic.StoreInt32(&c.poolIndex, cli.pool.index)
+					}
 					return cli, nil
 				}
 				p.Set(cli) //如果没有成功返回，就放回到连接池内
