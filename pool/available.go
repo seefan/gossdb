@@ -8,6 +8,6 @@ package pool
 //Avaliable avaliable interface
 type Avaliable interface {
 	Pop() int
-	Put(int)
-	Available() int
+	Put(int) int
+	IsEmpty() bool
 }

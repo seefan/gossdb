@@ -15,6 +15,8 @@ type Client struct {
 	pool *Pool
 	//连接池
 	over *Connectors
+	//OpenTime open time
+	OpenTime int64
 }
 
 //Close put the client to Connectors

@@ -1,17 +1,16 @@
 //Package pool available index queue
-package pool
+package queue
 
 //Queue queue for available index
 //可用连接的队列
 type Queue struct {
-	pos    int //available pos
-	putPos int //exchange pos
-	value  []int
-	size   int
+	pos   int //available pos
+	value []int
+	size  int
 }
 
 //建立一个队列
-func newQueue(size int) *Queue {
+func NewQueue(size int) *Queue {
 	v := make([]int, size)
 	for i := 0; i < size; i++ {
 		v[i] = i
@@ -28,10 +27,10 @@ func (q *Queue) Available() int {
 	return q.size - q.pos
 }
 
-//Empty check available index
+//IsEmpty check available index
 //
 //  @return bool
-func (q *Queue) Empty() (re bool) {
+func (q *Queue) IsEmpty() (re bool) {
 	re = q.pos < 0
 	return
 }
@@ -48,7 +47,6 @@ func (q *Queue) Pop() (re int) {
 	re = q.value[q.pos]
 	q.value[q.pos] = -1
 	q.pos--
-	//println("pop", q.pos)
 	return
 }
 
@@ -58,16 +56,12 @@ func (q *Queue) Pop() (re int) {
 //  @return int pos
 //
 //归还索引值
-func (q *Queue) Put(i int) {
+func (q *Queue) Put(v int) int {
 	pos := q.pos + 1
-	if q.putPos < pos {
-		q.value[pos] = q.value[q.putPos]
-		q.value[q.putPos] = i
-		q.putPos++
-	} else {
-		q.value[pos] = i
-		q.putPos = 0
+	if pos < q.size {
+		q.value[pos] = v
+		q.pos = pos
+		return pos
 	}
-	q.pos = pos
-	//println("put", q.pos)
+	return -1
 }

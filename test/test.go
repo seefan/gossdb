@@ -41,7 +41,7 @@ func main() {
 	// }()
 
 	var wait sync.WaitGroup
-	for i := 0; i < 10; i++ {
+	for i := 0; i < 100; i++ {
 		wait.Add(1)
 		go func() {
 			for k := 0; k < 100; k++ {

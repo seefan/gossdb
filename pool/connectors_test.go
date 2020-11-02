@@ -28,8 +28,9 @@ func BenchmarkConnectors_NewClient10(b *testing.B) {
 				//_, _ = c.Info()
 				c.Close()
 			} else {
-				//b.Error(err)
+				b.Error(err)
 			}
+			pool.Info()
 		}
 	})
 
@@ -117,8 +118,9 @@ func BenchmarkConnectors_NewClient100(b *testing.B) {
 				//_, _ = c.Info()
 				c.Close()
 			} else {
-				//b.Error(err)
+				b.Error(err)
 			}
+			pool.Info()
 		}
 	})
 
@@ -146,8 +148,9 @@ func BenchmarkConnectors_NewClient1000(b *testing.B) {
 				//_, _ = c.Info()
 				c.Close()
 			} else {
-				//b.Error(err)
+				b.Error(err)
 			}
+			pool.Info()
 		}
 	})
 
@@ -175,8 +178,9 @@ func BenchmarkConnectors_NewClient5000(b *testing.B) {
 				//_, _ = c.Info()
 				c.Close()
 			} else {
-				//b.Error(err)
+				b.Error(err)
 			}
+			pool.Info()
 		}
 	})
 

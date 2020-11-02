@@ -4,6 +4,7 @@ import (
 	"sync"
 
 	"github.com/seefan/gossdb/consts"
+	"github.com/seefan/gossdb/queue"
 )
 
 //Pool pool block
@@ -22,8 +23,8 @@ type Pool struct {
 	New func() (*Client, error)
 	//lock
 	lock sync.Mutex
-	//check open
-	opened int
+	//health 0 正常 1 检查 2 关闭中
+	health int32
 }
 
 //新建一个池
@@ -31,40 +32,40 @@ func newPool(size int) *Pool {
 	return &Pool{
 		pooled:    make([]*Client, size),
 		size:      size,
-		available: newQueue(size),
+		available: queue.NewQueue(size),
 		//available: newRing(size),
 		status: consts.None,
 	}
 }
 
-//CheckClose 检查是否可以关闭
-func (p *Pool) CheckClose() {
-	p.lock.Lock()
-	defer p.lock.Unlock()
-	if p.status == consts.PoolStop {
-		p.Close()
-	}
-	if p.available.Available() == 0 && p.status != consts.PoolStop {
-		p.status = consts.PoolStop
-	}
-}
+// //CheckClose 检查是否可以关闭
+// func (p *Pool) CheckClose() {
+// 	p.lock.Lock()
+// 	defer p.lock.Unlock()
+// 	if p.status == consts.PoolStop {
+// 		p.Close()
+// 	}
+// 	if p.available.IsEmpty() && p.status != consts.PoolStop {
+// 		p.status = consts.PoolStop
+// 	}
+// }
 
 //CheckHeath check opened number
-func (p *Pool) CheckHeath() {
-	p.lock.Lock()
-	defer p.lock.Unlock()
-	if p.status == consts.PoolCheck {
-		count := 0
-		for _, c := range p.pooled {
-			if c.IsOpen() {
-				count++
-			}
-		}
-		if count == p.size {
-			p.status = consts.PoolStart
-		}
-	}
-}
+// func (p *Pool) CheckHeath() {
+// 	p.lock.Lock()
+// 	defer p.lock.Unlock()
+// 	if p.status == consts.PoolCheck {
+// 		count := 0
+// 		for _, c := range p.pooled {
+// 			if c.IsOpen() {
+// 				count++
+// 			}
+// 		}
+// 		if count == p.size {
+// 			p.status = consts.PoolStart
+// 		}
+// 	}
+// }
 
 //Start start the pool
 //

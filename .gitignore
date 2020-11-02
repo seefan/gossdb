@@ -2,3 +2,4 @@ examples
 .idea
 test/__debug_bin
 test/test
+.vscode
