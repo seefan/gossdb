@@ -51,23 +51,25 @@ type Connectors struct {
 	timerTemp *sync.Pool
 	//round number
 	round int32
-	//性能指标
-	//当前创建的连接数
-	available int32
 	//当前活跃连接数，运行中
-	parallel int32
+	available int32
 	//当前等待创建的连接数，等待
 	waitCount int32
+	//性能指标
+	//一个回收周期内创建的连接数
+	totalCreated int32
 	//创建连接总耗时
-	createSumTime int64
+	totalCreateTime int64
 	//创建连接超时的个数
-	createTimeout int32
+	totalCreateTimeout int32
 	//创建连接的等待时间
-	createWaitTime int64
+	totalCreateWaitTime int64
+	//创建连接需要等待的个数
+	totalCreateWait int32
 	//当前返回失败的计数
-	returnFail int32
+	totalReturnFail int32
 	//运行总时长
-	parallelSumTime int64
+	totalParallelTime int64
 }
 
 //NewConnectors initialize the connection pool using the configuration
@@ -107,45 +109,51 @@ func NewConnectors(cfg *conf.Config) *Connectors {
 	return this
 }
 
-//后台的观察函数，处理连接池大小的扩展和收缩，连接池状态的检查等
-//基本流程为先标记，再关闭
-//标记的条件为如果活跃连接数不足，测试将连接池块长度缩减，然后检查该连接池块的连接有没有全部回收，如果全部回收就进行标记
-//在下一个检查周期，将标记的块回收
-//在检查周期过程中标记状态可能改变，如果块重用，将块内所有连接的状态检查一下，没有open的重新start一下
-// func (c *Connectors) watchHealth() {
-// 	for v := range c.watchTicker.C {
-// 		atomic.StoreInt32(&c.available, 0)
-// 		size := atomic.LoadInt32(&c.size)
-// 		if c.minSize != c.maxSize && v.Second()%c.cfg.HealthSecond == 0 {
-// 			parallel := atomic.LoadInt32(&c.parallel)
-// 			if parallel < (size-1)*int32(c.cfg.PoolSize) && size-1 >= int32(c.minSize) {
-// 				atomic.AddInt32(&c.size, -1)
-// 			}
-// 			c.watchPool(int(size))
-// 		}
-// 		waitCount := atomic.LoadInt32(&c.waitCount)
-// 		if waitCount > 0 && size < int32(c.maxSize) {
-// 			if err := c.appendPool(); err != nil {
-// 				time.Sleep(time.Millisecond * 10)
-// 			}
-// 		}
-// 		//println(c.Info())
-// 	}
-// }
+// 后台的观察函数，处理连接池大小的扩展和收缩，连接池状态的检查等
+// 基本流程为先标记，再关闭
+// 标记的条件为如果活跃连接数不足，测试将连接池块长度缩减，然后检查该连接池块的连接有没有全部回收，如果全部回收就进行标记
+// 在下一个检查周期，将标记的块回收
+// 在检查周期过程中标记状态可能改变，如果块重用，将块内所有连接的状态检查一下，没有open的重新start一下
+func (c *Connectors) watchHealth() {
+
+	for v := range c.watchTicker.C {
+		println(c.Info())
+
+		waitCount := atomic.LoadInt32(&c.waitCount)
+		size := atomic.LoadInt32(&c.cellPos)
+		if c.cellMin != c.cellMax && v.Unix()%int64(c.cfg.HealthSecond) == 0 {
+			totalCreated := atomic.LoadInt32(&c.totalCreated)
+			atomic.StoreInt32(&c.totalCreated, 0)
+			atomic.StoreInt64(&c.totalCreateTime, 0)
+			atomic.StoreInt64(&c.totalCreateWaitTime, 0)
+			atomic.StoreInt32(&c.totalCreateTimeout, 0)
+			atomic.StoreInt32(&c.totalCreateWait, 0)
+			atomic.StoreInt32(&c.totalReturnFail, 0)
+			atomic.StoreInt64(&c.totalParallelTime, 0)
+			if waitCount == 0 {
+				if totalCreated < (size-1)*int32(c.cfg.PoolSize) && size-1 >= c.cellMin {
+					size = atomic.AddInt32(&c.cellPos, -1)
+				}
+				c.watchPool(size)
+			}
+		}
+		//todo 更保守的创建连接池的方案，避免连接池占用过多的连接
+		if waitCount > 0 && size < c.cellMax {
+			if err := c.appendPool(); err != nil {
+				time.Sleep(time.Millisecond * 10)
+			}
+		}
+	}
+}
 
 //检查一下可关闭的连接池块，如果没有活动连接，可以关闭
-// func (c *Connectors) watchPool(size int) {
-// 	for i := size; i < c.maxSize; i++ {
-// 		if c.pool[i] != nil {
-// 			c.pool[i].CheckClose()
-// 		}
-// 	}
-// 	for i := 0; i < size; i++ {
-// 		if c.pool[i] != nil {
-// 			c.pool[i].CheckClose()
-// 		}
-// 	}
-// }
+func (c *Connectors) watchPool(size int32) {
+	for i := size; i < c.cellMax; i++ {
+		if c.cell[i] != nil {
+			c.cell[i].CheckClose()
+		}
+	}
+}
 
 //初始化连接池
 func (c *Connectors) appendPool() (err error) {
@@ -164,6 +172,7 @@ func (c *Connectors) appendPool() (err error) {
 		p.index = pos
 		atomic.AddInt32(&c.cellPos, 1)
 	}
+	println("append pool", pos+1)
 	return nil
 }
 
@@ -202,7 +211,7 @@ func (c *Connectors) Start() (err error) {
 	for i := c.cellPos; i < c.cellMin && err == nil; i++ {
 		err = c.appendPool()
 	}
-	//go c.watchHealth()
+	go c.watchHealth()
 	return
 }
 
@@ -215,8 +224,8 @@ func (c *Connectors) closeClient(client *Client) {
 	} else {
 		client.used = false
 		ts := time.Now().UnixNano() - client.OpenTime
-		atomic.AddInt64(&c.parallelSumTime, ts)
-		pc := atomic.AddInt32(&c.parallel, -1)
+		atomic.AddInt64(&c.totalParallelTime, ts)
+		pc := atomic.AddInt32(&c.available, -1)
 		if client.SSDBClient.IsOpen() {
 			waitCount := atomic.LoadInt32(&c.waitCount)
 			if waitCount > 0 && pc%2 == 0 {
@@ -227,7 +236,7 @@ func (c *Connectors) closeClient(client *Client) {
 		} else {
 			client.pool.Set(client)
 			atomic.StoreInt32(&client.pool.status, consts.PoolCheck)
-			atomic.AddInt32(&c.returnFail, 1)
+			atomic.AddInt32(&c.totalReturnFail, 1)
 		}
 	}
 }
@@ -251,7 +260,6 @@ func (c *Connectors) createClient() (cli *Client, err error) {
 	//首先按位置，直接取连接，给n次机会
 	size := atomic.LoadInt32(&c.cellPos)
 	pi := atomic.LoadInt32(&c.round)
-
 	for i := 0; i < 2; i++ {
 		pi += int32(i)
 		if pi >= size {
@@ -266,6 +274,7 @@ func (c *Connectors) createClient() (cli *Client, err error) {
 					if !cli.Ping() {
 						err = cli.SSDBClient.Start()
 					}
+					p.CheckHeath()
 				} else if !cli.SSDBClient.IsOpen() {
 					err = cli.SSDBClient.Start()
 				}
@@ -274,6 +283,7 @@ func (c *Connectors) createClient() (cli *Client, err error) {
 					if c.round != cli.pool.index {
 						atomic.StoreInt32(&c.round, cli.pool.index)
 					}
+
 					return cli, nil
 				}
 				p.Set(cli) //如果没有成功返回，就放回到连接池内
@@ -295,13 +305,13 @@ func (c *Connectors) NewClient() (cli *Client, err error) {
 		return nil, errors.New("connectors not start")
 	}
 
-	atomic.AddInt32(&c.available, 1)
+	atomic.AddInt32(&c.totalCreated, 1)
 	startTime := time.Now().UnixNano()
 	cli, err = c.createClient()
 	if cli != nil && err == nil {
-		atomic.AddInt32(&c.parallel, 1)
+		atomic.AddInt32(&c.available, 1)
 		ts := time.Now().UnixNano() - startTime
-		atomic.AddInt64(&c.createSumTime, ts)
+		atomic.AddInt64(&c.totalCreateTime, ts)
 		cli.OpenTime = startTime - ts
 		return
 	}
@@ -316,7 +326,7 @@ func (c *Connectors) NewClient() (cli *Client, err error) {
 	timeout.Reset(time.Duration(c.cfg.GetClientTimeout) * time.Second)
 	select {
 	case <-timeout.C:
-		atomic.AddInt32(&c.createTimeout, 1)
+		atomic.AddInt32(&c.totalCreateTimeout, 1)
 		err = fmt.Errorf("pool is busy,can not get new client in %d seconds,wait count is %d", c.cfg.GetClientTimeout, waitCount)
 	case cli = <-c.poolWait:
 		if cli == nil {
@@ -325,8 +335,11 @@ func (c *Connectors) NewClient() (cli *Client, err error) {
 			cli.used = true
 			err = nil
 			cli.OpenTime = time.Now().UnixNano()
+			atomic.AddInt32(&c.available, 1)
+			atomic.AddInt32(&c.totalCreateWait, 1)
 			ts := cli.OpenTime - startTime
-			atomic.AddInt64(&c.createWaitTime, ts) //等待时长
+			atomic.AddInt64(&c.totalCreateTime, ts)
+			atomic.AddInt64(&c.totalCreateWaitTime, ts) //等待时长
 		}
 	}
 	atomic.AddInt32(&c.waitCount, -1)
@@ -354,28 +367,32 @@ func (c *Connectors) Close() {
 //
 //返回连接池状态信息
 func (c *Connectors) Info() string {
-	available := atomic.LoadInt32(&c.available)
-	createTime := atomic.LoadInt64(&c.createSumTime)
-	parallelTime := atomic.LoadInt64(&c.parallelSumTime)
+	totalCreated := atomic.LoadInt32(&c.totalCreated)
+	createTime := atomic.LoadInt64(&c.totalCreateTime)
+	parallelTime := atomic.LoadInt64(&c.totalParallelTime)
+	createWaitTime := atomic.LoadInt64(&c.totalCreateWaitTime)
+	if totalCreated > 0 {
+		createTime /= int64(totalCreated)
+		parallelTime /= int64(totalCreated)
+
+	}
+	waitCount := atomic.LoadInt32(&c.totalCreateWait)
+	if waitCount > 0 {
+		createWaitTime /= int64(totalCreated)
+	}
 	inf := map[string]interface{}{
-		"available": atomic.LoadInt32(&c.available),
-		"parallel":  atomic.LoadInt32(&c.parallel),
-		"waitCount": atomic.LoadInt32(&c.waitCount),
-		//创建连接总耗时
-		"createTime": atomic.LoadInt64(&c.createSumTime),
-		//创建连接超时的个数
-		"createTimeout": atomic.LoadInt32(&c.createTimeout),
-		//创建连接的等待时间
-		"createWaitTime": atomic.LoadInt64(&c.createWaitTime),
-		//当前返回失败的计数
-		"returnFail": atomic.LoadInt32(&c.returnFail),
-		//运行总时长
-		"parallelTime":    atomic.LoadInt64(&c.parallelSumTime),
-		"parallelAvgTime": parallelTime / int64(available),
-		"createAvgTime":   createTime / int64(available),
+		"created":            totalCreated,
+		"seconds":            c.cfg.HealthSecond,
+		"parallel":           atomic.LoadInt32(&c.available),
+		"waitCount":          atomic.LoadInt32(&c.waitCount),
+		"totalReturnFail":    atomic.LoadInt32(&c.totalReturnFail), //当前返回失败的计数
+		"avgParallelTime":    parallelTime,
+		"avgCreateTime":      createTime,
+		"avgWaitTime":        createWaitTime,
+		"totalCreateTimeout": atomic.LoadInt32(&c.totalCreateTimeout),
 	}
 	if bs, err := json.Marshal(inf); err == nil {
 		return string(bs)
 	}
-	return "none"
+	return "empty"
 }

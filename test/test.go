@@ -22,12 +22,12 @@ func main() {
 		Host:        "127.0.0.1",
 		Port:        8888,
 		MaxWaitSize: 10000,
-		PoolSize:    10,
-		MinPoolSize: 10,
+		PoolSize:    5,
+		MinPoolSize: 5,
 		MaxPoolSize: 50,
 		AutoClose:   true,
 		//Password:     "vdsfsfafapaddssrd#@Ddfasfdsfedssdfsdfsd",
-		HealthSecond: 1,
+		HealthSecond: 5,
 	})
 	if err != nil {
 		panic(err)
@@ -47,7 +47,6 @@ func main() {
 			for k := 0; k < 100; k++ {
 
 				for j := 0; j < 100; j++ {
-
 					e := p.GetClient().Set("big", "ddddd")
 					if e == nil {
 						if _, e := p.GetClient().Get("big"); err != nil {
@@ -55,9 +54,8 @@ func main() {
 						}
 					}
 				}
-				time.Sleep(time.Millisecond * time.Duration(math.Round(10)))
+				time.Sleep(time.Millisecond * time.Duration(math.Round(100)))
 				//println(p.Info())
-
 			}
 			wait.Done()
 		}()

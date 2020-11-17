@@ -39,7 +39,7 @@ type Config struct {
 	//最大等待数目，当连接池满后，新建连接将等待池中连接释放后才可以继续，本值限制最大等待的数量，超过本值后将抛出异常。默认值: 1000
 	MaxWaitSize int
 	//the connection status check interval for the cache in the connection pool is in seconds. Default: 30
-	//连接池内缓存的连接状态检查时间隔，单位为秒。默认值: 30
+	//连接池内缓存的连接状态检查时间隔，单位为秒。默认值: 60
 	HealthSecond int
 	//connection write buffer, default 8k, in kb
 	//连接写缓冲，默认为8k，单位为kb
@@ -72,7 +72,7 @@ func (c *Config) Default() *Config {
 	c.PoolSize = defaultValue(c.PoolSize, 20)
 	c.GetClientTimeout = defaultValue(c.GetClientTimeout, 5)
 	c.MaxWaitSize = defaultValue(c.MaxWaitSize, 1000)
-	c.HealthSecond = defaultValue(c.HealthSecond, 30)
+	c.HealthSecond = defaultValue(c.HealthSecond, 60)
 	c.WriteBufferSize = defaultValue(c.WriteBufferSize, 8)
 	c.ReadBufferSize = defaultValue(c.ReadBufferSize, 8)
 	c.ReadWriteTimeout = defaultValue(c.ReadWriteTimeout, 60)
