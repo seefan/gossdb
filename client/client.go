@@ -36,15 +36,13 @@ type Client struct {
 //NewClient create new client
 //
 //  @param c *ssdbclient.SSDBClient
-//  @param autoClose Whether to automatically close the identity
 //  @param closeMethod A callback executed by a function to perform automatic closing of a connection
 //  @return *Client
 //
 //  使用ssdb client创建一个可缓存的连接
-func NewClient(c *ssdbclient.SSDBClient, autoClose bool, closeMethod func()) *Client {
+func NewClient(c *ssdbclient.SSDBClient, closeMethod func()) *Client {
 	return &Client{
 		SSDBClient:  *c,
-		AutoClose:   autoClose,
 		closeMethod: closeMethod,
 	}
 }

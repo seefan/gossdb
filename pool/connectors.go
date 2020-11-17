@@ -117,8 +117,7 @@ func NewConnectors(cfg *conf.Config) *Connectors {
 func (c *Connectors) watchHealth() {
 
 	for v := range c.watchTicker.C {
-		println(c.Info())
-
+		// println(c.Info())
 		waitCount := atomic.LoadInt32(&c.waitCount)
 		size := atomic.LoadInt32(&c.cellPos)
 		if c.cellMin != c.cellMax && v.Unix()%int64(c.cfg.HealthSecond) == 0 {
@@ -190,7 +189,7 @@ func (c *Connectors) getPool() *Pool {
 			over: c,
 			pool: p,
 		}
-		cc.Client = *client.NewClient(sc, c.cfg.AutoClose, func() {
+		cc.Client = *client.NewClient(sc, func() {
 			if cc.AutoClose {
 				cc.close()
 			}
@@ -250,6 +249,9 @@ func (c *Connectors) GetClient() *Client {
 	cc, err := c.NewClient()
 	//println("client get ", c.Info())
 	if err == nil {
+		if c.cfg.AutoClose {
+			cc.AutoClose = true
+		}
 		return cc
 	}
 	cc = c.clientTemp.Get().(*Client)
@@ -280,7 +282,7 @@ func (c *Connectors) createClient() (cli *Client, err error) {
 				}
 				if err == nil {
 					cli.used = true
-					if c.round != cli.pool.index {
+					if pi != cli.pool.index {
 						atomic.StoreInt32(&c.round, cli.pool.index)
 					}
 

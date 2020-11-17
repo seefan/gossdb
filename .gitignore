@@ -3,3 +3,4 @@ examples
 test/__debug_bin
 test/test
 .vscode
+.vscode/launch.json
