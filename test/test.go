@@ -7,14 +7,13 @@
 package main
 
 import (
-	"log"
 	"math"
 	_ "net/http/pprof"
 	"sync"
 	"time"
 
-	"github.com/seefan/gossdb"
-	"github.com/seefan/gossdb/conf"
+	"github.com/seefan/gossdb/v2"
+	"github.com/seefan/gossdb/v2/conf"
 )
 
 func main() {
@@ -24,10 +23,10 @@ func main() {
 		MaxWaitSize: 10000,
 		PoolSize:    5,
 		MinPoolSize: 5,
-		MaxPoolSize: 50,
+		MaxPoolSize: 10,
 		AutoClose:   true,
 		//Password:     "vdsfsfafapaddssrd#@Ddfasfdsfedssdfsdfsd",
-		HealthSecond: 5,
+		HealthSecond: 10,
 	})
 	if err != nil {
 		panic(err)
@@ -41,20 +40,20 @@ func main() {
 	// }()
 
 	var wait sync.WaitGroup
-	for i := 0; i < 100; i++ {
+	for i := 0; i < 7; i++ {
 		wait.Add(1)
 		go func() {
 			for k := 0; k < 100; k++ {
-
 				for j := 0; j < 100; j++ {
-					e := p.GetClient().Set("big", "ddddd")
-					if e == nil {
-						if _, e := p.GetClient().Get("big"); err != nil {
-							log.Println(e)
-						}
+					c, e := p.NewClient()
+
+					if e != nil {
+						println(e.Error())
+					} else {
+						time.Sleep(time.Millisecond * time.Duration(math.Round(10)))
+						c.Close()
 					}
 				}
-				time.Sleep(time.Millisecond * time.Duration(math.Round(100)))
 				//println(p.Info())
 			}
 			wait.Done()

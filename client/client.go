@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/seefan/gossdb/ssdbclient"
+	"github.com/seefan/gossdb/v2/ssdbclient"
 )
 
 const (

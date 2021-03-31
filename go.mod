@@ -1,4 +1,4 @@
-module github.com/seefan/gossdb
+module github.com/seefan/gossdb/v2
 
 go 1.14
 

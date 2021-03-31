@@ -10,10 +10,10 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/seefan/gossdb/client"
-	"github.com/seefan/gossdb/conf"
-	"github.com/seefan/gossdb/consts"
-	"github.com/seefan/gossdb/ssdbclient"
+	"github.com/seefan/gossdb/v2/client"
+	"github.com/seefan/gossdb/v2/conf"
+	"github.com/seefan/gossdb/v2/consts"
+	"github.com/seefan/gossdb/v2/ssdbclient"
 )
 
 //Connectors connection pool
@@ -171,7 +171,7 @@ func (c *Connectors) appendPool() (err error) {
 		p.index = pos
 		atomic.AddInt32(&c.cellPos, 1)
 	}
-	println("append pool", pos+1)
+	//println("append pool", pos+1)
 	return nil
 }
 

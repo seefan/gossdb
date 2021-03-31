@@ -3,8 +3,8 @@ package pool
 import (
 	"sync"
 
-	"github.com/seefan/gossdb/consts"
-	"github.com/seefan/gossdb/queue"
+	"github.com/seefan/gossdb/v2/consts"
+	"github.com/seefan/gossdb/v2/queue"
 )
 
 //Pool pool block

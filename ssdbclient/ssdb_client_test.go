@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/seefan/gossdb/conf"
+	"github.com/seefan/gossdb/v2/conf"
 )
 
 func TestSSDBClient_ping(t *testing.T) {
@@ -244,11 +244,11 @@ func TestSSDBClient_getBig(t *testing.T) {
 	//	t.Error(err)
 	//}
 	//for i := 0; i < 1000; i++ {
-		if v, err := c.Do("hget", "app:0","1359003378"); err == nil {
-			t.Log(len(v[1]))
-		} else {
-			t.Error(err)
-		}
+	if v, err := c.Do("hget", "app:0", "1359003378"); err == nil {
+		t.Log(len(v[1]))
+	} else {
+		t.Error(err)
+	}
 	//}
 	if err := c.Close(); err != nil {
 		t.Fatal(err)
@@ -287,7 +287,7 @@ func TestSSDBClient_multiget(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer c.Close()
-	if v, err := c.Do("multi_hget", "black:0", "0:0:1000565011","0:0:1001394200"); err == nil {
+	if v, err := c.Do("multi_hget", "black:0", "0:0:1000565011", "0:0:1001394200"); err == nil {
 		t.Log(v)
 	} else {
 		t.Error(err)

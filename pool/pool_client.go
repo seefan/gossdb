@@ -1,7 +1,7 @@
 package pool
 
 import (
-	"github.com/seefan/gossdb/client"
+	"github.com/seefan/gossdb/v2/client"
 )
 
 //Client pooled client
