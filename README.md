@@ -51,6 +51,10 @@
 
 所有的API基于ssdb的原始API用法，只针对go的特点增加部分方法。所以也可以参照官方文档使用。
 
+引入：
+
+    import "github.com/seefan/gossdb/v2"
+
 示例1：使用自动关闭
 
     //打开连接池，使用默认配置,Host=127.0.0.1,Port=8888,AutoClose=true
