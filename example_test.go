@@ -1,8 +1,8 @@
 package gossdb_test
 
 import (
-	"github.com/seefan/gossdb"
-	"github.com/seefan/gossdb/conf"
+	"github.com/seefan/gossdb/v2"
+	"github.com/seefan/gossdb/v2/conf"
 )
 
 //Client
