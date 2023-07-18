@@ -217,9 +217,10 @@ func (c *connection) recv() (resp []string, err error) {
 				return nil, err
 			}
 			if isEnd {
-				max := len(c.posList) - 1
-				for i := 0; i < max; i += 2 {
-					resp = append(resp, string(c.rsp[c.posList[i]:c.posList[i+1]]))
+				max := len(c.posList) / 2
+				resp = make([]string, max)
+				for i := 0; i < max; i++ {
+					resp[i] = string(c.rsp[c.posList[i*2]:c.posList[i*2+1]])
 				}
 				break
 			}

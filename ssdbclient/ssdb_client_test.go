@@ -288,6 +288,11 @@ func TestSSDBClient_multiget(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer c.Close()
+	if v, err := c.Do("multi_hset", "black:0", "0:0:1000565011", "2", "0:0:1001394200", "3"); err == nil {
+		t.Log(v)
+	} else {
+		t.Error(err)
+	}
 	if v, err := c.Do("multi_hget", "black:0", "0:0:1000565011", "0:0:1001394200"); err == nil {
 		t.Log(v)
 	} else {
