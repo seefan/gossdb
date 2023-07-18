@@ -264,10 +264,14 @@ func index(pos, size int, c byte, bs []byte) int {
 // 第三层，读取数据，一个长度一个内容
 func (c *connection) parseData(n int) (end bool, err error) {
 	if c.dataSize == 0 {
-		c.dataSize = toNum(c.rsp[c.pos:n])
-		if c.dataSize == 0 {
+		if c.pos == n {
 			return true, nil
 		}
+		ds, e := strconv.Atoi(string(c.rsp[c.pos:n]))
+		if e != nil {
+			return false, e
+		}
+		c.dataSize = ds
 		c.nextPos = n + delim + c.dataSize + delim
 	}
 

@@ -2,6 +2,7 @@ package ssdbclient
 
 import (
 	"encoding/json"
+	"strconv"
 	"testing"
 	"time"
 
@@ -223,7 +224,7 @@ func TestSSDBClient_pwd(t *testing.T) {
 }
 func TestSSDBClient_getBig(t *testing.T) {
 	cfg := &conf.Config{
-		Host:            "afcm222",
+		Host:            "127.0.0.1",
 		Port:            8888,
 		ReadBufferSize:  8,
 		WriteBufferSize: 8,
@@ -245,7 +246,7 @@ func TestSSDBClient_getBig(t *testing.T) {
 	//}
 	//for i := 0; i < 1000; i++ {
 	if v, err := c.Do("hget", "app:0", "1359003378"); err == nil {
-		t.Log(len(v[1]))
+		t.Log(v)
 	} else {
 		t.Error(err)
 	}
@@ -256,7 +257,7 @@ func TestSSDBClient_getBig(t *testing.T) {
 }
 func TestSSDBClient_getScan(t *testing.T) {
 	cfg := &conf.Config{
-		Host:            "afcm222",
+		Host:            "127.0.0.1",
 		Port:            8888,
 		ReadBufferSize:  8,
 		WriteBufferSize: 8,
@@ -276,7 +277,7 @@ func TestSSDBClient_getScan(t *testing.T) {
 }
 func TestSSDBClient_multiget(t *testing.T) {
 	cfg := &conf.Config{
-		Host:            "afcm222",
+		Host:            "127.0.0.1",
 		Port:            8888,
 		ReadBufferSize:  8,
 		WriteBufferSize: 8,
@@ -293,4 +294,40 @@ func TestSSDBClient_multiget(t *testing.T) {
 		t.Error(err)
 	}
 
+}
+func TestSSDBClient_nil(t *testing.T) {
+	cfg := &conf.Config{
+		Host:            "127.0.0.1",
+		Port:            8888,
+		ReadBufferSize:  8,
+		WriteBufferSize: 8,
+		ReadTimeout:     300,
+	}
+	c := NewSSDBClient(cfg.Default())
+	if err := c.Start(); err != nil {
+		t.Fatal(err)
+	}
+	defer c.Close()
+	if v, err := c.Do("set", "test_nil", nil); err == nil {
+		t.Log(v)
+	} else {
+		t.Error(err)
+	}
+	if v, err := c.Do("get", "test_nil"); err == nil {
+		t.Log(v)
+	} else {
+		t.Error(err)
+	}
+}
+
+func BenchmarkConnectors_conv(b *testing.B) {
+	ns := []string{"1283221", "3132", "32331", "92847", "9863232", "93712"}
+	b.SetParallelism(10)
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			for i := range ns {
+				strconv.Atoi(ns[i])
+			}
+		}
+	})
 }
